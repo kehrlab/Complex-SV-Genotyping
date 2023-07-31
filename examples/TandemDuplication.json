@@ -1,0 +1,16 @@
+{ 
+    "TandemDuplication" : {
+        "VAR" : {
+            "chr5" : {
+                "1" : {
+                    "rNameLeft" : "chr5",
+                    "rNameRight" : "chr5",
+                    "xLeft" : 148173976,
+                    "xRight" : 148173476,
+                    "directionLeft" : "left",
+                    "directionRight" : "right"
+                }
+            }
+        }
+    }
+}

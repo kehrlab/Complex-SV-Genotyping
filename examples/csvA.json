@@ -1,0 +1,30 @@
+{
+    "csvA" : {
+        "VAR" : {
+            "chr6" : {
+                "1" : {
+                    "rNameLeft" : "chr6",
+                    "rNameRight" : "chr6",
+                    "xLeft" : 157000,
+                    "xRight" : 159001,
+                    "directionLeft" : "left",
+                    "directionRight" : "right"
+                },
+                "2" : {
+                    "rNameLeft" : "chr6",
+                    "rNameRight" : "chr6",
+                    "xLeft" : 160000,
+                    "xRight" : 158000,
+                    "directionLeft" : "left",
+                    "directionRight" : "left"
+                },
+                "3" : {
+                    "rNameLeft" : "chr6",
+                    "rNameRight" : "chr6",
+                    "xLeft" : 155000,
+                    "directionLeft" : "right" 
+                }
+            }
+        }
+    }
+}

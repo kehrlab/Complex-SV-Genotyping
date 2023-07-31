@@ -1,0 +1,24 @@
+{   
+    "SPINK14" : {
+    	"VAR" : {
+        	"chr5" : {
+        	    "1" : {
+        	        "rNameLeft": "chr5",
+        	        "rNameRight": "chr5",
+        	        "xLeft": 148173476,
+        	        "xRight": 148175044,
+        	        "directionLeft": "left",
+        	        "directionRight": "left"
+        	    },
+        	    "2" : {
+        	        "rNameLeft": "chr5",
+        	        "rNameRight": "chr5",
+        	        "xLeft": 148174677,
+        	        "xRight": 148175216,
+        	        "directionLeft": "right",
+        	        "directionRight": "right"
+        	    }
+        	}
+    	}
+    }
+}
