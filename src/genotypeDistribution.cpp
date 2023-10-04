@@ -20,13 +20,29 @@ GenotypeDistribution::GenotypeDistribution(std::vector<std::string> contigNames,
     setDistributionMode(mode);
 }
 
+GenotypeDistribution::GenotypeDistribution(const Eigen::SparseMatrix<float> & dist, std::unordered_map<std::string, int> & groupIndices, int sMin, int sMax)
+{
+    this->normalizationFactor = 1;
+    this->minProbability = 0.0;
+    this->mode = 2;
+
+    for (auto & g : groupIndices)
+    {
+        std::vector<float> temp(dist.rows(), 0);
+        for (int i = 0; i < dist.rows(); ++i)
+            temp[i] = dist.coeff(i, g.second);
+        this->distributions[g.first] = InsertSizeDistribution(sMin, sMax, temp);
+    }
+    calculateMinProbability();
+}
+
 void GenotypeDistribution::setDistributionMode(int mode)
 {
     if (mode >= 0 && mode <=3)
         this->mode = mode;
     else {
-        std::cout << "Invalid mode. Set to default (0)." << std::endl;
-        this->mode = 0;
+        std::cout << "Invalid mode. Set to default (2)." << std::endl;
+        this->mode = 2;
     }
     this->distributions.erase(this->distributions.begin(), this->distributions.end());
     this->distributionProbabilities.erase(this->distributionProbabilities.begin(), this->distributionProbabilities.end());
@@ -197,6 +213,12 @@ void GenotypeDistribution::calculateNormalizationFactor()
     return;
 }
 
+float GenotypeDistribution::getNormalizationFactor()
+{
+    calculateNormalizationFactor();
+    return this->normalizationFactor;
+}
+
 float GenotypeDistribution::getProbability(int insertSize, std::string orientation, bool split, bool spanning, bool interChromosome, std::string regionString, std::string junctionString, std::string breakpointString, std::vector<std::vector<std::string>> rNamePairs, bool useInsertSize)
 {
     if (interChromosome)
@@ -350,8 +372,9 @@ std::string GenotypeDistribution::getContigIdentifier(std::string rName1, std::s
 {
     std::string identifier = "";
 
-    if (this->contigs.find(rName1) == this->contigs.end() || this->contigs.find(rName2) == this->contigs.end())
-        return "";
+    if (this->contigs.size() > 0)
+        if (this->contigs.find(rName1) == this->contigs.end() || this->contigs.find(rName2) == this->contigs.end())
+            return "";
 
     if (rName1 <= rName2)
         identifier = rName1 + rName2;

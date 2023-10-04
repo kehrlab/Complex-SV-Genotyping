@@ -8,7 +8,6 @@
 
 class VariantMap
 {
-    // float getGCContentFromIndices(int, int);
     public:
     VariantMap();
     

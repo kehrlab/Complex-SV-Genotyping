@@ -35,7 +35,7 @@ class Junction {
     bool operator==(Junction);
     
 
-    int getId();
+    int getID();
     int getDirectionLeft();
     int getDirectionRight();
     int getPositionLeft();

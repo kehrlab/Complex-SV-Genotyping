@@ -28,9 +28,12 @@ class Genotyper
     std::vector<std::vector<GenotypeResult>> genotypeResults;
     std::vector<LibraryDistribution> sampleDistributions;
 
+    std::vector<VariantProfile> variantProfiles;
+
     std::vector<ContigInfo> contigInfos;
 
     int maxFilterMargin;
+    int maxReadLength;
     std::unordered_map<std::string, int> contigLengths;
 
     std::ofstream outputFile;
@@ -56,10 +59,10 @@ class Genotyper
     void openReferenceFile();
     void writeVariantAlleles();
     void closeReferenceFile();
-    void calculateMaxFilterMargin(std::vector<Sample> &);
     void createAlleleMaps();
     void gatherContigLengths();
     void writeStats();
+    void createVariantProfiles();
 };
 
 #endif

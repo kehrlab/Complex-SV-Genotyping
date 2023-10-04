@@ -2,15 +2,19 @@
 #include "genotypeResult.hpp"
 #include "libraryDistribution.hpp"
 #include "regionSampler.hpp"
+#include "variantProfile.hpp"
 #include <chrono>
 #include <unordered_map>
 #include <unordered_set>
 
 Genotyper::Genotyper()
-{}
+{
+    this->maxFilterMargin = 500;
+}
 
 Genotyper::Genotyper(ProgramOptions options)
 {
+    this->maxFilterMargin = 500;
     setOptions(options);
     getBamFileNames();
     openReferenceFile();
@@ -19,7 +23,12 @@ Genotyper::Genotyper(ProgramOptions options)
     sampleRegionsForInsertSizeDistribution();
     this->options.determineNumThreads(this->fileNames.size(), this->variants.size());
     createSamples();
-    createAlleleMaps();
+
+    if (this->options.isOptionCreateVariantProfiles())
+        createVariantProfiles();
+    else
+        createAlleleMaps();
+
     printVariantDetails();
     writeVariantAlleles();
 }
@@ -81,22 +90,27 @@ void Genotyper::createSamples()
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (int i = 0; i < this->fileNames.size(); ++i)
         sampleDistributions.push_back(LibraryDistribution());
-    std::vector<int> margins(this->fileNames.size(), 0);
 
+    //std::vector<int> margins(this->fileNames.size(), 0);
+    std::vector<int> readLengths(this->fileNames.size(), 0);
+    
     //#pragma omp parallel for num_threads(this->options.getNumberOfThreads())
     for (int i = 0; i < this->fileNames.size(); ++i) 
     {
         Sample s(this->fileNames[i], this->referenceFile, this->options, this->regionSampler, this->variants);
         s.open();
-        margins[i] = s.getFilterMargin();
+        //margins[i] = s.getFilterMargin();
+        readLengths[i] = s.getMaxReadLength();
         this->sampleDistributions[i] = s.getLibraryDistribution();
-	s.close();
+	    s.close();
     }
-    margins.size() > 0 ? this->maxFilterMargin = 0 : this->maxFilterMargin = 1000;
-    for (int m : margins)
-    	this->maxFilterMargin = std::max(this->maxFilterMargin, m);
+    //margins.size() > 0 ? this->maxFilterMargin = 0 : this->maxFilterMargin = 1000;
+    readLengths.size() > 0 ? this->maxReadLength = 0 : this->maxReadLength = 150;
+    // for (int m : margins)
+    // 	this->maxFilterMargin = std::max(this->maxFilterMargin, m);
+    for (int l : readLengths)
+        this->maxReadLength = std::max(this->maxReadLength, l);
 
-    // calculateMaxFilterMargin(samples); // could make this one sample-specific
     this->regionSampler = RegionSampler();
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -104,11 +118,21 @@ void Genotyper::createSamples()
         std::cout << "Total time taken to create default distributions for all files: " << std::chrono::duration_cast<std::chrono::seconds>(end-begin).count() << "s" << std::endl;
 }
 
-void Genotyper::calculateMaxFilterMargin(std::vector<Sample> & samples)
+void Genotyper::createVariantProfiles()
 {
-    samples.size() > 0 ? this->maxFilterMargin = 0 : this->maxFilterMargin = 1000;
-    for (Sample & s : samples)
-        this->maxFilterMargin = std::max(this->maxFilterMargin, s.getFilterMargin());
+    int overlap = 20;
+    int sMin {1}, sMax {1000};
+    for (int i = 0; i < this->variants.size(); ++i) {
+        // std::cout << "Variant Profile: " << this->variants[i].getName() << std::endl;
+        this->variantProfiles.push_back(VariantProfile(this->variants[i], this->maxFilterMargin, overlap, this->maxReadLength, sMin, sMax, this->contigLengths, this->options));
+    }
+    // this->variantProfiles = std::vector<VariantProfile>(this->variants.size());
+    
+    #pragma omp parallel for num_threads(this->options.getNumberOfThreads())
+    for (int i = 0; i < this->variantProfiles.size(); ++i) {
+        // std::cout << "Variant: " << this->variantProfiles[i].getVariant().getName() << std::endl;
+        this->variantProfiles[i].calculateAlleleMasks();
+    }
 }
 
 void Genotyper::gatherContigLengths()
@@ -135,8 +159,7 @@ void Genotyper::gatherContigLengths()
 void Genotyper::createAlleleMaps()
 {
     for (complexVariant & cSV : this->variants) 
-        for (Allele & allele : cSV.getAlleles()) 
-            allele.createChromosomeMaps(cSV.getAllBreakpoints(), this->maxFilterMargin, this->contigLengths, this->referenceFile); 
+        cSV.createAlleleMaps(this->maxFilterMargin, this->contigLengths);
 }
 
 void Genotyper::printVariantDetails()
@@ -195,14 +218,16 @@ void Genotyper::genotypeAllSamples()
         {
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
             VariantGenotyper vG(this->variants[i], this->fileNames[j], this->sampleDistributions[j], this->options);
-            vG.genotype();
+            if (this->variantProfiles.size() > 0)
+                vG.genotype(this->variantProfiles[i]);
+            else
+                vG.genotype();
             this->genotypeResults[i][j] = vG.getResult();
             std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
             if (this->options.isOptionProfile())
                 std::cout << "Total time to genotype variant " << this->variants[i].getName() << " in file " << this->fileNames[j] << ": " << std::chrono::duration_cast<std::chrono::seconds>(end-begin).count() << "s" << std::endl;
         }
     }
-    //closeSamples();
     closeReferenceFile();
 }
 

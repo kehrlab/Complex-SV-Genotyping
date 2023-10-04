@@ -4,6 +4,7 @@
 #include "genomicRegion.hpp"
 #include "genotypeDistribution.hpp"
 #include "libraryDistribution.hpp"
+#include "options.hpp"
 #include "readTemplate.hpp"
 #include "record.hpp"
 #include <algorithm>
@@ -21,17 +22,37 @@ DistributionConverter::DistributionConverter(complexVariant variant, LibraryDist
     this->readLength = readLength;
     this->sampleDistribution = sampleDistribution;
     this->variant = variant;
-    this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->sampleDistribution.getInsertMean(), this->sampleDistribution.getInsertSD());
+    this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), 500, 0);//this->sampleDistribution.getInsertMean(), this->sampleDistribution.getInsertSD());
     this->options = options;
 
     this->filename = fileHandler.getFileName();
 
-    this->lowerInsertLimit = this->sampleDistribution.getInsertMean() - 2*this->sampleDistribution.getInsertSD();
-    this->upperInsertLimit = this->sampleDistribution.getInsertMean() + 2*this->sampleDistribution.getInsertSD();
-    
+    // this->lowerInsertLimit = this->sampleDistribution.getInsertMean() - 2*this->sampleDistribution.getInsertSD();
+    // this->upperInsertLimit = this->sampleDistribution.getInsertMean() + 2*this->sampleDistribution.getInsertSD();
+    this->lowerInsertLimit = 1;
+    this->upperInsertLimit = 1000;
+
     // createVariantMaps();
     initDistributions(fileHandler, options.getDistributionMode());
     createDistributions();
+    determineDifficulty();
+}
+
+DistributionConverter::DistributionConverter(VariantProfile & variantProfile, LibraryDistribution & sampleDistribution, BamFileHandler & fileHandler, ProgramOptions & options)
+{
+    this->filter = variantProfile.getFilter();
+    this->options = options;
+    this->filename = fileHandler.getFileName();
+    this->filter = variantProfile.getFilter();
+
+    std::vector<std::string> cNames = fileHandler.getContigInfo().cNames;
+    auto tempDists = variantProfile.calculateGenotypeDistributions(sampleDistribution, 0.001);
+    for (auto & dist : tempDists)
+    {
+        dist.second.setPossibleContigs(cNames);
+        this->genotypeDistributions.push_back(dist.second);
+        this->genotypeNames.push_back(dist.first);
+    }
     determineDifficulty();
 }
 
@@ -214,17 +235,17 @@ void DistributionConverter::addVariantRegionsWithGCCorrection(std::string cName,
                 bool split = sT.containsSplitRead();
                 if (split && this->options.isOptionNoSplitReads()) {
                     continue;
-		}
+		        }
 
                 bool spanning = sT.containsSpanningRead();
                 if (spanning && this->options.isOptionNoSpanningReads()) {
                     continue;
-		}
+		        }
 
                 if (this->options.isOptionNoNormalReads())
                     if (!split && !spanning && orientation != "FF" && orientation != "RR" && insertSize > this->lowerInsertLimit && insertSize < this->upperInsertLimit) { 
                         continue;
-		    }
+		        }
 
                 bool interChromosome = sT.alignsAcrossChromosomes();
                 std::string regionString = sT.getRegionString();
@@ -321,7 +342,7 @@ void DistributionConverter::createMixedDistributions()
         {
             this->genotypeNames.push_back(alleleNames[j] + "/" + alleleNames[i]);
             GenotypeDistribution mixedDist = this->alleleDistributions[j] + this->alleleDistributions[i];
-            if (this->alleleNames.size() > 2)
+            if (this->alleleNames.size() == 2)
             {
                 this->genotypeDistributions.push_back(mixedDist);
             }
@@ -334,7 +355,7 @@ void DistributionConverter::createMixedDistributions()
                         continue;
                     otherDist += this->alleleDistributions[k];
                 }
-                this->genotypeDistributions.push_back((1-eps) * mixedDist + eps * otherDist);
+                this->genotypeDistributions.push_back((1-eps) / 2 * mixedDist + (eps /(this->alleleNames.size() - 2)) * otherDist);
             }
         }
     }

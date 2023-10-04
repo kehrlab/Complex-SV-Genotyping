@@ -27,13 +27,14 @@ ProgramOptions::ProgramOptions()
     this->sequenceDirectory = "";
     this->simCoverage = -1;
     this->stats = false;
+    this->variantProfiles = false;
 }
 
 ProgramOptions::ProgramOptions(
     std::string inFile, std::string fileList,
     std::string outFile, std::string vcfFile, std::string variantFile, std::string refFile, std::string sequenceDir, std::string samplingFile,
     bool wholeGenome, int nThreads, int minQ, int estimateDiffQ, int mode, bool verbose, bool outputDistributions, bool profile,
-    bool noSplit, bool noSpanning, bool noStandard, bool noInsert, bool useQualities, bool gcCorrect, bool loadToMemory, int simCoverage, bool stats
+    bool noSplit, bool noSpanning, bool noStandard, bool noInsert, bool useQualities, bool gcCorrect, bool loadToMemory, int simCoverage, bool stats, bool variantProfiles
 )
 {
     this->outFile = outFile;
@@ -58,6 +59,7 @@ ProgramOptions::ProgramOptions(
     this->normalReads = !noStandard;
     this->simCoverage = simCoverage;
     this->stats = stats;
+    this->variantProfiles = variantProfiles;
 
     determineBamFiles(inFile, fileList);
     determineSamplingRegions(samplingFile);
@@ -257,4 +259,9 @@ int ProgramOptions::getCoverage()
 bool ProgramOptions::isOptionStats()
 {
     return this->stats;
+}
+
+bool ProgramOptions::isOptionCreateVariantProfiles()
+{
+    return this->variantProfiles;
 }

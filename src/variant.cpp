@@ -174,3 +174,9 @@ std::vector<GenomicRegion> & complexVariant::getVariantRegions()
 {
     return this->variantRegions;
 }
+
+void complexVariant::createAlleleMaps(int filterMargin, std::unordered_map<std::string, int> contigLengths)
+{
+    for (auto & allele : this->variantAlleles)
+        allele.createChromosomeMaps(this->allBreakpoints, filterMargin, contigLengths);
+}

@@ -168,7 +168,7 @@ std::string Junction::getRefNameRight()
     return this->rNameRight;
 }
 
-int Junction::getId()
+int Junction::getID()
 {
     return this->id;
 }

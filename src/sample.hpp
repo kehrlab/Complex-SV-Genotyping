@@ -30,6 +30,7 @@ class Sample
     LibraryDistribution sampleDistribution;
     
     bool bamFileOpen;
+    int maxReadLength;
 
     // private functions
     void calculateDefaultDistributions();
@@ -49,6 +50,7 @@ class Sample
     ContigInfo getContigInfo();
     std::unordered_map<std::string, int> getContigLengths();
     std::string getFileName();
+    int getMaxReadLength();
     void close();
 };
 

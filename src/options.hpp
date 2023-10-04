@@ -36,6 +36,7 @@ class ProgramOptions
     int Ts, Tv;
     int simCoverage;
     bool stats;
+    bool variantProfiles;
 
     void determineBamFiles(std::string, std::string);
     void determineSamplingRegions(std::string);
@@ -44,7 +45,7 @@ class ProgramOptions
     ProgramOptions();
     ProgramOptions(
         std::string, std::string, std::string, std::string, std::string, std::string, std::string, std::string,
-        bool, int, int, int, int, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, int, bool
+        bool, int, int, int, int, bool, bool, bool, bool, bool, bool, bool, bool, bool, bool, int, bool, bool
     );
     std::vector<std::string> getBamFileNames();
     std::vector<GenomicRegion> getSamplingRegions();
@@ -77,6 +78,7 @@ class ProgramOptions
     bool isOptionSample();
     int getCoverage();
     bool isOptionStats();
+    bool isOptionCreateVariantProfiles();
 };
 
 #endif

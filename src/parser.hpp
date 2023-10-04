@@ -39,6 +39,7 @@ class parser {
     void addOptionLoadToMemory();
     void addOptionCoverage();
     void addOptionStats();
+    void addOptionVariantProfiles();
 
     void addOptionOutputInsertSizeDistributions();
 

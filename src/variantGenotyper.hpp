@@ -6,6 +6,7 @@
 #include "likelihoodCalculator.hpp"
 #include "recordManager.hpp"
 #include "variant.hpp"
+#include "variantProfile.hpp"
 #include <boost/filesystem.hpp>
 
 class VariantGenotyper
@@ -30,6 +31,7 @@ class VariantGenotyper
     public:
     VariantGenotyper(complexVariant &, std::string, LibraryDistribution &, ProgramOptions &);
     void genotype();
+    void genotype(VariantProfile &);
     GenotypeResult getResult();
     std::string getVariantName();
     std::string getSampleName();

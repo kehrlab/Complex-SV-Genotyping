@@ -11,6 +11,7 @@
 #include "variant.hpp"
 #include "readTemplate.hpp"
 #include <random>
+#include "variantProfile.hpp"
 
 class DistributionConverter
 {
@@ -42,6 +43,7 @@ class DistributionConverter
     public:
     DistributionConverter();
     DistributionConverter(complexVariant, LibraryDistribution, int, BamFileHandler &, ProgramOptions &);
+    DistributionConverter(VariantProfile &, LibraryDistribution &, BamFileHandler &, ProgramOptions &);
 
     void initDistributions(BamFileHandler &, int);
     void createDistributions();

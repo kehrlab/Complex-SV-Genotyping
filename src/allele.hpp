@@ -40,7 +40,7 @@ class Allele
     seqan::String<seqan::CharString> getSequenceIDs();
     seqan::String<seqan::Dna5String> getChromosomeSequences();
     void print();
-    void createChromosomeMaps(std::vector<Breakpoint> &, int, std::unordered_map<std::string, int>, SeqFileHandler &);
+    void createChromosomeMaps(std::vector<Breakpoint> &, int, std::unordered_map<std::string, int>);
     void createAlleleSequences(SeqFileHandler &);
     
     std::vector<Junction> getJunctionsOnChromosome(std::string);

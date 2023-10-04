@@ -165,7 +165,7 @@ void Allele::print()
     std::cout << "----------------------" << std::endl;
 }
 
-void Allele::createChromosomeMaps(std::vector<Breakpoint> & allBreakpoints, int filterMargin, std::unordered_map<std::string, int> contigLengths, SeqFileHandler & referenceFileHandler)
+void Allele::createChromosomeMaps(std::vector<Breakpoint> & allBreakpoints, int filterMargin, std::unordered_map<std::string, int> contigLengths)
 {
     std::unordered_set<std::string> cNames;
     for (Breakpoint bp : allBreakpoints)

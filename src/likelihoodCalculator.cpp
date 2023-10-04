@@ -28,9 +28,9 @@ LikelihoodCalculator::LikelihoodCalculator(RecordManager & recordManager, BamFil
 
 void LikelihoodCalculator::calculateLikelihoods()
 {
-    this->result.initLikelihoods(this->distributionConverter.getGenotypeNames());
+    this->result.initLikelihoods(this->genotypeNames);
     for (auto it = this->templates.begin(); it != this->templates.end(); ++it)
-        if (it->isInterestingReadPair(this->distributionConverter.getReadPairFilter())) 
+        if (it->isInterestingReadPair(this->filter)) 
             adjustLikelihoods(*it);
     this->templates = std::vector<ReadTemplate>();
     this->result.callGenotype();
@@ -79,9 +79,18 @@ void LikelihoodCalculator::adjustLikelihoods(ReadTemplate & readTemplate)
 
 void LikelihoodCalculator::createInsertSizeDistributions()
 {
-    this->distributionConverter = DistributionConverter(this->variant, this->sampleDistribution, this->maxReadLength, this->bamFileHandler, this->options);
-    this->genotypeDistributions = this->distributionConverter.getGenotypeDistributions();
-    this->genotypeNames = this->distributionConverter.getGenotypeNames();
+    DistributionConverter distributionConverter(this->variant, this->sampleDistribution, this->maxReadLength, this->bamFileHandler, this->options);
+    this->genotypeDistributions = distributionConverter.getGenotypeDistributions();
+    this->genotypeNames = distributionConverter.getGenotypeNames();
+    this->filter = distributionConverter.getReadPairFilter();
+}
+
+void LikelihoodCalculator::createInsertSizeDistributions(VariantProfile & variantProfile)
+{
+    DistributionConverter distributionConverter(variantProfile, this->sampleDistribution, this->bamFileHandler, this->options);
+    this->genotypeDistributions = distributionConverter.getGenotypeDistributions();
+    this->genotypeNames = distributionConverter.getGenotypeNames();
+    this->filter = distributionConverter.getReadPairFilter();
 }
 
 GenotypeResult LikelihoodCalculator::getResult()
@@ -102,6 +111,5 @@ std::vector<std::string> & LikelihoodCalculator::getGenotypeNames()
 void LikelihoodCalculator::clearData()
 {
     this->templates.clear();
-    this->distributionConverter = DistributionConverter();
     this->result = GenotypeResult();
 }

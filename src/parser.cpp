@@ -61,6 +61,7 @@ parser::addOptionsParams()
     addOptionLoadToMemory();
     addOptionCoverage();
     addOptionStats();
+    addOptionVariantProfiles();
 }
 
 void 
@@ -268,6 +269,13 @@ void parser::addOptionStats()
     ));
 }
 
+void parser::addOptionVariantProfiles()
+{
+    addOption(this->argParser, ArgParseOption(
+        "L", "legacy-mode", "do not calculate variant profile matrices"
+    ));
+}
+
 void 
 parser::parseOptions(int argc, const char **argv)
 {
@@ -336,6 +344,7 @@ void parser::extractOptions()
     bool loadToMemory = false;
     int coverage = -1;
     bool stats = false;
+    bool legacyMode = false;
 
     getOptionValue(inFile, this->argParser, "input-file");
     getOptionValue(outFile, this->argParser, "output-file");
@@ -354,7 +363,6 @@ void parser::extractOptions()
     getOptionValue(noSpanning, this->argParser, "no-spanning");
     getOptionValue(noStandard, this->argParser, "no-standard");
     getOptionValue(noInsert, this->argParser, "no-insert-sizes");
-    //getOptionValue(useQualities, this->argParser, "use-qualities");
     getOptionValue(minQ, this->argParser, "minQ");
     getOptionValue(mode, this->argParser, "distribution-mode");
     getOptionValue(loadToMemory, this->argParser, "load-to-memory");
@@ -362,6 +370,7 @@ void parser::extractOptions()
     getOptionValue(samplingFile, this->argParser, "sampling-regions");
     getOptionValue(coverage, this->argParser, "coverage");
     getOptionValue(stats, this->argParser, "stats");
+    getOptionValue(legacyMode, this->argParser, "legacy-mode");
     
     this->options = ProgramOptions(
         inFile, fileList, outFile, vcfFile,
@@ -370,7 +379,7 @@ void parser::extractOptions()
         wholeGenome, nThreads, minQ, estimate, mode, verbose,
         outputDistributions, profile,
         noSplit, noSpanning, noStandard, noInsert, 
-        useQualities, gcCorrect, loadToMemory, coverage, stats
+        useQualities, gcCorrect, loadToMemory, coverage, stats, !legacyMode
     );
 }
 

@@ -18,6 +18,7 @@ Sample::Sample(
 {
     this->distributionDirectory = "";
     this->bamFileOpen = false;
+    this->maxReadLength = 0;
 }
 
 Sample::Sample(
@@ -29,6 +30,7 @@ Sample::Sample(
 ) : filename(filename), referenceFile(referenceFile), options(options), regionSampler(regionSampler), variants(variants)
 {
     this->distributionDirectory = "";
+    this->maxReadLength = 0;
 }
 
 void Sample::open()
@@ -67,14 +69,14 @@ void Sample::calculateDefaultDistributions()
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::unordered_map<std::string, TemplatePosition> insertPositions;
     if (this->options.isOptionUseWholeGenome()) { 
-        insertPositions = this->bamFile.get_insert_size_positions();
+        insertPositions = this->bamFile.get_insert_size_positions(this->maxReadLength);
     }
     else
     {
         std::vector<std::string> regionStrings;
         for (GenomicRegion & r : this->regionSampler.getSampledInsertRegions())
             regionStrings.push_back(r.getRegionString());
-        insertPositions = this->bamFile.get_insert_size_positions(regionStrings);
+        insertPositions = this->bamFile.get_insert_size_positions(this->maxReadLength, regionStrings);
     }
     createSampleDistribution(insertPositions);
     std::unordered_map<std::string, TemplatePosition>().swap(insertPositions);
@@ -139,3 +141,7 @@ void Sample::close()
     closeBamFile();
 }
 
+int Sample::getMaxReadLength()
+{
+    return this->maxReadLength;
+}

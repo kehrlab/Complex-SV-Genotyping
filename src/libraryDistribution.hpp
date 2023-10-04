@@ -2,6 +2,7 @@
 #define LIBDISTHEADER
 
 #include "custom_types.hpp"
+#include <eigen3/Eigen/Sparse>
 #include "genomicRegion.hpp"
 #include "readTemplate.hpp"
 #include "seqFileHandler.hpp"

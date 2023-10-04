@@ -45,11 +45,11 @@ class BamFileHandler
 
     // get_insert_size_positions
     //
-    std::unordered_map<std::string, TemplatePosition> get_insert_size_positions(std::vector<std::string>);
+    std::unordered_map<std::string, TemplatePosition> get_insert_size_positions(int &, std::vector<std::string>);
 
     // get_insert_size_positions
     //
-    std::unordered_map<std::string, TemplatePosition> get_insert_size_positions();
+    std::unordered_map<std::string, TemplatePosition> get_insert_size_positions(int &);
 
     // get_read_pairs
     //

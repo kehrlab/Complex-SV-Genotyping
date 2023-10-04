@@ -38,6 +38,7 @@ class complexVariant {
     std::unordered_set<std::string> getContigNames();
     void calculateVariantRegions();
     std::vector<GenomicRegion> & getVariantRegions();
+    void createAlleleMaps(int, std::unordered_map<std::string, int>);
 };
 
 #endif

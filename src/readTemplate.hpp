@@ -35,6 +35,7 @@ class ReadTemplate
     std::unordered_set<int> overlappingRegions;
     std::string regionString;
     std::string junctionString;
+    std::string chromosomeString;
     std::string bpString;
     std::unordered_set<int> spanningBreakpoints;
     std::unordered_set<int> splittingJunctions;
@@ -90,6 +91,7 @@ class ReadTemplate
     std::string getRegionString();
     std::string getJunctionString();
     std::string getBreakpointString();
+    std::string getChromosomeString();
     std::vector<int> getMappingQualities();
 };
 

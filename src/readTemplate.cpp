@@ -18,6 +18,9 @@ ReadTemplate::ReadTemplate(std::vector<BamRecord> records)
     this->templateGCContent = 0;
     this->templateName = records[0].getTemplateName();
     this->regionString = "";
+    this->junctionString = "";
+    this->chromosomeString = "";
+    this->bpString = "";
     this->splitFirst = false;
     this->splitLast = false;
     this->suspectedSplit = false;
@@ -39,6 +42,9 @@ ReadTemplate::ReadTemplate(std::vector<BamRecord> records, std::vector<Junction>
     this->templateGCContent = 0;
     this->templateName = records[0].getTemplateName();
     this->regionString = "";
+    this->junctionString = "";
+    this->bpString = "";
+    this->chromosomeString = "";
     this->splitFirst = false;
     this->splitLast = false;
     this->suspectedSplit = false;
@@ -124,13 +130,13 @@ void ReadTemplate::calculateInsertSize()
         if (this->orientation == "FR" || this->orientation == "RF")
         {
             if (this->records[this->primaryFirst].isReverse() && !this->records[this->primaryLast].isReverse())
-                this->insertSize = this->fivePrimeFirst - this->fivePrimeLast;
+                this->insertSize = this->fivePrimeFirst - this->fivePrimeLast + 1;
             else if (!this->records[this->primaryFirst].isReverse() && this->records[this->primaryLast].isReverse())
-                this->insertSize = this->fivePrimeLast - this->fivePrimeFirst;
-            if (this->insertSize < 0)
-                this->insertSize--;
-            else
-                this->insertSize++;
+                this->insertSize = this->fivePrimeLast - this->fivePrimeFirst + 1;
+            // if (this->insertSize < 0)
+            //     this->insertSize--;
+            // else
+            //     this->insertSize++;
             return;
         }
     }
@@ -250,7 +256,7 @@ void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, std::vector<
 
     int clippedLength = -1;
     int direction = 0;
-    bool interChromosomeTrue = this->interChromosome;
+    // bool interChromosomeTrue = this->interChromosome;
     for (unsigned i = 0; i < chromosomeJunctions.size(); ++i)
     {
         Junction junction = chromosomeJunctions[i];
@@ -258,44 +264,44 @@ void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, std::vector<
         {
             if (alignsWithinExpectedDistance(chromosomeJunctions, i, rFirst, rLast))
             {
-                this->splittingJunctions.insert(junction.getId());
+                this->splittingJunctions.insert(junction.getID());
                 this->splitFirst = true;
                 // check for interChromosome reads
-                if (junction.getRefNameLeft() != junction.getRefNameRight())
-                {
-                    if (interChromosomeTrue)
-                    {
-                        this->interChromosomeNames.clear();
-                        interChromosomeTrue = false;
-                    }
-                    std::vector<std::string> cNamePair;
-                    cNamePair.push_back(junction.getRefNameLeft());
-                    cNamePair.push_back(junction.getRefNameRight());
-                    this->interChromosomeNames.push_back(cNamePair);
-                    this->interChromosome = true;
-                }
+                // if (junction.getRefNameLeft() != junction.getRefNameRight())
+                // {
+                //     if (interChromosomeTrue)
+                //     {
+                //         this->interChromosomeNames.clear();
+                //         interChromosomeTrue = false;
+                //     }
+                //     std::vector<std::string> cNamePair;
+                //     cNamePair.push_back(junction.getRefNameLeft());
+                //     cNamePair.push_back(junction.getRefNameRight());
+                //     this->interChromosomeNames.push_back(cNamePair);
+                //     this->interChromosome = true;
+                // }
             }
         }
         if (!this->splitLast && isClippedAtJunction(clippedLength, direction, rLast, junction))
         {
             if (alignsWithinExpectedDistance(chromosomeJunctions, i, rLast, rFirst))
             {
-                this->splittingJunctions.insert(junction.getId());
+                this->splittingJunctions.insert(junction.getID());
                 this->splitLast = true;
                 // check for interChromosome reads
-                if (junction.getRefNameLeft() != junction.getRefNameRight())
-                {
-                    if (interChromosomeTrue)
-                    {
-                        this->interChromosomeNames.clear();
-                        interChromosomeTrue = false;
-                    }
-                    std::vector<std::string> cNamePair;
-                    cNamePair.push_back(junction.getRefNameLeft());
-                    cNamePair.push_back(junction.getRefNameRight());
-                    this->interChromosomeNames.push_back(cNamePair);
-                    this->interChromosome = true;
-                }
+                // if (junction.getRefNameLeft() != junction.getRefNameRight())
+                // {
+                //     if (interChromosomeTrue)
+                //     {
+                //         this->interChromosomeNames.clear();
+                //         interChromosomeTrue = false;
+                //     }
+                //     std::vector<std::string> cNamePair;
+                //     cNamePair.push_back(junction.getRefNameLeft());
+                //     cNamePair.push_back(junction.getRefNameRight());
+                //     this->interChromosomeNames.push_back(cNamePair);
+                //     this->interChromosome = true;
+                // }
             }
         }
     }
@@ -391,7 +397,7 @@ void ReadTemplate::findSplitsBasedOnGaps(std::vector<Junction> & junctions)
             {
                 if (alignsWithinExpectedDistance(junctions, i, this->records[this->primaryFirst], this->records[this->primaryLast]))
                 {
-                    this->splittingJunctions.insert(junction.getId());
+                    this->splittingJunctions.insert(junction.getID());
                     this->splitFirst = true;
                 }
             }
@@ -403,7 +409,7 @@ void ReadTemplate::findSplitsBasedOnGaps(std::vector<Junction> & junctions)
             {
                 if (alignsWithinExpectedDistance(junctions, i, this->records[this->primaryLast], this->records[this->primaryFirst]))
                 {
-                    this->splittingJunctions.insert(junction.getId());
+                    this->splittingJunctions.insert(junction.getID());
                     this->splitLast = true;
                 }
             }
@@ -708,4 +714,26 @@ void ReadTemplate::markSuspectedSplit()
 bool ReadTemplate::containsSuspectedSplit()
 {
 	return this->suspectedSplit;
+}
+
+std::string ReadTemplate::getChromosomeString()
+{
+    this->chromosomeString = "";
+    if (!this->isProperPair())
+    {
+        return "";
+    }
+    else
+    {
+        if (this->interChromosomeNames.size() > 0)
+        {
+            if (this->interChromosomeNames[0].size() == 2)
+            {
+                std::sort(this->interChromosomeNames[0].begin(), this->interChromosomeNames[0].end());
+                for (auto & chrName : this->interChromosomeNames[0])
+                    this->chromosomeString += chrName;
+            }
+        }
+    }
+    return this->chromosomeString;
 }

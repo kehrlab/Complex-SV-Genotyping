@@ -12,6 +12,7 @@
 #include "readTemplate.hpp"
 #include "recordManager.hpp"
 #include "variant.hpp"
+#include "variantProfile.hpp"
 #include <unordered_map>
 #include <vector>
 
@@ -23,8 +24,6 @@ class LikelihoodCalculator
     BamFileHandler & bamFileHandler;
     ProgramOptions & options;
     int maxReadLength;
-
-    DistributionConverter distributionConverter;
 
     float splitReadFactor;
     float spanningReadFactor;
@@ -38,10 +37,12 @@ class LikelihoodCalculator
 
     std::vector<GenotypeDistribution> genotypeDistributions;
     std::vector<std::string> genotypeNames;
+    ReadPairFilter filter;
 
     public:
     LikelihoodCalculator(RecordManager &, BamFileHandler &, complexVariant &, LibraryDistribution &, ProgramOptions &);
     void createInsertSizeDistributions();
+    void createInsertSizeDistributions(VariantProfile &);
     void calculateLikelihoods();
     void adjustLikelihoods(ReadTemplate &);
     std::vector<GenotypeDistribution> & getDistributions();

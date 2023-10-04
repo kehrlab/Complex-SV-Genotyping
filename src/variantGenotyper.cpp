@@ -27,6 +27,22 @@ void VariantGenotyper::genotype()
     bamFileHandler.closeInputFile();
 }
 
+void VariantGenotyper::genotype(VariantProfile & variantProfile)
+{
+    BamFileHandler bamFileHandler(this->bamFileName, this->options);
+    bamFileHandler.setRegions(variant.calculateAssociatedRegions(this->sampleDistribution));
+    this->bamRecords.setReadPairs(bamFileHandler.get_read_pairs());
+    LikelihoodCalculator likelihoodCalculator(bamRecords, bamFileHandler, variantProfile.getVariant(), sampleDistribution, options);
+    likelihoodCalculator.createInsertSizeDistributions(variantProfile);
+    this->bamRecords.reset();
+    likelihoodCalculator.calculateLikelihoods();
+    this->variantGenotype = likelihoodCalculator.getResult();
+    if (this->options.isOptionOutputDistributions())
+        writeInsertSizeDistributions(likelihoodCalculator);
+    this->variantGenotype.clearData();
+    bamFileHandler.closeInputFile();
+}
+
 void VariantGenotyper::writeInsertSizeDistributions(LikelihoodCalculator & likelihoodCalculator)
 {
     if (!this->options.isOptionOutputDistributions())

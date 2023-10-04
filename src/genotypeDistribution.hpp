@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <fstream>
+#include <eigen3/Eigen/Sparse>
 
 class GenotypeDistribution
 {
@@ -26,6 +27,7 @@ class GenotypeDistribution
     public:
     GenotypeDistribution();
     GenotypeDistribution(std::vector<std::string>, int);
+    GenotypeDistribution(const Eigen::SparseMatrix<float> &, std::unordered_map<std::string, int> &, int, int);
 
     GenotypeDistribution & operator+=(GenotypeDistribution &);
     GenotypeDistribution & operator*=(float &);
@@ -58,6 +60,7 @@ class GenotypeDistribution
     int getMinInsertSize();
     int getMaxInsertSize();
     void smoothDistribution();
+    float getNormalizationFactor();
 };
 
 GenotypeDistribution operator+(GenotypeDistribution, GenotypeDistribution);

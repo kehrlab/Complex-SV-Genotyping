@@ -14,10 +14,11 @@ The aim is to enable genoyping of complex SVs of any structure.
 - zlib
 - boost
 - openmp
+- eigen
 
 All requirements can be easily installed using conda:
 ```
-conda create -c bioconda -c conda-forge -n genotyping cxx-compiler seqan=2.4 zlib boost intel-openmp htslib=1.17
+conda create -c bioconda -c conda-forge -n genotyping cxx-compiler seqan=2.4 zlib boost intel-openmp htslib=1.17 eigen=3.4.0
 conda activate genotyping
 ```
 
@@ -25,8 +26,12 @@ If the required libraries have not been installed system-wide, the following two
 ```
 # INCLUDE_PATH=/home/tim/.conda/envs/genotyping/include
 # LIB_PATH=/home/tim/.conda/envs/genotyping/lib
+```  
+or call make with addition parameters:
 ```
-
+make CXXFLAGS="-I${INCLUDE_PATH} -L${LIB_PATH}"
+```  
+  
 Afterwards, installation is straightforward:
 ```
 git clone https://github.com/kehrlab/Complex-SV-Genotyping
@@ -107,7 +112,8 @@ OPTIONS
           if not given no sampling is performed
     -x, --stats
           record stats per read group
-
+    -L, --legacy-mode
+          do not calculate profile matrices
 VERSION
     Last update: 
     genotype version: 

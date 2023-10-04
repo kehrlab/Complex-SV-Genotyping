@@ -217,7 +217,7 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
                 reverseRight = true;
         }
         
-	this->possibleSplitRead = true;
+	    this->possibleSplitRead = true;
         BamRecord r1(refNameLeft, "tempTemplate", startLeft, endLeft, 60, endIndex - beginIndex, clipRightLeft, clipLeftLeft, reverseLeft, primaryLeft, first, !first);
         BamRecord r2(refNameRight, "tempTemplate", startRight, endRight, 60, endIndex - beginIndex, clipRightRight, clipLeftRight, reverseRight, primaryRight, first, !first);
         createdRecords.push_back(r1);

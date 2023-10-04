@@ -116,13 +116,14 @@ void BamFileHandler::resetRegions()
 }
 
 
-std::unordered_map<std::string, TemplatePosition> BamFileHandler::get_insert_size_positions(std::vector<std::string> regions)
+std::unordered_map<std::string, TemplatePosition> BamFileHandler::get_insert_size_positions(int & maxReadLength, std::vector<std::string> regions)
 {
     std::unordered_map<std::string, std::vector<BamRecord>> recordTable;
     std::unordered_map<std::string, TemplatePosition> positions;
     bam1_t * record = bam_init1();
 
     int readCounter = 0;
+    maxReadLength = 0;
     for (auto & r : regions)
     {
         hts_itr_t * itr = sam_itr_querys(this->index, this->header, r.c_str());
@@ -133,6 +134,7 @@ std::unordered_map<std::string, TemplatePosition> BamFileHandler::get_insert_siz
                 break;
 	    
             BamRecord bamRcrd(record, this->header);
+            maxReadLength = std::max(maxReadLength, bamRcrd.getSeqLength());
             if (bamRcrd.passesInsertFilter())
             {
                 std::string hKey = bamRcrd.getTemplateName();
@@ -156,12 +158,13 @@ std::unordered_map<std::string, TemplatePosition> BamFileHandler::get_insert_siz
 }
 
 
-std::unordered_map<std::string, TemplatePosition> BamFileHandler::get_insert_size_positions()
+std::unordered_map<std::string, TemplatePosition> BamFileHandler::get_insert_size_positions(int & maxReadLength)
 {
     std::unordered_map<std::string, std::vector<BamRecord>> recordTable;
     std::unordered_map<std::string, TemplatePosition> positions;
     bam1_t * record = bam_init1();
     hts_itr_t * itr = sam_itr_querys(this->index, this->header, ".");
+    maxReadLength = 0;
 
     int readCounter = 0;
     while (sam_itr_next(this->bamFileIn, itr, record) >= 0) 
@@ -169,6 +172,7 @@ std::unordered_map<std::string, TemplatePosition> BamFileHandler::get_insert_siz
         if (record->core.tid < 0)
             break;
         BamRecord bamRcrd(record, this->header);
+        maxReadLength = std::max(maxReadLength, bamRcrd.getSeqLength());
         if (bamRcrd.passesInsertFilter())
         {
             std::string hKey = bamRcrd.getTemplateName();
