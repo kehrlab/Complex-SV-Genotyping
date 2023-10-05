@@ -51,8 +51,7 @@ void VariantMapManager::createMapFromJunctions(std::vector<Junction> novelJuncti
 void VariantMapManager::createBreakpointMaps(std::vector<Breakpoint> breakpoints)
 {
     for (Breakpoint bp : breakpoints)
-        if (bp.getReferenceName() == this->chromosome)
-            createMapFromBreakpoint(bp);
+        createMapFromBreakpoint(bp);
     mergeOverlappingMaps();
     for (VariantMap & m : this->refMaps)
         m.calculateMapLength();
