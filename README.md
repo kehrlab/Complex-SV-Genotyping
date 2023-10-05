@@ -7,6 +7,12 @@ The aim is to enable genoyping of complex SVs of any structure.
 
 ## Installation
 
+Download the source code and navigate to the corresponding directory:
+```
+git clone https://github.com/kehrlab/Complex-SV-Genotyping
+cd Complex-SV-Genotyping
+```
+
 ### Requirements
 - g++
 - Seqan v2.4
@@ -27,15 +33,13 @@ If the required libraries have not been installed system-wide, the following two
 # INCLUDE_PATH=/home/tim/.conda/envs/genotyping/include
 # LIB_PATH=/home/tim/.conda/envs/genotyping/lib
 ```  
-or call make with addition parameters:
+or call make (see below) with addition parameters:
 ```
 make CXXFLAGS="-I${INCLUDE_PATH} -L${LIB_PATH}"
 ```  
   
 Afterwards, installation is straightforward:
 ```
-git clone https://github.com/kehrlab/Complex-SV-Genotyping
-cd Complex-SV-Genotyping
 make
 sudo make install   # install in /usr/bin, optional
 ```
