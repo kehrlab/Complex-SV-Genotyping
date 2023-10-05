@@ -3,8 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <seqan/bam_io.h>
-#include "bamFileHandler.hpp"
 #include "breakpoint.hpp"
 #include "record.hpp"
 

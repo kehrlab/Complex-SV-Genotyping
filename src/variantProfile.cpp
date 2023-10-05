@@ -35,7 +35,6 @@ VariantProfile::VariantProfile(
     this->sMaxMapped = sMax;
     determinePossibleGroups();
     initMasks();
-    // calculateAlleleMasks();
 }
 
 void VariantProfile::determinePossibleGroups()
@@ -44,7 +43,7 @@ void VariantProfile::determinePossibleGroups()
     for (Allele & allele : this->variant.getAlleles())
     {
         VariantRegions vRegions {
-            createVariantRegions(allele.getNovelJunctions())
+            createVariantRegions(allele)
         };
         determineVariantGroups(vRegions);
         if (allele.getName() != "REF")
@@ -182,12 +181,13 @@ inline void VariantProfile::createIndexString(std::string & g, const std::unorde
         g += idx;
 }
 
-VariantRegions VariantProfile::createVariantRegions(std::vector<Junction> & junctions)
+VariantRegions VariantProfile::createVariantRegions(Allele & allele)
 {
-    std::unordered_map<std::string, JunctionRegion> chromosomeStructures = createChromosomeStructures(junctions);
+    createChromosomeStructures(allele);
+    std::unordered_map<std::string, JunctionRegion> chrStructures = this->chromosomeStructures[allele.getName()];
 
     VariantRegions vRegions;
-    for (auto it : chromosomeStructures)
+    for (auto it : chrStructures)
     {
         const std::string & chr = it.first;
         JunctionRegion & jRegion = it.second;
@@ -304,16 +304,17 @@ VariantRegions VariantProfile::createVariantRegions(std::vector<Junction> & junc
     return vRegions;
 }
 
-std::unordered_map<std::string, JunctionRegion> VariantProfile::createChromosomeStructures(std::vector<Junction> & junctions)
+void VariantProfile::createChromosomeStructures(Allele & allele)
 {
     // find unique chromosomes
     std::vector<Breakpoint> & breakpoints = this->variant.getAllBreakpoints();
+    std::vector<Junction> & junctions = allele.getNovelJunctions();
+
     std::unordered_set<std::string> chromosomes;
     for (auto & bp : breakpoints)
         chromosomes.insert(bp.getReferenceName());
 
     // go over all involved chromosomes
-    std::unordered_map<std::string, JunctionRegion> chromosomeStructures;
     for (auto & chr : chromosomes)
     {
         JunctionRegion chrStructure;
@@ -408,9 +409,9 @@ std::unordered_map<std::string, JunctionRegion> VariantProfile::createChromosome
         // Place all breakpoints and assign corresponding indices
         for (auto & b : bpIndices)
             insertBreakpoint(breakpoints[b], chrStructure);
-        chromosomeStructures[chr] = chrStructure;
+        
+        this->chromosomeStructures[allele.getName()][chr] = chrStructure;
     }
-    return chromosomeStructures;
 }
 
 void VariantProfile::insertBreakpoint(Breakpoint & bp, JunctionRegion & jRegion)
@@ -1100,6 +1101,7 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
         splitString = "split_" + splitString;
         groups.insert(splitString);
     }
+    groups.insert("split_ambiguous");
 }
 
 void VariantProfile::initReferenceMask()
@@ -1165,8 +1167,7 @@ inline void VariantProfile::addSimulatedTemplateToMask(int & status, VariantMap 
 
     sT.findSpanningReads(this->variant.getAllBreakpoints());
     if (sT.containsSuspectedSplit())
-        sT.findSplitReads(allele.getNovelJunctions());
-    // sT.determineOverlappingRegions(this->variant.getVariantRegions());
+        sT.findSplitReads(allele.getNovelJunctions(), this->chromosomeStructures);
     sT.determineLocationStrings();
 
     std::string orientation = sT.getOrientation();
@@ -1350,4 +1351,9 @@ ReadPairFilter & VariantProfile::getFilter()
 complexVariant & VariantProfile::getVariant()
 {
     return this->variant;
+}
+
+std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> & VariantProfile::getChromosomeStructures()
+{
+    return this->chromosomeStructures;
 }

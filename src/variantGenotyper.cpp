@@ -16,10 +16,15 @@ void VariantGenotyper::genotype()
     BamFileHandler bamFileHandler(this->bamFileName, this->options);
     bamFileHandler.setRegions(variant.calculateAssociatedRegions(this->sampleDistribution));
     this->bamRecords.setReadPairs(bamFileHandler.get_read_pairs());
+
+    std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> chromosomeStructures;
+    for (auto & allele : this->variant.getAlleles())
+        chromosomeStructures[allele.getName()] = allele.getChromosomeStructures(this->variant.getAllBreakpoints());
+
     LikelihoodCalculator likelihoodCalculator(bamRecords, bamFileHandler, variant, sampleDistribution, options);
-    likelihoodCalculator.createInsertSizeDistributions();
+    likelihoodCalculator.createInsertSizeDistributions(chromosomeStructures);
     this->bamRecords.reset();
-    likelihoodCalculator.calculateLikelihoods();
+    likelihoodCalculator.calculateLikelihoods(chromosomeStructures);
     this->variantGenotype = likelihoodCalculator.getResult();
     if (this->options.isOptionOutputDistributions())
         writeInsertSizeDistributions(likelihoodCalculator);
@@ -35,7 +40,7 @@ void VariantGenotyper::genotype(VariantProfile & variantProfile)
     LikelihoodCalculator likelihoodCalculator(bamRecords, bamFileHandler, variantProfile.getVariant(), sampleDistribution, options);
     likelihoodCalculator.createInsertSizeDistributions(variantProfile);
     this->bamRecords.reset();
-    likelihoodCalculator.calculateLikelihoods();
+    likelihoodCalculator.calculateLikelihoods(variantProfile);
     this->variantGenotype = likelihoodCalculator.getResult();
     if (this->options.isOptionOutputDistributions())
         writeInsertSizeDistributions(likelihoodCalculator);

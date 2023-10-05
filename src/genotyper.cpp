@@ -122,6 +122,7 @@ void Genotyper::createVariantProfiles()
 {
     int overlap = 20;
     int sMin {1}, sMax {1000};
+
     for (int i = 0; i < this->variants.size(); ++i) {
         // std::cout << "Variant Profile: " << this->variants[i].getName() << std::endl;
         this->variantProfiles.push_back(VariantProfile(this->variants[i], this->maxFilterMargin, overlap, this->maxReadLength, sMin, sMax, this->contigLengths, this->options));

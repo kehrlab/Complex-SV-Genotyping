@@ -30,6 +30,7 @@ class DistributionConverter
     std::vector<GenotypeDistribution> alleleDistributions;
     std::vector<std::string> genotypeNames;
     std::vector<std::string> alleleNames;
+    std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> chromosomeStructures;
 
     void addVariantRegions(std::string, GenotypeDistribution &, Allele &, bool);
     void addVariantRegionsWithGCCorrection(std::string, GenotypeDistribution &, Allele &);
@@ -42,7 +43,7 @@ class DistributionConverter
 
     public:
     DistributionConverter();
-    DistributionConverter(complexVariant, LibraryDistribution, int, BamFileHandler &, ProgramOptions &);
+    DistributionConverter(complexVariant, std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &, LibraryDistribution, int, BamFileHandler &, ProgramOptions &);
     DistributionConverter(VariantProfile &, LibraryDistribution &, BamFileHandler &, ProgramOptions &);
 
     void initDistributions(BamFileHandler &, int);

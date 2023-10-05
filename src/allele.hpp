@@ -27,6 +27,7 @@ class Allele
     void joinBreakpoints();
     std::unordered_set<std::string> getUniqueBpRefNames();
     void sortBreakpointsOnReference(std::string);
+    void insertBreakpoint(Breakpoint & bp, JunctionRegion & jRegion);
 
     public:
     Allele();
@@ -42,6 +43,8 @@ class Allele
     void print();
     void createChromosomeMaps(std::vector<Breakpoint> &, int, std::unordered_map<std::string, int>);
     void createAlleleSequences(SeqFileHandler &);
+
+    std::unordered_map<std::string, JunctionRegion> getChromosomeStructures(std::vector<Breakpoint> &);
     
     std::vector<Junction> getJunctionsOnChromosome(std::string);
     void createChromosomeMap(std::string, std::vector<Breakpoint> &, int, std::unordered_map<std::string, int>);

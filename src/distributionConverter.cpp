@@ -17,13 +17,14 @@ DistributionConverter::DistributionConverter()
     this->readLength = 0;
 }
 
-DistributionConverter::DistributionConverter(complexVariant variant, LibraryDistribution sampleDistribution, int readLength, BamFileHandler & fileHandler, ProgramOptions & options)
+DistributionConverter::DistributionConverter(complexVariant variant, std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> & chromosomeStructures, LibraryDistribution sampleDistribution, int readLength, BamFileHandler & fileHandler, ProgramOptions & options)
 {
     this->readLength = readLength;
     this->sampleDistribution = sampleDistribution;
     this->variant = variant;
     this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), 500, 0);//this->sampleDistribution.getInsertMean(), this->sampleDistribution.getInsertSD());
     this->options = options;
+    this->chromosomeStructures = chromosomeStructures;
 
     this->filename = fileHandler.getFileName();
 
@@ -225,7 +226,7 @@ void DistributionConverter::addVariantRegionsWithGCCorrection(std::string cName,
                 ReadTemplate sT = map.simulateTemplate(i, s, this->readLength);
                 sT.findSpanningReads(this->variant.getAllBreakpoints());
                 if (sT.containsSuspectedSplit()) 
-			        sT.findSplitReads(allele.getNovelJunctions());
+			        sT.findSplitReads(allele.getNovelJunctions(), this->chromosomeStructures);
                 sT.determineOverlappingRegions(this->variant.getVariantRegions());
                 sT.determineLocationStrings();
 
@@ -278,7 +279,7 @@ int DistributionConverter::addSimulatedTemplateToDistribution(VariantMap & map, 
     ReadTemplate sT = map.simulateTemplate(i, s, this->readLength);
     sT.findSpanningReads(this->variant.getAllBreakpoints());
     if (sT.containsSuspectedSplit()) 
-        sT.findSplitReads(allele.getNovelJunctions());
+        sT.findSplitReads(allele.getNovelJunctions(), this->chromosomeStructures);
     sT.determineOverlappingRegions(this->variant.getVariantRegions());
     sT.determineLocationStrings();
 

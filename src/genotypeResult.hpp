@@ -5,6 +5,7 @@
 #include <iostream>
 #include <random>
 #include <unordered_map>
+#include "options.hpp"
 
 class GenotypeResult
 {

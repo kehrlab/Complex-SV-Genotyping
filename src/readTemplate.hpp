@@ -6,6 +6,7 @@
 #include "record.hpp"
 #include "filter.hpp"
 #include "junction.hpp"
+#include "custom_types.hpp"
 #include <vector>
 #include <unordered_set>
 
@@ -46,28 +47,26 @@ class ReadTemplate
     
     int softClippingLeftLength(BamRecord &);
     int softClippingRightLength(BamRecord &);
-    bool isClippedAtJunction(int &, int &, BamRecord &, Junction &);
-    void findSplitsBasedOnClipping(std::vector<Junction> &);
+    void findSplitsBasedOnClipping(std::unordered_map<std::string, JunctionRegion> &, SplitAlignmentInfo &);
     void findSplitsBasedOnGaps(std::vector<Junction> &);
-    void findClippedSplitsOnChromosome(std::string, std::vector<Junction> &);
+    void findClippedSplitsOnChromosome(std::string, JunctionRegion &, SplitAlignmentInfo &);
     bool alignsWithinExpectedDistance(std::vector<Junction> &, int, BamRecord &, BamRecord &);
     bool alignsWithinRegion(int &, GenomicRegion &, BamRecord &, int);
     bool readSpansJunction(BamRecord &, Junction &);
+
+    void getIndexRegions(std::vector<GenomicRegion> &, std::vector<std::vector<int>> &, BamRecord &, JunctionRegion &);
     
     public:
     ReadTemplate();
     ReadTemplate(std::vector<BamRecord>);
-    ReadTemplate(std::vector<BamRecord>, std::vector<Junction> &, std::vector<Breakpoint> &);
 
-    void determineGroup(std::vector<Junction> &, std::vector<Breakpoint> &, std::vector<GenomicRegion> &);
-    void findSplitReads(std::vector<Junction> &);
+    // void determineGroup(std::vector<Junction> &, std::vector<Breakpoint> &, std::vector<GenomicRegion> &);
+    void findSplitReads(std::vector<Junction> &, std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);
     void findSpanningReads(std::vector<Breakpoint> &);
     void determineOverlappingRegions(std::vector<GenomicRegion> &);
     void determineLocationStrings();
     void determineFivePrimeEnds();
     void markSuspectedSplit();
-
-
 
     std::string getOrientation();
     int getInsertSize();

@@ -41,9 +41,10 @@ class LikelihoodCalculator
 
     public:
     LikelihoodCalculator(RecordManager &, BamFileHandler &, complexVariant &, LibraryDistribution &, ProgramOptions &);
-    void createInsertSizeDistributions();
+    void createInsertSizeDistributions(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);
     void createInsertSizeDistributions(VariantProfile &);
-    void calculateLikelihoods();
+    void calculateLikelihoods(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);
+    void calculateLikelihoods(VariantProfile &);
     void adjustLikelihoods(ReadTemplate &);
     std::vector<GenotypeDistribution> & getDistributions();
     std::vector<std::string> & getGenotypeNames();

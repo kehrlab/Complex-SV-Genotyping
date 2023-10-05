@@ -1,4 +1,5 @@
 #include "likelihoodCalculator.hpp"
+#include "custom_types.hpp"
 #include "distributionConverter.hpp"
 #include "genotypeResult.hpp"
 #include "options.hpp"
@@ -19,19 +20,35 @@ LikelihoodCalculator::LikelihoodCalculator(RecordManager & recordManager, BamFil
         this->useInsertSizes = ! this->options.isOptionNoInsertSizes();
 	    this->lowerInsertLimit = this->sampleDistribution.getInsertMean() - 2*this->sampleDistribution.getInsertSD();
 	    this->upperInsertLimit = this->sampleDistribution.getInsertMean() + 2*this->sampleDistribution.getInsertSD();
-        for (auto it = this->templates.begin(); it != this->templates.end(); ++it)
-        {
-            it->determineGroup(this->variant.getAllJunctions(), this->variant.getAllBreakpoints(), this->variant.getVariantRegions());
-            it->determineLocationStrings();
-        }
     };
 
-void LikelihoodCalculator::calculateLikelihoods()
+void LikelihoodCalculator::calculateLikelihoods(VariantProfile & variantProfile)
 {
     this->result.initLikelihoods(this->genotypeNames);
     for (auto it = this->templates.begin(); it != this->templates.end(); ++it)
         if (it->isInterestingReadPair(this->filter)) 
+        {
+            it->findSpanningReads(this->variant.getAllBreakpoints());
+            it->findSplitReads(this->variant.getAllJunctions(), variantProfile.getChromosomeStructures());
+            it->determineLocationStrings();
             adjustLikelihoods(*it);
+        }
+    this->templates = std::vector<ReadTemplate>();
+    this->result.callGenotype();
+}
+
+void LikelihoodCalculator::calculateLikelihoods(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> & chromosomeStructures)
+{
+    this->result.initLikelihoods(this->genotypeNames);
+
+    for (auto it = this->templates.begin(); it != this->templates.end(); ++it)
+        if (it->isInterestingReadPair(this->filter)) 
+        {
+            it->findSpanningReads(this->variant.getAllBreakpoints());
+            it->findSplitReads(this->variant.getAllJunctions(), chromosomeStructures);
+            it->determineLocationStrings();
+            adjustLikelihoods(*it);
+        }
     this->templates = std::vector<ReadTemplate>();
     this->result.callGenotype();
 }
@@ -77,9 +94,9 @@ void LikelihoodCalculator::adjustLikelihoods(ReadTemplate & readTemplate)
     this->result.addTemplateProbabilities(this->genotypeNames, probabilities, readTemplate.getTemplateWeight());
 }
 
-void LikelihoodCalculator::createInsertSizeDistributions()
+void LikelihoodCalculator::createInsertSizeDistributions(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> & chromosomeStructures)
 {
-    DistributionConverter distributionConverter(this->variant, this->sampleDistribution, this->maxReadLength, this->bamFileHandler, this->options);
+    DistributionConverter distributionConverter(this->variant, chromosomeStructures, this->sampleDistribution, this->maxReadLength, this->bamFileHandler, this->options);
     this->genotypeDistributions = distributionConverter.getGenotypeDistributions();
     this->genotypeNames = distributionConverter.getGenotypeNames();
     this->filter = distributionConverter.getReadPairFilter();

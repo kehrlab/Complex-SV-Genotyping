@@ -9,35 +9,13 @@
 #include <unordered_map>
 #include "genomicRegion.hpp"
 #include "genotypeDistribution.hpp"
-
-struct JunctionRegion
-{
-    std::vector<GenomicRegion> regions;
-    std::vector<int> junctionIndices;
-    std::vector<int> breakpointIndices;
-    std::vector<Junction> junctions;
-    std::vector<Breakpoint> breakpoints;
-    int length;
-    std::string chromosome;
-};
-
-struct BreakpointRegion
-{
-    GenomicRegion region;
-    std::vector<Breakpoint> breakpoints;
-};
-
-struct VariantRegions
-{
-    std::vector<JunctionRegion> regions;
-    std::vector<int> distanceFromLast;
-    std::vector<int> distanceToNext;
-};
+#include "custom_types.hpp"
 
 class VariantProfile
 {
     complexVariant variant;
     ProgramOptions options;
+    std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> chromosomeStructures; // need one of these for every variant allele!
 
     std::unordered_map<std::string, int> variantAlleleNames;
     std::unordered_map<std::string, int> variantGroups;
@@ -72,6 +50,7 @@ class VariantProfile
     std::unordered_map<std::string, GenotypeDistribution> calculateGenotypeDistributions(LibraryDistribution &, float);
     ReadPairFilter & getFilter();
     complexVariant & getVariant();
+    std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> & getChromosomeStructures();
 
     private:
     void determinePossibleGroups();
@@ -83,8 +62,8 @@ class VariantProfile
     inline void createIndexString(std::string &, const std::unordered_set<std::string> &);
     std::vector<GenomicRegion> getRegionsFromIndices(JunctionRegion &, int, int);
     void insertBreakpoint(Breakpoint &, JunctionRegion &);
-    VariantRegions createVariantRegions(std::vector<Junction> &);
-    std::unordered_map<std::string, JunctionRegion> createChromosomeStructures(std::vector<Junction> &);
+    VariantRegions createVariantRegions(Allele &);
+    void createChromosomeStructures(Allele &);
 
     void determineVariantGroups(VariantRegions &);
     void findPairAttributes(std::unordered_set<std::string> & groups, VariantRegions & variantRegions);
