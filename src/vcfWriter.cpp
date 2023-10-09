@@ -190,7 +190,7 @@ void VcfWriter::openVcfFile()
 {
     seqan::open(this->vcfFile, this->vcfFileName.c_str());
     if (!seqan::isOpen(this->vcfFile))
-        std::runtime_error("Could not open VCF file.");
+        throw std::runtime_error("Could not open VCF file.");
 }
 
 void VcfWriter::createRefIDs()

@@ -16,7 +16,7 @@ SeqFileHandler::SeqFileHandler(std::string filename)
     if (!this->success)
         std::cout << "Could not build index!" << std::endl;
     if (!openFile())
-        std::runtime_error("Could not open sequence file / index.");
+        throw std::runtime_error("Could not open sequence file / index.");
 }
 
 void SeqFileHandler::setFileName(std::string filename)
@@ -150,7 +150,7 @@ void SeqFileHandler::open(std::string filename)
         std::cout << "Could not build index!" << std::endl;
     if (!openFile()) {
         this->success = false;
-        std::runtime_error("Could not open sequence file / index.");
+        throw std::runtime_error("Could not open sequence file / index.");
     } else {
         this->success = true;
     }

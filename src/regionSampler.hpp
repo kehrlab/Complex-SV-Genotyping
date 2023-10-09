@@ -25,11 +25,11 @@ class RegionSampler
     std::vector<GenomicRegion> createGenomicRegions();
     void subsampleRegions(std::vector<GenomicRegion>, SeqFileHandler &);
     bool allRegionsValid(std::vector<GenomicRegion>);
+    void sampleInsertSizeRegions(SeqFileHandler &, std::vector<GenomicRegion>);
 
     public:
     RegionSampler();
     RegionSampler(std::vector<ContigInfo>, SeqFileHandler &, std::vector<std::string>, ProgramOptions &, std::vector<GenomicRegion>);
-    void sampleInsertSizeRegions(SeqFileHandler &, std::vector<GenomicRegion>);
     std::vector<GenomicRegion> & getSampledInsertRegions();
 };
 

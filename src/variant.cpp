@@ -15,6 +15,23 @@ complexVariant::complexVariant()
 complexVariant::complexVariant(std::string variantName, std::vector<std::string> alleleNames, variantData variantJunctions)
 {
     this->variantName = variantName;
+    this->variantFileName = "";
+
+    for (int i = 0; i < variantJunctions.size(); ++i)
+        this->variantAlleles.push_back(Allele(variantJunctions[i], alleleNames[i]));
+    this->nAlleles = alleleNames.size();
+
+    poolBreakpoints();
+    poolJunctions();
+
+    this->variantAlleles.push_back(Allele(this->allBreakpoints));
+    calculateVariantRegions();
+}
+
+complexVariant::complexVariant(std::string variantName, std::vector<std::string> alleleNames, variantData variantJunctions, std::string variantFileName)
+{
+    this->variantName = variantName;
+    this->variantFileName = variantFileName;
 
     for (int i = 0; i < variantJunctions.size(); ++i)
         this->variantAlleles.push_back(Allele(variantJunctions[i], alleleNames[i]));
@@ -30,6 +47,7 @@ complexVariant::complexVariant(std::string variantName, std::vector<std::string>
 complexVariant::complexVariant(std::vector<Junction> novelJunctions)
 {
     this->variantName = "Unnamed Variant";
+    this->variantFileName = "Unknown";
     this->nAlleles = 1;
     this->variantAlleles.push_back(Allele(novelJunctions, "VAR"));
     poolBreakpoints();
@@ -179,4 +197,9 @@ void complexVariant::createAlleleMaps(int filterMargin, std::unordered_map<std::
 {
     for (auto & allele : this->variantAlleles)
         allele.createChromosomeMaps(this->allBreakpoints, filterMargin, contigLengths);
+}
+
+std::string complexVariant::getVariantFileName()
+{
+    return this->variantFileName;
 }

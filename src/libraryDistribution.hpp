@@ -6,6 +6,7 @@
 #include "genomicRegion.hpp"
 #include "readTemplate.hpp"
 #include "seqFileHandler.hpp"
+#include <fstream>
 #include <vector>
 
 class LibraryDistribution
@@ -21,6 +22,11 @@ class LibraryDistribution
     float insertMean;
     float insertSD;
     bool gcCorrection;
+    int sMin;
+    int sMax;
+
+    int readLength;
+    int numReadPairs;
 
     int calculateGCIndex(float);
     void smoothDistribution(std::vector<std::vector<float>> &, int);
@@ -38,10 +44,15 @@ class LibraryDistribution
     float getProbability(int);
     float getProbability(float);
     float getCorrectionFactor(int, float);
-    float getInsertMean();
-    float getInsertSD();
+    float & getInsertMean();
+    float & getInsertSD();
+    int & getMinInsert();
+    int & getMaxInsert();
+    int & getNumReadPairs();
+    int & getReadLength();
     bool gcCorrectionPossible();
     int drawInsertSize();
+    std::vector<float> & getInsertDistribution();
 };
 
 #endif

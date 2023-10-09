@@ -245,7 +245,7 @@ VariantMapManager & Allele::getChromosomeMap(std::string cName)
             return this->chromosomeMaps[i];
 
     std::string msg = "Could not find map for chromosome " + cName;
-    std::runtime_error(msg.c_str());
+    throw std::runtime_error(msg.c_str());
 }
 
 void Allele::clearSequences()
@@ -303,9 +303,9 @@ std::unordered_map<std::string, JunctionRegion> Allele::getChromosomeStructures(
             for (int j = 0; j < njIndices.size() - 1; ++j)
             {
                 if (this->novelJunctions[njIndices[j]].getRefNameRight() != this->novelJunctions[njIndices[j + 1]].getRefNameLeft())
-                    std::runtime_error("ERROR: RefNames of adjacent junctions do not match!");
+                    throw std::runtime_error("ERROR: RefNames of adjacent junctions do not match!");
                 if (this->novelJunctions[njIndices[j]].getDirectionRight() == this->novelJunctions[njIndices[j + 1]].getDirectionLeft())
-                    std::runtime_error("ERROR: Directions of adjacent junctions are incompatible!");
+                    throw std::runtime_error("ERROR: Directions of adjacent junctions are incompatible!");
                 isReverse = (this->novelJunctions[njIndices[j]].getDirectionRight() < 0);
                 chrStructure.regions.push_back(
                     GenomicRegion {

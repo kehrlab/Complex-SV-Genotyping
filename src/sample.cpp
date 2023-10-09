@@ -9,42 +9,61 @@
 #include "variantGenotyper.hpp"
 #include <chrono>
 #include <boost/filesystem.hpp>
+#include <cstring>
+#include <ostream>
 #include <stdexcept>
 #include <unordered_map>
 
-Sample::Sample(
-    Sample && s
-): filename(s.filename), referenceFile(s.referenceFile), options(s.options), regionSampler(s.regionSampler), variants(s.variants)
+Sample::Sample(Sample && s): 
+    filename(s.filename), refFileName(s.refFileName), options(s.options), 
+    minMapQ(s.minMapQ),
+    distributionDirectory(s.distributionDirectory), sampledRegions(s.sampledRegions), sampleDistribution(s.sampleDistribution)
 {
-    this->distributionDirectory = "";
     this->bamFileOpen = false;
-    this->maxReadLength = 0;
+    this->sampleName = this->filename;
+    this->minMapQ = 0;
 }
 
 Sample::Sample(
     std::string filename,
-    SeqFileHandler & referenceFile, 
-    ProgramOptions & options, 
-    RegionSampler & regionSampler, 
-    std::vector<complexVariant> & variants
-) : filename(filename), referenceFile(referenceFile), options(options), regionSampler(regionSampler), variants(variants)
+    std::string refFileName, 
+    ProgramOptions & options,
+    RegionSampler & regionSampler
+) : filename(filename), refFileName(refFileName), options(options), sampledRegions(regionSampler.getSampledInsertRegions())
 {
     this->distributionDirectory = "";
-    this->maxReadLength = 0;
-}
+    this->sampleName = this->filename;
+    this->minMapQ = 0;
+    this->bamFileOpen = false;
 
-void Sample::open()
-{
     openBamFile();
     createDistributionDirectory();
     calculateDefaultDistributions();
     closeBamFile();
 }
 
+Sample::Sample(std::string profilePath)
+{
+    this->distributionDirectory = "";
+    this->bamFileOpen = false;
+
+    std::ifstream stream;
+    this->sampleDistribution = LibraryDistribution();
+    stream.open(profilePath);
+    if (!stream.is_open())
+    {
+        std::string msg = "Could not open Profile " + profilePath;
+        throw std::runtime_error(msg.c_str());
+    }
+    readSampleProfile(stream);
+    stream.close();
+}
+
 void Sample::openBamFile()
 {
     this->bamFile.open(this->filename, this->options);
     this->bamFileOpen = true;
+    this->chromosomeLengths = bamFile.getContigLengths();
 }
 
 void Sample::createDistributionDirectory()
@@ -59,7 +78,7 @@ void Sample::createDistributionDirectory()
         if (! boost::filesystem::is_directory(this->distributionDirectory))
         {
             std::string msg = "Could not create directory '" + this->distributionDirectory + "', but flag -d was set. Make sure you have write permissions in the directory containing bam files.";
-            std::runtime_error(msg.c_str());
+            throw std::runtime_error(msg.c_str());
         }
     }
 }
@@ -68,17 +87,28 @@ void Sample::calculateDefaultDistributions()
 {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::unordered_map<std::string, TemplatePosition> insertPositions;
-    if (this->options.isOptionUseWholeGenome()) { 
-        insertPositions = this->bamFile.get_insert_size_positions(this->maxReadLength);
-    }
+
+    int readLength;
+    if (!this->options.isOptionUseWholeGenome())
+    {
+        for (GenomicRegion & r : this->sampledRegions)
+            this->regionStrings.push_back(r.getRegionString());
+        insertPositions = this->bamFile.get_insert_size_positions(readLength, this->regionStrings);
+    } 
     else
     {
-        std::vector<std::string> regionStrings;
-        for (GenomicRegion & r : this->regionSampler.getSampledInsertRegions())
-            regionStrings.push_back(r.getRegionString());
-        insertPositions = this->bamFile.get_insert_size_positions(this->maxReadLength, regionStrings);
+        if (this->options.getSamplingRegions().size() == 0) 
+        {
+            insertPositions = this->bamFile.get_insert_size_positions(readLength);
+        } else {
+            for (GenomicRegion & r : this->options.getSamplingRegions())
+                this->regionStrings.push_back(r.getRegionString());
+            insertPositions = this->bamFile.get_insert_size_positions(readLength, this->regionStrings);
+        }
     }
     createSampleDistribution(insertPositions);
+    this->sampleDistribution.getReadLength() = readLength;
+
     std::unordered_map<std::string, TemplatePosition>().swap(insertPositions);
 
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
@@ -90,7 +120,8 @@ void Sample::createSampleDistribution(std::unordered_map<std::string, TemplatePo
 {
     if (this->options.isOptionGCCorrect() && !this->options.isOptionUseWholeGenome() && this->options.getRefFileName() != "")
     {
-        this->sampleDistribution = LibraryDistribution(insertPositions, this->regionSampler.getSampledInsertRegions(), this->referenceFile);
+        this->referenceFile.open(this->refFileName);
+        this->sampleDistribution = LibraryDistribution(insertPositions, this->sampledRegions, this->referenceFile);
     } else {
         this->sampleDistribution = LibraryDistribution(insertPositions);
     }
@@ -143,5 +174,189 @@ void Sample::close()
 
 int Sample::getMaxReadLength()
 {
-    return this->maxReadLength;
+    return this->sampleDistribution.getReadLength();
+}
+
+void Sample::writeSampleProfile(std::ofstream & stream)
+{
+    // magic string
+    stream.write("GENOTYPER\1", 10);
+
+    // write version
+    stream.write("0.9", 3);
+
+    // write sample name
+    int sampleNameLen = this->sampleName.size() + 1;
+    stream.write(reinterpret_cast<const char *>(&sampleNameLen), sizeof sampleNameLen);
+    stream.write(this->sampleName.c_str(), sampleName.size());
+    stream.write("\0", 1);
+
+    // write sample path
+    int samplePathLength = this->filename.size() + 1;
+    stream.write(reinterpret_cast<const char *>(&samplePathLength), sizeof samplePathLength);
+    stream.write(this->filename.c_str(), this->filename.size());
+    stream.write("\0", 1);
+
+    // write read length and number of read pairs considered
+    stream.write(reinterpret_cast<const char *>(& this->sampleDistribution.getReadLength()), sizeof(int));
+    stream.write(reinterpret_cast<const char *>(& this->sampleDistribution.getNumReadPairs()), sizeof(int));
+
+    // write min mapQ
+    stream.write(reinterpret_cast<const char *>(& this->minMapQ), sizeof this->minMapQ);
+
+    // write sMin and sMax
+    stream.write(reinterpret_cast<const char *>(&this->sampleDistribution.getMinInsert()), sizeof(int));
+    stream.write(reinterpret_cast<const char *>(&this->sampleDistribution.getMaxInsert()), sizeof(int));
+
+    // write MEAN and SD
+    stream.write(reinterpret_cast<const char *>(&this->sampleDistribution.getInsertMean()), sizeof(float));
+    stream.write(reinterpret_cast<const char *>(&this->sampleDistribution.getInsertSD()), sizeof(float));
+
+    // write chromosome names and lengths
+    // write number of chromosomes
+    int nChrom = this->chromosomeLengths.size();
+    stream.write(reinterpret_cast<const char *>(&nChrom), sizeof nChrom);
+    for (auto & chr : this->chromosomeLengths)
+    {
+        int cNameLen = chr.first.size() + 1;
+        stream.write(reinterpret_cast<const char *>(&cNameLen), sizeof cNameLen);
+        stream.write(chr.first.c_str(), cNameLen - 1);
+        stream.write("\0", 1);
+        stream.write(reinterpret_cast<const char *>(&chr.second), sizeof chr.second);
+    }
+
+    // write regions used for distribution creation
+    int nRegions = this->regionStrings.size();
+    stream.write(reinterpret_cast<const char *>(&nRegions), sizeof nRegions);
+    for (auto & r : this->regionStrings)
+    {
+        int rNameLen = r.size() + 1;
+        stream.write(reinterpret_cast<const char *>(&rNameLen), sizeof rNameLen);
+        stream.write(r.c_str(), rNameLen - 1);
+        stream.write("\0", 1);
+    }
+
+    // write actual distribution
+    for (auto & p : this->sampleDistribution.getInsertDistribution())
+        stream.write(reinterpret_cast<const char *>(&p), sizeof(float));
+    
+}
+
+void Sample::readSampleProfile(std::ifstream & stream)
+{
+    char * buffer = new char[100];
+    // magic string
+    char * magic = new char[10];
+    stream.read(magic, 10);
+    
+    if (!stream.good())
+        throw std::runtime_error("Unable to read magic string.");
+    if (std::strcmp(magic, "GENOTYPER\1") != 0)
+        throw std::runtime_error("Magic string is wrong");
+    
+    // version
+    char * version = new char[3];
+    stream.read(version, 3);
+
+    // sample name
+    int sampleNameSize;
+    stream.read(reinterpret_cast<char *>(&sampleNameSize), sizeof(int));
+    char * tempString = new char[sampleNameSize];
+    stream.read(tempString, sampleNameSize);
+    if (tempString[sampleNameSize - 1] != '\0')
+        throw std::runtime_error("In Sample Profile: String must end with 0!");
+    this->sampleName = std::string(tempString);
+    delete[] tempString;
+    
+    // sample path
+    int samplePathSize;
+    stream.read(reinterpret_cast<char *>(&samplePathSize), sizeof(int));
+    tempString = new char[samplePathSize];
+    stream.read(tempString, samplePathSize);
+    if (tempString[samplePathSize - 1] != '\0')
+        throw std::runtime_error("In Sample Profile: String must end with 0!");
+    this->filename = std::string(tempString);
+    delete[] tempString;
+
+    // max read length and number of reads
+    stream.read(reinterpret_cast<char *>(&this->sampleDistribution.getReadLength()), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&this->sampleDistribution.getNumReadPairs()), sizeof(int));
+    // minMapQ and insert size numbers
+    stream.read(reinterpret_cast<char *>(&this->minMapQ), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&this->sampleDistribution.getMinInsert()), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&this->sampleDistribution.getMaxInsert()), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&this->sampleDistribution.getInsertMean()), sizeof(float));
+    stream.read(reinterpret_cast<char *>(&this->sampleDistribution.getInsertSD()), sizeof(float));
+
+    // chromosome names and lengths
+    std::unordered_map<std::string, int>().swap(this->chromosomeLengths);
+    int nChrom;
+    stream.read(reinterpret_cast<char * >(&nChrom), sizeof(int));
+    for (int i = 0; i < nChrom; ++i)
+    {
+        int l;
+        int cLength;
+
+        stream.read(reinterpret_cast<char *>(&l), sizeof(int));
+
+        char * tempString = new char[l];
+        stream.read(reinterpret_cast<char *>(tempString), l);
+        std::string cName = std::string(tempString);
+        delete[] tempString;
+        
+        stream.read(reinterpret_cast<char *>(&cLength), sizeof(int));
+        this->chromosomeLengths[cName] = cLength;
+    }
+
+    // regions
+    std::vector<std::string>().swap(this->regionStrings);
+    int nRegions;
+    stream.read(reinterpret_cast<char * >(&nRegions), sizeof(int));
+    for (int i = 0; i < nRegions; ++i)
+    {
+        int l;
+        stream.read(reinterpret_cast<char *>(&l), sizeof(int));
+
+        char * tempString = new char[l];
+        stream.read(tempString, l);
+        std::string region = std::string(tempString);
+        delete[] tempString;
+        this->regionStrings.push_back(region);
+    }
+
+    // insert size values
+    std::vector<float> distribution(this->sampleDistribution.getMaxInsert() - this->sampleDistribution.getMinInsert() + 1);
+    for (int i = 0; i < distribution.size(); ++i)
+        stream.read(reinterpret_cast<char *>(&distribution[i]), sizeof(float));
+    this->sampleDistribution.getInsertDistribution() = distribution;
+
+    delete[] magic;
+    delete[] version;
+    delete[] buffer;
+}
+
+void Sample::printSampleProfile()
+{
+    std::cout << "--------------------------------------------------------------" << std::endl;
+    std::cout << "Version: 0.9" << std::endl;
+    std::cout << "Sample Name: " << this->sampleName << std::endl;
+    std::cout << "Filepath: " << this->filename << std::endl;
+    std::cout << "Read Length: " << this->sampleDistribution.getReadLength() << std::endl;
+    std::cout << "Read Number: " << this->sampleDistribution.getNumReadPairs() << std::endl;
+    std::cout << "Min MapQ: " << this->minMapQ << std::endl;
+    std::cout << "sMin: " << this->sampleDistribution.getMinInsert() << std::endl;
+    std::cout << "sMax: " << this->sampleDistribution.getMaxInsert() << std::endl;
+    std::cout << "Mean: " << this->sampleDistribution.getInsertMean() << std::endl;
+    std::cout << "SD: " << this->sampleDistribution.getInsertSD() << std::endl;
+    std::cout << "Chromosomes: "<< std::endl;
+    for (auto & chr : this->chromosomeLengths)
+        std::cout << "\t" << chr.first << "\t" << chr.second << std::endl;
+    std::cout << "Regions:" << std::endl;
+    for (auto & r : this->regionStrings)
+        std::cout << "\t" << r << std::endl;
+    std::cout << "Distribution: " << std::endl;
+    for (auto & p : this->sampleDistribution.getInsertDistribution())
+        std::cout << p << "\t";
+    std::cout << std::endl;
+    std::cout << "--------------------------------------------------------------" << std::endl;
 }

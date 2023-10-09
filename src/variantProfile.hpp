@@ -15,14 +15,13 @@ class VariantProfile
 {
     complexVariant variant;
     ProgramOptions options;
-    std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> chromosomeStructures; // need one of these for every variant allele!
+    std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> chromosomeStructures;
 
     std::unordered_map<std::string, int> variantAlleleNames;
     std::unordered_map<std::string, int> variantGroups;
 
     Eigen::SparseMatrix<float, Eigen::RowMajor> referenceMask;
     std::vector<std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor>>> variantMask;
-
        
     int sMin;
     int sMax;
@@ -51,6 +50,9 @@ class VariantProfile
     ReadPairFilter & getFilter();
     complexVariant & getVariant();
     std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> & getChromosomeStructures();
+
+    void writeProfile(std::string);
+    void readProfile(std::string);
 
     private:
     void determinePossibleGroups();

@@ -8,6 +8,9 @@
 #include "options.hpp"
 #include "readTemplate.hpp"
 #include "vMapManager.hpp"
+#include <fstream>
+#include <ios>
+#include <stdexcept>
 #include <unordered_set>
 
 VariantProfile::VariantProfile()
@@ -354,9 +357,9 @@ void VariantProfile::createChromosomeStructures(Allele & allele)
             for (int j = 0; j < njIndices.size() - 1; ++j)
             {
                 if (junctions[njIndices[j]].getRefNameRight() != junctions[njIndices[j + 1]].getRefNameLeft())
-                    std::runtime_error("ERROR: RefNames of adjacent junctions do not match!");
+                    throw std::runtime_error("ERROR: RefNames of adjacent junctions do not match!");
                 if (junctions[njIndices[j]].getDirectionRight() == junctions[njIndices[j + 1]].getDirectionLeft())
-                    std::runtime_error("ERROR: Directions of adjacent junctions are incompatible!");
+                    throw std::runtime_error("ERROR: Directions of adjacent junctions are incompatible!");
                 isReverse = (junctions[njIndices[j]].getDirectionRight() < 0);
                 chrStructure.regions.push_back(
                     GenomicRegion {
@@ -1356,4 +1359,278 @@ complexVariant & VariantProfile::getVariant()
 std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> & VariantProfile::getChromosomeStructures()
 {
     return this->chromosomeStructures;
+}
+
+void VariantProfile::writeProfile(std::string filename)
+{
+    std::ofstream stream(filename, std::ios_base::binary | std::ios_base::out);
+    if (!stream.is_open())
+    {
+        std::string msg = "Could not open file " + filename + " to write Profile";
+        throw std::runtime_error(msg.c_str());
+    }
+
+    // write magic string
+    stream.write("GENOTYPER\1", 10);
+    
+    // write version
+    stream.write("0.9", 3);
+    
+    // write variant name
+    int vnSize = this->variant.getName().size() + 1;
+    stream.write(reinterpret_cast<const char *>(&vnSize), sizeof(int));
+    stream.write(this->variant.getName().c_str(), vnSize - 1);
+    stream.write("\0", 1);
+
+    // write variant file name
+    std::string vName = this->variant.getVariantFileName();
+    int vfSize = vName.size() + 1;
+    stream.write(reinterpret_cast<const char *>(&vfSize), sizeof(int));
+    stream.write(vName.c_str(), vfSize - 1);
+    stream.write("\0", 1);
+    
+    // write read length, sMin and sMax assumed for library distibution
+    stream.write(reinterpret_cast<const char *>(&this->readLength), sizeof(int));
+    stream.write(reinterpret_cast<const char *>(&this->sMin), sizeof(int));
+    stream.write(reinterpret_cast<const char *>(&this->sMax), sizeof(int));
+
+    // write min and max insert size in profiles
+    stream.write(reinterpret_cast<const char *>(&this->sMinMapped), sizeof(int));
+    stream.write(reinterpret_cast<const char *>(&this->sMaxMapped), sizeof(int));
+
+    // write number of read pair groups and their names
+    int nG = this->variantGroups.size();
+    stream.write(reinterpret_cast<const char *>(&nG), sizeof(int));
+    
+    std::vector<std::string> colnames(nG, "");
+    for (int i = 0; i < nG; )
+    {
+        for (auto & g : this->variantGroups)
+        {
+            if (g.second == i)
+            {
+                colnames[i] = g.first;
+                ++i;
+            }
+        }
+    }
+    for (std::string & g : colnames)
+    {
+        int size = g.size() + 1;
+        stream.write(reinterpret_cast<const char *>(&size), sizeof(int));
+        stream.write(g.c_str(), size - 1);
+        stream.write("\0", 1);
+    }
+
+    // write reference allele name
+    stream.write("REF\0", 4);
+
+    // write reference matrix
+    this->referenceMask.makeCompressed()  ;
+    int m      = referenceMask.rows()     ;
+    int n      = referenceMask.cols()     ;
+    int nnzS   = referenceMask.nonZeros() ;
+    int outerS = referenceMask.outerSize();
+    int innerS = referenceMask.innerSize();
+    stream.write(reinterpret_cast<const char *>(&m), sizeof(int));
+    stream.write(reinterpret_cast<const char *>(&n), sizeof(int));
+    stream.write(reinterpret_cast<const char *>(&nnzS), sizeof(int));
+    stream.write(reinterpret_cast<const char *>(&outerS), sizeof(int));
+    stream.write(reinterpret_cast<const char *>(&innerS), sizeof(int));
+
+    stream.write(reinterpret_cast<const char *>(referenceMask.valuePtr()), sizeof(float)*nnzS);
+    stream.write(reinterpret_cast<const char *>(referenceMask.outerIndexPtr()), sizeof(int)*outerS);
+    stream.write(reinterpret_cast<const char *>(referenceMask.innerIndexPtr()), sizeof(int)*nnzS);
+
+    // write number of variant alleles and their names
+    int nA = this->variantAlleleNames.size();
+    stream.write(reinterpret_cast<const char *>(&nA), sizeof(int));
+    std::vector<std::string> alleleNames;
+    for (int i = 0; i < nA; )
+    {
+        for (auto & a : this->variantAlleleNames)
+        {
+            if (a.second == i)
+            {
+                alleleNames.push_back(a.first);
+                ++i;
+            }
+        }
+    }
+    for (std::string & a : alleleNames)
+    {
+        int size = a.size() + 1;
+        stream.write(reinterpret_cast<const char *>(&size), sizeof(int));
+        stream.write(a.c_str(), size - 1);
+        stream.write("\0", 1);
+    }
+
+    // write variant matrices
+    for (int i = 0; i < this->variantMask.size(); ++i)
+    {
+        for (int s = 0; s < this->variantMask[i].size(); ++s)
+        {
+            this->variantMask[i][s].makeCompressed();
+
+            int m      = this->variantMask[i][s].rows()     ;
+            int n      = this->variantMask[i][s].cols()     ;
+            int nnzS   = this->variantMask[i][s].nonZeros() ;
+            int outerS = this->variantMask[i][s].outerSize();
+            int innerS = this->variantMask[i][s].innerSize();
+
+            stream.write(reinterpret_cast<const char *>(&m), sizeof(int))     ;
+            stream.write(reinterpret_cast<const char *>(&n), sizeof(int))     ;
+            stream.write(reinterpret_cast<const char *>(&nnzS), sizeof(int))  ;
+            stream.write(reinterpret_cast<const char *>(&outerS), sizeof(int));
+            stream.write(reinterpret_cast<const char *>(&innerS), sizeof(int));
+
+            stream.write(reinterpret_cast<const char *>(this->variantMask[i][s].valuePtr()), sizeof(float)*nnzS)     ;
+            stream.write(reinterpret_cast<const char *>(this->variantMask[i][s].outerIndexPtr()), sizeof(int)*outerS);
+            stream.write(reinterpret_cast<const char *>(this->variantMask[i][s].innerIndexPtr()), sizeof(int)*nnzS)  ;
+        }
+    }
+    stream.close();
+}
+
+void VariantProfile::readProfile(std::string filename)
+{
+    // open file
+    std::ifstream stream(filename, std::ios_base::binary | std::ios_base::in);
+    if (!stream.is_open())
+    {
+        std::string msg = "Could not open profile " + filename + " for reading";
+        throw std::runtime_error(msg.c_str());
+    }
+
+    // compare magic string
+    char * tempString = new char[10];
+    stream.read(tempString, 10);
+    if (tempString[9] != '\1')
+        throw std::runtime_error("Magic string does not match. Wrong / corrupted profile?");
+    tempString[9] = '\0';
+    if (std::strcmp(tempString, "GENOTYPER") != 0)
+        throw std::runtime_error("Magic string does not match. Wrong / corrupted profile?");
+    delete[] tempString;
+
+    // get version
+    char * version = new char[3];
+    stream.read(version, 3);
+
+    // get variant name
+    int l;
+    stream.read(reinterpret_cast<char *>(&l), sizeof(int));
+    tempString = new char[l];
+    stream.read(tempString, l);
+    if (tempString[l-1] != '\0')
+        throw std::runtime_error("");
+    std::string variantName(tempString);
+    delete[] tempString;
+    
+    // get variant path
+    stream.read(reinterpret_cast<char *>(&l), sizeof(int));
+    tempString = new char[l];
+    stream.read(tempString, l);
+    if (tempString[l-1] != '\0')
+        throw std::runtime_error("");
+    std::string variantPath(tempString);
+    delete[] tempString;
+
+    // get read length and insert minima and maxima
+    stream.read(reinterpret_cast<char *>(&this->readLength), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&this->sMin), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&this->sMax), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&this->sMinMapped), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&this->sMaxMapped), sizeof(int));
+
+    // get read pair groups
+    int nG;
+    stream.read(reinterpret_cast<char *>(&nG), sizeof(int));
+    std::unordered_map<std::string, int>().swap(this->variantGroups);
+    for (int i = 0; i < nG; ++i)
+    {
+        stream.read(reinterpret_cast<char *>(&l), sizeof(int));
+        tempString = new char[l];
+        stream.read(tempString, l);
+        if (tempString[l-1] != '\0')
+            throw std::runtime_error("");
+        std::string g(tempString);
+        this->variantGroups[g] = i;
+        delete[] tempString;
+    }
+
+    // get reference allele name
+    tempString = new char[4];
+    stream.read(tempString, 4);
+    if (tempString[3] != '\0')
+        throw std::runtime_error("");
+    std::string refName(tempString);
+    delete [] tempString;
+
+    // get reference mask
+    int m, n, nnzS, innerS, outerS;
+    stream.read(reinterpret_cast<char *>(&m), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&n), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&nnzS), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&outerS), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&innerS), sizeof(int));
+
+    this->referenceMask.resize(m, n);
+    this->referenceMask.makeCompressed();
+    this->referenceMask.resizeNonZeros(nnzS);
+
+    stream.read(reinterpret_cast<char *>(this->referenceMask.valuePtr()), sizeof(float) * nnzS);
+    stream.read(reinterpret_cast<char *>(this->referenceMask.outerIndexPtr()), sizeof(int) * outerS);
+    stream.read(reinterpret_cast<char *>(this->referenceMask.innerIndexPtr()), sizeof(int) * nnzS);
+    this->referenceMask.finalize();
+
+    // get variant allele names
+    int nA;
+    stream.read(reinterpret_cast<char *>(&nA), sizeof(int));
+    std::unordered_map<std::string, int>().swap(this->variantAlleleNames);
+
+    for (int i = 0; i < nA; ++i)
+    {
+        stream.read(reinterpret_cast<char *>(&l), sizeof(int));
+        tempString = new char[l];
+        stream.read(tempString, l);
+        if (tempString[l-1] != '\0')
+            throw std::runtime_error("");
+        std::string a(tempString);
+        this->variantAlleleNames[a] = i;
+        delete[] tempString;
+    }
+
+    // read the variant allele masks
+    this->variantMask = std::vector<std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor>>>(
+        nA,
+        std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor>>(
+            this->sMax - this->sMin + 1,
+            Eigen::SparseMatrix<float, Eigen::RowMajor>(this->sMaxMapped - this->sMinMapped + 1, this->variantGroups.size())
+        )
+    );
+
+    for (int i = 0; i < nA; ++i)
+    {
+        for (int s = this->sMin; s <= this->sMax; ++s)
+        {
+            stream.read(reinterpret_cast<char *>(&m), sizeof(int));
+            stream.read(reinterpret_cast<char *>(&n), sizeof(int));
+            stream.read(reinterpret_cast<char *>(&nnzS), sizeof(int));
+            stream.read(reinterpret_cast<char *>(&outerS), sizeof(int));
+            stream.read(reinterpret_cast<char *>(&innerS), sizeof(int));
+
+            this->variantMask[i][s - this->sMin].resize(m, n);
+            this->variantMask[i][s - this->sMin].makeCompressed();
+            this->variantMask[i][s - this->sMin].resizeNonZeros(nnzS);
+
+            stream.read(reinterpret_cast<char *>(this->variantMask[i][s - this->sMin].valuePtr()), sizeof(float) * nnzS);
+            stream.read(reinterpret_cast<char *>(this->variantMask[i][s - this->sMin].outerIndexPtr()), sizeof(int) * outerS);
+            stream.read(reinterpret_cast<char *>(this->variantMask[i][s - this->sMin].innerIndexPtr()), sizeof(int) * nnzS);
+            this->variantMask[i][s - this->sMin].finalize();
+        }
+    }
+    
+    // free allocated char arrays
+    delete[] version;
+    stream.close();
 }

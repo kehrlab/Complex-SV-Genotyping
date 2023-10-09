@@ -4,6 +4,7 @@
 #include "readTemplate.hpp"
 #include "seqan/sequence/sequence_shortcuts.h"
 #include <cmath>
+#include <fstream>
 #include <unordered_map>
 
 LibraryDistribution::LibraryDistribution()
@@ -11,13 +12,22 @@ LibraryDistribution::LibraryDistribution()
     this->insertMean = 0;
     this->insertSD = 0;
     this->gcCorrection = false;
+    this->sMin = 0;
+    this->sMax = 1000;
+    this->readLength = 0;
+    this->numReadPairs = 0;
 }
 
 LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, TemplatePosition> & positions)
 {
     this->insertMean = 0;
     this->insertSD = 0;
+    this->sMin = 0;
+    this->sMax = 1000;
+    this->readLength = 0;
     this->gcCorrection = false;
+    this->numReadPairs = 0;
+
     this->distribution.resize(1001);
     for (int i = 0; i < this->distribution.size(); ++i)
         this->distribution[i] = std::vector<float>(100, 0);
@@ -26,6 +36,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
         int s = it.second.end - it.second.begin + 1;
         if (s > 1000 || s < 0)
             continue;
+        ++this->numReadPairs;
         this->insertSizes.push_back(s);
         this->distribution[s][0] += 1;
     }
@@ -41,6 +52,8 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
 {
     this->insertMean = 0;
     this->insertSD = 0;
+    this->sMin = 0;
+    this->sMax = 1000;
     this->gcCorrection = true;
     this->distribution.resize(1001);
     for (int i = 0; i < this->distribution.size(); ++i)
@@ -65,6 +78,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
         if (s > 1000 || s < 0)
             continue;
         this->insertSizes.push_back(s);
+        ++this->numReadPairs;
 
         if (templatePositions.find(it.second.chr) == templatePositions.end())
         {
@@ -155,6 +169,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
             }
         }
         gcContents.erase(gcContents.begin(), gcContents.end());
+        region.clearSequence();
     }
     smoothDistribution(this->distribution, 5); 
     scaleDistribution(this->distribution);
@@ -348,12 +363,12 @@ void LibraryDistribution::calculateInsertStats()
     this->insertSD = std::sqrt(this->insertSD / this->insertSizes.size());
 }
 
-float LibraryDistribution::getInsertMean()
+float & LibraryDistribution::getInsertMean()
 {
     return this->insertMean;
 }
 
-float LibraryDistribution::getInsertSD()
+float & LibraryDistribution::getInsertSD()
 {
     return this->insertSD;
 }
@@ -369,4 +384,29 @@ int LibraryDistribution::drawInsertSize()
     std::mt19937 gen(rd());
     std::discrete_distribution<int> distrib(this->insertDistribution.begin(), this->insertDistribution.end());
     return distrib(gen);
+}
+
+int & LibraryDistribution::getMinInsert()
+{
+    return this->sMin;
+}
+
+int & LibraryDistribution::getMaxInsert()
+{
+    return this->sMax;
+}
+
+std::vector<float> & LibraryDistribution::getInsertDistribution()
+{
+    return this->insertDistribution;
+}
+
+int & LibraryDistribution::getNumReadPairs()
+{
+    return this->numReadPairs;
+}
+
+int & LibraryDistribution::getReadLength()
+{
+    return this->readLength;
 }

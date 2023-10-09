@@ -1,6 +1,7 @@
 #ifndef SAMPLEHEADER
 #define SAMPLEHEADER
 
+#include <fstream>
 #include <vector>
 #include "bamFileHandler.hpp"
 #include "genotypeDistribution.hpp"
@@ -16,21 +17,25 @@
 class Sample
 {
     // global resources
-    SeqFileHandler & referenceFile;
-    ProgramOptions & options;
-    std::vector<complexVariant> & variants;
-    RegionSampler & regionSampler;
+    ProgramOptions options;
 
     // local resources
     std::string filename;
+    std::string sampleName;
     std::string distributionDirectory;
+    std::string refFileName;
     BamFileHandler bamFile;
+    SeqFileHandler referenceFile;
+
+    std::vector<GenomicRegion> sampledRegions;
+    std::unordered_map<std::string, int> chromosomeLengths;
 
     // results
     LibraryDistribution sampleDistribution;
     
     bool bamFileOpen;
-    int maxReadLength;
+    std::vector<std::string> regionStrings;
+    int minMapQ;
 
     // private functions
     void calculateDefaultDistributions();
@@ -42,8 +47,9 @@ class Sample
 
     public:
     Sample(Sample&&);
-    Sample(std::string, SeqFileHandler &, ProgramOptions &, RegionSampler &, std::vector<complexVariant> &);
-    void open();
+    Sample(std::string, std::string, ProgramOptions &, RegionSampler &);
+    Sample(std::string);
+
     LibraryDistribution & getLibraryDistribution();
     void closeBamFile();
     int getFilterMargin();
@@ -52,6 +58,9 @@ class Sample
     std::string getFileName();
     int getMaxReadLength();
     void close();
+    void writeSampleProfile(std::ofstream &);
+    void readSampleProfile(std::ifstream &);
+    void printSampleProfile();
 };
 
 #endif

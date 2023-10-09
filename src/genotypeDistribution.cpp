@@ -10,12 +10,14 @@ GenotypeDistribution::GenotypeDistribution()
 {
     this->normalizationFactor = 1;
     this->minProbability = 0.0;
+    this->mode = 2;
 }
 
 GenotypeDistribution::GenotypeDistribution(std::vector<std::string> contigNames, int mode)
 {
     this->normalizationFactor = 1;
     this->minProbability = 0.0;
+    this->mode = 2;
     setPossibleContigs(contigNames);
     setDistributionMode(mode);
 }
@@ -42,7 +44,6 @@ void GenotypeDistribution::setDistributionMode(int mode)
         this->mode = mode;
     else {
         std::cout << "Invalid mode. Set to default (2)." << std::endl;
-        this->mode = 2;
     }
     this->distributions.erase(this->distributions.begin(), this->distributions.end());
     this->distributionProbabilities.erase(this->distributionProbabilities.begin(), this->distributionProbabilities.end());
@@ -109,7 +110,7 @@ void GenotypeDistribution::addInsertSizeProbability(int insertSize, std::string 
         for (unsigned i = 0; i < rNamePairs.size(); ++i)
         {
             if (rNamePairs[i].size() != 2)
-                std::runtime_error("Invalid number of chromosome names for inter-chromosome read pair");
+                throw std::runtime_error("Invalid number of chromosome names for inter-chromosome read pair");
             std::string contigIdentifier = getContigIdentifier(rNamePairs[i][0], rNamePairs[i][1]);
             if (contigIdentifier != "")
                 addInterChromosomeProbability(contigIdentifier, probability);
@@ -227,7 +228,7 @@ float GenotypeDistribution::getProbability(int insertSize, std::string orientati
         for (unsigned i = 0; i < rNamePairs.size(); ++i)
         {
             if (rNamePairs[i].size() != 2)
-                std::runtime_error("Invalid number of chromosome names for inter-chromosome read pair.");
+                throw std::runtime_error("Invalid number of chromosome names for inter-chromosome read pair.");
             prob = std::max(prob, getInterChromosomeProbability(getContigIdentifier(rNamePairs[i][0], rNamePairs[i][1])));
         }
         return prob;

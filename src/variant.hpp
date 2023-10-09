@@ -17,6 +17,7 @@ class complexVariant {
     std::vector<GenomicRegion> variantRegions;
 
     int nAlleles;
+    std::string variantFileName;
 
     int calculateSearchDistance(double, double);
     void poolBreakpoints();
@@ -27,6 +28,7 @@ class complexVariant {
     public:
     complexVariant();
     complexVariant(std::string, std::vector<std::string>, variantData);
+    complexVariant(std::string, std::vector<std::string>, variantData, std::string);
     complexVariant(std::vector<Junction>);
 
     void print();
@@ -39,6 +41,7 @@ class complexVariant {
     void calculateVariantRegions();
     std::vector<GenomicRegion> & getVariantRegions();
     void createAlleleMaps(int, std::unordered_map<std::string, int>);
+    std::string getVariantFileName();
 };
 
 #endif
