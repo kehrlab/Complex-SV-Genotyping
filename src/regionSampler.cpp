@@ -6,25 +6,34 @@
 RegionSampler::RegionSampler()
 {}
 
-RegionSampler::RegionSampler(std::vector<ContigInfo> contigInfo, SeqFileHandler & referenceFileHandler, std::vector<std::string> bamFileNames, ProgramOptions & options, std::vector<GenomicRegion> regions)
+RegionSampler::RegionSampler(std::vector<ContigInfo> contigInfo, std::vector<GenomicRegion> regions)
+{
+    this->gcBias = false;
+    this->intervalSizes = 25000;
+    this->totalIntervalLength = 2000000;
+    this->contigInfo = contigInfo;
+    
+    sampleInsertSizeRegions(regions);
+}
+
+RegionSampler::RegionSampler(std::vector<ContigInfo> contigInfo, ProgramOptions & options, std::vector<GenomicRegion> regions)
 {
     this->gcBias = options.isOptionGCCorrect();
     this->intervalSizes = 25000;
     this->totalIntervalLength = 2000000;
     this->contigInfo = contigInfo;
-    this->bamFileNames = bamFileNames;
     
-    sampleInsertSizeRegions(referenceFileHandler, regions);
+    sampleInsertSizeRegions(regions);
 }
 
-void RegionSampler::sampleInsertSizeRegions(SeqFileHandler & referenceFileHandler, std::vector<GenomicRegion> regions)
+void RegionSampler::sampleInsertSizeRegions(std::vector<GenomicRegion> regions)
 {
     determineCommonContigs();
     std::vector<GenomicRegion> wholeGenomeRegions = regions;
     if (wholeGenomeRegions.size() == 0 || !allRegionsValid(wholeGenomeRegions)) 
 	    wholeGenomeRegions = createGenomicRegions();
     
-    subsampleRegions(wholeGenomeRegions, referenceFileHandler);
+    subsampleRegions(wholeGenomeRegions);
 }
 
 void RegionSampler::determineCommonContigs()
@@ -84,7 +93,7 @@ std::vector<GenomicRegion> RegionSampler::createGenomicRegions()
     return regions;
 }
 
-void RegionSampler::subsampleRegions(std::vector<GenomicRegion> wholeGenomeRegions, SeqFileHandler & referenceFileHandler)
+void RegionSampler::subsampleRegions(std::vector<GenomicRegion> wholeGenomeRegions)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -104,10 +113,10 @@ void RegionSampler::subsampleRegions(std::vector<GenomicRegion> wholeGenomeRegio
         GenomicRegion sampledRegion(r.getReferenceName(), start, start + this->intervalSizes);
 
         // check N
-        if (this->gcBias)
-            sampledRegion.readSequence(referenceFileHandler);
-        if (!sampledRegion.isValidSample(referenceFileHandler))
-            continue;
+        // if (this->gcBias)
+        //     sampledRegion.readSequence(referenceFileHandler);
+        // if (!sampledRegion.isValidSample(referenceFileHandler))
+        //     continue;
         
         // add
         currentSize += this->intervalSizes;
@@ -116,7 +125,7 @@ void RegionSampler::subsampleRegions(std::vector<GenomicRegion> wholeGenomeRegio
     this->insertSizeRegions = GenomicRegion::joinRegions(this->insertSizeRegions); 
 }
 
-std::vector<GenomicRegion> & RegionSampler::getSampledInsertRegions()
+std::vector<GenomicRegion> & RegionSampler::sampledInsertRegions()
 {
     return this->insertSizeRegions;
 }

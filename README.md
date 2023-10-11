@@ -33,122 +33,63 @@ If the required libraries have not been installed system-wide, the following two
 # INCLUDE_PATH=/home/tim/.conda/envs/genotyping/include
 # LIB_PATH=/home/tim/.conda/envs/genotyping/lib
 ```  
-or call make (see below) with addition parameters:
+before calling `make`.  
+Alternatively, the parameters can be supplied when calling make:
 ```
 make CXXFLAGS="-I${INCLUDE_PATH} -L${LIB_PATH}"
 ```  
-  
-Afterwards, installation is straightforward:
-```
-make
-sudo make install   # install in /usr/bin, optional
-```
 
 ## Usage
 
-The program can be run with the command `genotype`. To show the help, use the command line argument `-h`:
+The program is split in 3 commands:  
+`ggtyper profile-samples`, `ggtyper profile-variants` and `ggtyper genotype`, which should be called in that order.  
+To show the help, use `ggtyper -h/--help`:
 ```
-genotype -h
-```
-This will show the following help page:
+GGTyper - Genotyping of complex structural variants
+===================================================
 
-```text
 SYNOPSIS
+    ggtyper COMMAND [ARGUMENTS] [OPTIONS]
 
-DESCRIPTION
+COMMANDS
+    profile-samples       Create profiles of given bam files and write them to disk.
+    profile-variants      Create profiles of given variants and write them to disk.
+    genotype              Genotype given variants (specified by profiles) in all samples (specified by profiles).
 
-OPTIONS
-    -h, --help
-          Display the help message.
-    -i, --input-file INPUT_FILE
-          BAM input file Valid filetype is: .bam.
-    -F, --file-list INPUT_FILE
-          text fiel containing list of bam files Valid filetype is: .txt.
-    -o, --output-file OUTPUT_FILE
-          output file for genotype information
-    -C, --config-file INPUT_FILE
-          json file containing novel junctions Valid filetypes are: .json and .JSON.
-    -V, --output-vcf OUTPUT_FILE
-          VCF output for variant breakends Valid filetype is: .vcf.
-    -G, --reference-genome INPUT_FILE
-          fasta file containing reference sequences
-    -s, --sequence-directory OUTPUT_DIRECTORY
-          directory that created allele sequences are written to
-    -R, --sampling-regions INPUT_FILE
-          text file containing all regions used for sampling default insert sizes,
-          one region per line
-    -T, --num-threads INTEGER
-          max number of threads to use
-    -v, --verbose
-          print additional information
-    -w, --whole-genome
-          use all records instead of sampling to determine insert size distribution
-    -d, --output-distributions
-          write insert size distributions for all genotypes to text files
-    -p, --profile
-          profile performance
-    -e, --estimate-difficulty INTEGER
-          get an estimate of how many reads are needed to genotype variant with a
-          certain quality
-    -k, --no-split
-          do not use split reads
-    -l, --no-spanning
-          do not use split reads
-    -m, --no-standard
-          do not use split reads
-    -n, --no-insert-sizes
-          combine each insert size distribution into one probability for the
-          corresponding read pair class
-    -minQ, --minMapQ INTEGER
-          minimum mapping quality used to filter records (inclusive)
-    -mode, --distribution-mode INTEGER
-          internal storing of insert size distributions (0: one distribution for
-          split and spanning, each; 1: split and spanning parted by orientation; 2:
-          like 0, but location is considered; 3: insert size is only used for RF,
-          otherwise like 0)
-    -gc, --gc-correct
-          perform gc bias correction based on observed (sampled) records ind the bam
-          file
-    -M, --load-to-memory
-          load reference sequences of sampled chromosomes into memory
-    -z, --coverage INTEGER
-          average sampling coverage for determination of theoretical distribution;
-          if not given no sampling is performed
-    -x, --stats
-          record stats per read group
-    -L, --legacy-mode
-          do not calculate profile matrices
 VERSION
-    Last update: 
-    genotype version: 
-    SeqAn version: 2.4.
+    GGTyper version: 0.0.1-fa1570f
+    Last update on 2023-10-09 13:03:09
+    Contact: Tim Mirus (Tim.Mirus[at]ukr.de)
+
+Try 'ggtyper COMMAND --help' for more information on each command.
 ```
 
+## profile-samples
 
-Basic usage requires specification of a target bam file, the reference genome and a description of the variants to genotype:  
-```
-./genotype -i [sample.bam] -C [variantDescription.json] -G [reference.fa]
-```
+The `profile-samples` command requires as first argument the `.bam` file or a list of bam files as a `.txt` file.
+The second argument is the location where the list of created sample profiles should be written. This must be a `.txt` file.
+The third argument specifies the folder in which the created profiles are to be stored.  
 
-### Bam File
-Using the option `-i` the user can specify a single bam file to be genotyped. However, in order to genotype multiple samples in parallel, the option `-F` allows specification of a text file containing a list of files to be processed, with one filepath per line, e.g.
-
+A simple call would be
 ```
-./genotype -F bamFiles.txt ...
+./ggtyper profile-samples [bamFiles.txt] sampleProfiles.txt ./ -T 10
 ```
-
-where bamFiles.txt is of the form
+where 
 ```
-bamFile1.bam
-bamFile2.bam
+[bamFiles.txt]
+filePath1.bam
+filePath2.bam
 ...
 ```
-If not specified otherwise, it is assumed that the bam file contains alignment data for the whole genome. If that is not the case, the option `-R` should be used to specify the regions available (format chr:start-end). If only a small region is contained in the bam file, one should use the flag `-w` to specify that all reads in the file need to be used for calculation of the library distribution.
 
-### Reference genome
-Option `-G` is used to specify the filepath of the reference genome. This has to be a fasta file containing the sequence of the reference genome used during alignment of the read data. It is used among other things to create the sequence of the variant allele from the description and to calculate sample-specific correction factors for biases.
 
-The current version of the human genome (hg38) can be found [here](https://ftp.ensembl.org/pub/release-109/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz).
+## profile-variants
+
+The `profile-variants` command is similar to sample-variants, but takes as first input a `json` file of variant descriptions.
+Details on that format may be found below. The second and third argument once again denote the target location of the profile list and the target directory of the profiles, respectively.  
+Variant profiles need to be created with library parameters (insert size range and read size) that match the samples to be genotyped.
+These can either be determined from a list of sample profiles (parameter `-S`) or supplied manually (`-sMin`, `-sMax`, `-l`). 
+If both are given, the samples take precendence.
 
 ### Variant Description
 (Complex) Structural Variants can be described by their novel junctions or break-ends. We use the JSON format to specify the novel junctions of the alternate alleles for each affected chromosome. It is imperative that these junctions are supplied in the order they are found in on the variant allele.
@@ -176,15 +117,55 @@ The current version of the human genome (hg38) can be found [here](https://ftp.e
     "[Variant2]" : ...
 }
 ```
-  
-Some examples of valid variant descriptions can be found [here](examples/).  
+
+Some examples of valid variant descriptions can be found [here](examples/). 
+
+A simple call would be
+```
+./ggtyper profile-variants [variantDescriptions.json] sampleProfiles.txt ./
+```
+
+## genotype
+
+The `genotype` command requires as arguments a list of variant profiles as returned by `profile-variants`, a list
+of sample profiles as returned by `profile-samples` and the desired prefix/path of the output file.
+The results will be written to `${PREFIX}_genotype_results.tsv`.  
+
+We can genotype the variants and samples specified in variantProfiles.txt and sampleProfiles.txt for with
+```
+./ggtyper genotype variantProfiles.txt sampleProfiles.txt -T 10 -o ./example_run
+```
 
 ### Other parameters
-- The number of threads (OpenMP) can be specified with `-T`.  
-- GC Bias correction is enabled with `-gc`.   
-- Prefix of the output files is specified with `-o`.  
-- Option `-d` writes created distributions and results into a directory created in the same directory as the bam file, .i.e., "[bamFile.bam]\_distributions".  
-- minQ specifies the minimum mapping quality required for reads to be considered. Default 0.  
-- Importance sampling is enabled with `-z <sampling coverage>`. Can't be used in conjunction with GC bias correction.  
-- Estimation of Variant difficulty is enabled with `-e <Q>`, and returns for each genotype of a variant the number of reads required to genotype the variant with expected quality Q.
-- VCF output is enabled with the parameter `-V <filename>`.
+- The number of threads (OpenMP) can be specified with `-T`.
+- Option `-d` writes created distributions and results into a directory created in the same directory as the bam file, .i.e., "[bamFile.bam]\_distributions"
+- minQ specifies the minimum mapping quality required for reads to be considered. Default 0. 
+- Estimation of Variant difficulty is enabled with `-e`, and returns for each genotype of a variant the number of reads required to genotype the variant with expected quality Q.
+
+## Output 
+The output of `genotype` is a tab-separated file with the following columns:
+
+- Variant: Name of the variant as given in the variant description.
+- Sample: Name of the sample as read from the BAM header.
+- File: Name of the BAM file.
+- Genotype: Called Genotype, in the form [AlleleName1]/[AlleleName2]. 
+Reference allele name is `REF`, variant allele name is given in variant description.
+- Mean_Quality: Average genotype quality (determined by bootstrapping).
+- Lower_Bound: Lower boundary of 95-% CI (determined by bootstrapping).
+- Upper_Bound: Upper boundary of 95-% CI (determined by bootstrapping).
+- Certainty: Genotype certainty (determined by bootstrapping).
+- Reads: Number of read pairs the genotype call is based on.
+- AvgMapQ: Average mapping quality of the used reads.
+- MinMapQ: Lowest mapping quality among the used reads.
+- MaxMapQ: Largest mapping quality among the used reads
+- QualityPass: Flag indicating whether a certain quality (Certainty + AvgMapQ) was reached.
+- Difficulty: Difficulty of this variant in this sample (derived from Kullback-Leibler divergence).
+
+## Version and License
+```
+Last update: 2023-10-11
+GGTyper version: 0.0.9
+SeqAn version: 2.4
+HTSLib version: 1.18
+Author: Tim Mirus (Tim.Mirus[at]ukr.de)
+```

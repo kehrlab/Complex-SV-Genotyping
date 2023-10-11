@@ -2,18 +2,33 @@
 #include "custom_types.hpp"
 #include "distributionConverter.hpp"
 #include "genotypeResult.hpp"
+#include "libraryDistribution.hpp"
 #include "options.hpp"
 #include "readTemplate.hpp"
 #include "variant.hpp"
 #include <chrono>
 #include <limits>
 
-LikelihoodCalculator::LikelihoodCalculator(RecordManager & recordManager, BamFileHandler & fileHandler, complexVariant & variant, LibraryDistribution & sampleDistribution, ProgramOptions & options):
+LikelihoodCalculator::LikelihoodCalculator(RecordManager & recordManager, BamFileHandler & fileHandler, complexVariant & variant, Sample & sample, ProgramOptions & options):
+    templates(recordManager.getTemplates()),
+    variant(variant), 
+    sampleDistribution(sample.getLibraryDistribution()),
+    bamFileHandler(fileHandler),
+    result(GenotypeResult(sample.getFileName(), sample.getSampleName(), fileHandler.getContigInfo().cNames, options)),
+    options(options),
+    maxReadLength(recordManager.getMaxReadLength())
+    {
+        this->useInsertSizes = ! this->options.isOptionNoInsertSizes();
+	    this->lowerInsertLimit = this->sampleDistribution.getInsertMean() - 2*this->sampleDistribution.getInsertSD();
+	    this->upperInsertLimit = this->sampleDistribution.getInsertMean() + 2*this->sampleDistribution.getInsertSD();
+    };
+
+LikelihoodCalculator::LikelihoodCalculator(RecordManager & recordManager, BamFileHandler & fileHandler, complexVariant & variant, std::string sampleName, LibraryDistribution & sampleDistribution, ProgramOptions & options):
     templates(recordManager.getTemplates()),
     variant(variant), 
     sampleDistribution(sampleDistribution),
     bamFileHandler(fileHandler),
-    result(GenotypeResult(fileHandler.getFileName(), fileHandler.getContigInfo().cNames, options)),
+    result(GenotypeResult(fileHandler.getFileName(), sampleName, fileHandler.getContigInfo().cNames, options)),
     options(options),
     maxReadLength(recordManager.getMaxReadLength())
     {
@@ -104,7 +119,7 @@ void LikelihoodCalculator::createInsertSizeDistributions(std::unordered_map<std:
 
 void LikelihoodCalculator::createInsertSizeDistributions(VariantProfile & variantProfile)
 {
-    DistributionConverter distributionConverter(variantProfile, this->sampleDistribution, this->bamFileHandler, this->options);
+    DistributionConverter distributionConverter(variantProfile, this->sampleDistribution, this->bamFileHandler, this->options.getEstimateDiffQual() != 0);
     this->genotypeDistributions = distributionConverter.getGenotypeDistributions();
     this->genotypeNames = distributionConverter.getGenotypeNames();
     this->filter = distributionConverter.getReadPairFilter();

@@ -12,7 +12,7 @@ LibraryDistribution::LibraryDistribution()
     this->insertMean = 0;
     this->insertSD = 0;
     this->gcCorrection = false;
-    this->sMin = 0;
+    this->sMin = 1;
     this->sMax = 1000;
     this->readLength = 0;
     this->numReadPairs = 0;
@@ -22,19 +22,19 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
 {
     this->insertMean = 0;
     this->insertSD = 0;
-    this->sMin = 0;
+    this->sMin = 1;
     this->sMax = 1000;
     this->readLength = 0;
     this->gcCorrection = false;
     this->numReadPairs = 0;
 
-    this->distribution.resize(1001);
+    this->distribution.resize(this->sMax - this->sMin + 1);
     for (int i = 0; i < this->distribution.size(); ++i)
         this->distribution[i] = std::vector<float>(100, 0);
     for (auto it : positions)
     {
         int s = it.second.end - it.second.begin + 1;
-        if (s > 1000 || s < 0)
+        if (s > this->sMax || s < this->sMin)
             continue;
         ++this->numReadPairs;
         this->insertSizes.push_back(s);
@@ -52,13 +52,13 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
 {
     this->insertMean = 0;
     this->insertSD = 0;
-    this->sMin = 0;
+    this->sMin = 1;
     this->sMax = 1000;
     this->gcCorrection = true;
-    this->distribution.resize(1001);
+    this->distribution.resize(this->sMax - this->sMin + 1);
     for (int i = 0; i < this->distribution.size(); ++i)
         this->distribution[i] = std::vector<float>(100, 0);
-    this->uniformDistribution.resize(1001);
+    this->uniformDistribution.resize(this->sMax - this->sMin + 1);
     for (int i = 0; i < this->uniformDistribution.size(); ++i)
         this->uniformDistribution[i] = std::vector<float>(100, 0);
 
@@ -66,7 +66,6 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
     seqan::Dna5String cString = 'C';
     seqan::Dna5String base, seq;
     float gc, total, temp;
-    int maxDist = 1000;
 
     std::vector<float> gcContents;
 
@@ -75,7 +74,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
     for (auto it : insertPositions)
     {
         int s = it.second.end - it.second.begin + 1;
-        if (s > 1000 || s < 0)
+        if (s > this->sMax || s < this->sMin)
             continue;
         this->insertSizes.push_back(s);
         ++this->numReadPairs;
@@ -120,7 +119,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
             {
                 total = 0;
                 gc = 0;
-                for (int s = 0; s <= maxDist; ++s)
+                for (int s = this->sMin; s <= this->sMax; ++s)
                 {
                     if ((i + s) >= seqan::length(seq))
                         break;
@@ -143,13 +142,13 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
                         temp -= 1;
                     gcContents[j] = temp / (total - 1);
                 }
-                if ((i + maxDist) < seqan::length(seq))
+                if ((i + this->sMax) < seqan::length(seq))
                 {
-                    total = maxDist + 1;
+                    total = this->sMax + 1;
                     temp = gcContents[gcContents.size() - 1] * total;
                     if (base == gString || base == cString)
                             temp -= 1;
-                    base = seq[i + maxDist];
+                    base = seq[i + this->sMax];
                     if (base == gString || base == cString)
                             temp += 1;
                     gcContents[gcContents.size() - 1] = temp / total;
@@ -165,7 +164,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
             if (positions.find(region.getRegionStart() + i) != positions.end())
             {
                 for (int s : positions[region.getRegionStart() + i])	
-			this->distribution[s][calculateGCIndex(gcContents[s])] += 1;
+			        this->distribution[s- this->sMin][calculateGCIndex(gcContents[s - this->sMin])] += 1;
             }
         }
         gcContents.erase(gcContents.begin(), gcContents.end());
@@ -275,7 +274,7 @@ void LibraryDistribution::createMarginalDistributions()
 
 void LibraryDistribution::calculateCorrectionFactors()
 {
-    this->correctionFactors.resize(1001);
+    this->correctionFactors.resize(this->sMax - this->sMin + 1);
     for (int i = 0; i < this->correctionFactors.size(); ++i)
 	    this->correctionFactors[i] = std::vector<float>(100, 0);
     
@@ -286,29 +285,29 @@ void LibraryDistribution::calculateCorrectionFactors()
             pMargin += this->uniformDistribution[s][j];
         
         // calculate
-	if (this->insertDistribution[s] == 0)
-		continue;	
-        float marginalFactor = pMargin / this->insertDistribution[s];
-        for (int j = 0; j < this->correctionFactors[s].size(); ++j)
-	{
-		if (this->uniformDistribution[s][j] == 0)
-			continue;
-            this->correctionFactors[s][j] = (this->distribution[s][j] / this->uniformDistribution[s][j]) * marginalFactor;
-	}
+        if (this->insertDistribution[s] == 0)
+            continue;	
+            float marginalFactor = pMargin / this->insertDistribution[s];
+            for (int j = 0; j < this->correctionFactors[s].size(); ++j)
+        {
+            if (this->uniformDistribution[s][j] == 0)
+                continue;
+                this->correctionFactors[s][j] = (this->distribution[s][j] / this->uniformDistribution[s][j]) * marginalFactor;
+        }
     }
 }
 
 float LibraryDistribution::getProbability(int s, float gc)
 {
-    if (s >= 0 && s <= 1000 && gc >= 0 && gc <= 1)
-        return this->distribution[s][calculateGCIndex(gc)];
+    if (s >= this->sMin && s <= this->sMax && gc >= 0 && gc <= 1)
+        return this->distribution[s-this->sMin][calculateGCIndex(gc)];
     return 0.0;
 }
 
 float LibraryDistribution::getProbability(int s)
 {
-    if (s >= 0 && s <= 1000)
-        return this->insertDistribution[s];
+    if (s >= this->sMin && s <= this->sMax)
+        return this->insertDistribution[s - this->sMin];
     return 0.0;
 }
 
@@ -329,14 +328,14 @@ void LibraryDistribution::writeDistribution(std::string filename)
 	    } else {
 		    f << "InsertSize\tProbability" << std::endl;
 	    }
-        for (int s = 0; s < this->distribution.size(); ++s) {
+        for (int s = 0; s < this->insertDistribution.size(); ++s) {
             if (this->gcCorrection) {
-		f << s << "\t" << 0.01 << "\t" << this->distribution[s][0] << "\t" << this->correctionFactors[s][0] << std::endl;
+		        f << s + this->sMin << "\t" << 0.01 << "\t" << this->distribution[s][0] << "\t" << this->correctionFactors[s][0] << std::endl;
                 for (int j = 1; j < this->distribution[s].size(); ++j)
-                    f << s << "\t" << (j+1) * 0.01 << "\t" << this->distribution[s][j] << "\t" << this->correctionFactors[s][j] << std::endl;
+                    f << s + this->sMin << "\t" << (j+1) * 0.01 << "\t" << this->distribution[s][j] << "\t" << this->correctionFactors[s][j] << std::endl;
             } else {
-		    f << s << "\t" << this->distribution[s][0] << std::endl;
-	    }
+		        f << s << "\t" << this->insertDistribution[s] << std::endl;
+	        }
         }
     } else {
         std::cerr << "Could not open file: " << filename << "for writing." << std::endl;
@@ -346,7 +345,7 @@ void LibraryDistribution::writeDistribution(std::string filename)
 
 float LibraryDistribution::getCorrectionFactor(int s, float gc)
 {	
-    return this->correctionFactors[s][calculateGCIndex(gc)];
+    return this->correctionFactors[s - this->sMin][calculateGCIndex(gc)];
 }
 
 void LibraryDistribution::calculateInsertStats()

@@ -10,6 +10,7 @@
 GenotypeResult::GenotypeResult()
 {
     this->filename = "";
+    this->sampleName = "";
     this->observedReads = 0;
     this->callCertainty = 0;
     this->lowerBoundQuality = 0;
@@ -23,6 +24,7 @@ GenotypeResult::GenotypeResult()
 GenotypeResult::GenotypeResult(std::string filename, bool useQualities)
 {
     this->filename = filename;
+    this->sampleName = "unknown";
     this->observedReads = 0;
     this->callCertainty = 0;
     this->lowerBoundQuality = 0;
@@ -33,9 +35,10 @@ GenotypeResult::GenotypeResult(std::string filename, bool useQualities)
     this->useQualities = useQualities;
 }
 
-GenotypeResult::GenotypeResult(std::string filename, std::vector<std::string> contigNames, bool useQualities)
+GenotypeResult::GenotypeResult(std::string filename, std::string sampleName,  std::vector<std::string> contigNames, bool useQualities)
 {
     this->filename = filename;
+    this->sampleName = sampleName;
     this->observedReads = 0;
     setPossibleContigs(contigNames);
     this->callCertainty = 0;
@@ -45,11 +48,13 @@ GenotypeResult::GenotypeResult(std::string filename, std::vector<std::string> co
     this->maxQuality = 0;
     this->meanQuality = 0.0;
     this->useQualities = useQualities;
+    setDistributionMode(2);
 }
 
-GenotypeResult::GenotypeResult(std::string filename, std::vector<std::string> contigNames, ProgramOptions & options)
+GenotypeResult::GenotypeResult(std::string filename, std::string sampleName, std::vector<std::string> contigNames, ProgramOptions & options)
 {
     this->filename = filename;
+    this->sampleName = sampleName;
     this->observedReads = 0;
     this->callCertainty = 0;
     this->lowerBoundQuality = 0;
@@ -312,6 +317,8 @@ void GenotypeResult::createOutputString()
 {
     determineQualityStats();
     std::string outputString = "";
+    outputString.append(this->sampleName);
+    outputString.append("\t");
     outputString.append(this->filename);
     outputString.append("\t");
     outputString.append(this->calledGenotype);
@@ -336,7 +343,7 @@ void GenotypeResult::createOutputString()
 	    outputString.append("TRUE");
     else
 	    outputString.append("FALSE");
-    outputString.append("\n");
+    // outputString.append("\n");
     this->outputString = outputString;
 }
 

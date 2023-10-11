@@ -10,20 +10,14 @@
 #include "regionSampler.hpp"
 #include "seqFileHandler.hpp"
 #include "variant.hpp"
-#include "variantGenotyper.hpp"
 #include "libraryDistribution.hpp"
 #include <chrono>
 
 class Sample
 {
-    // global resources
-    ProgramOptions options;
-
-    // local resources
     std::string filename;
     std::string sampleName;
     std::string distributionDirectory;
-    std::string refFileName;
     BamFileHandler bamFile;
     SeqFileHandler referenceFile;
 
@@ -39,16 +33,18 @@ class Sample
 
     // private functions
     void calculateDefaultDistributions();
-    void createSampleDistribution(std::unordered_map<std::string, TemplatePosition> &);
-    void createDistributionDirectory();
+    // void createSampleDistribution(std::unordered_map<std::string, TemplatePosition> &);
+    // void createDistributionDirectory();
 
     private:
     void openBamFile();
 
     public:
-    Sample(Sample&&);
-    Sample(std::string, std::string, ProgramOptions &, RegionSampler &);
+    Sample & operator=(Sample);
+    // Sample(Sample&&);
+    Sample(std::string, const std::vector<GenomicRegion> &);
     Sample(std::string);
+    
 
     LibraryDistribution & getLibraryDistribution();
     void closeBamFile();
@@ -58,9 +54,10 @@ class Sample
     std::string getFileName();
     int getMaxReadLength();
     void close();
-    void writeSampleProfile(std::ofstream &);
-    void readSampleProfile(std::ifstream &);
+    void writeSampleProfile(std::string);
+    void readSampleProfile(std::string);
     void printSampleProfile();
+    std::string getSampleName();
 };
 
 #endif

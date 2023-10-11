@@ -76,7 +76,7 @@ void Genotyper::sampleRegionsForInsertSizeDistribution()
     openReferenceFile();
     std::vector<GenomicRegion> regionsForSampling = this->options.getSamplingRegions();
     if (this->contigInfos.size() > 0 && !this->options.isOptionUseWholeGenome())
-        this->regionSampler = RegionSampler(this->contigInfos, this->referenceFile, this->fileNames, this->options, regionsForSampling);
+        this->regionSampler = RegionSampler(this->contigInfos, regionsForSampling);
     closeReferenceFile();
 }
 
@@ -85,14 +85,17 @@ void Genotyper::createSamples()
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     
     sampleDistributions = std::vector<LibraryDistribution>(this->fileNames.size());
+    sampleNames = std::vector<std::string>(this->fileNames.size());
     std::vector<int> readLengths(this->fileNames.size(), 0);
 
     // open samples and calculate library distributions
     for (int i = 0; i < this->fileNames.size(); ++i) 
     {
-        Sample s(this->fileNames[i], this->options.getRefFileName(), this->options, this->regionSampler);
+        Sample s(this->fileNames[i], this->regionSampler.sampledInsertRegions());
         readLengths[i] = s.getMaxReadLength();
         this->sampleDistributions[i] = s.getLibraryDistribution();
+        this->sampleNames[i] = s.getSampleName();
+        s.close();
     }
 
     // determine maximum read length across all samples
@@ -114,7 +117,7 @@ void Genotyper::createVariantProfiles()
     int sMin {1}, sMax {1000};
 
     for (int i = 0; i < this->variants.size(); ++i) 
-        this->variantProfiles.push_back(VariantProfile(this->variants[i], this->maxFilterMargin, overlap, this->maxReadLength, sMin, sMax, this->contigLengths, this->options));
+        this->variantProfiles.push_back(VariantProfile(this->variants[i], this->maxFilterMargin, overlap, this->maxReadLength, sMin, sMax, this->contigLengths));
     
     #pragma omp parallel for num_threads(this->options.getNumberOfThreads())
     for (int i = 0; i < this->variantProfiles.size(); ++i) 
@@ -211,7 +214,7 @@ void Genotyper::genotypeAllSamples()
         for (int i = 0; i < this->variants.size(); ++i)
         {
             std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-            VariantGenotyper vG(this->variants[i], this->fileNames[j], this->sampleDistributions[j], this->options);
+            VariantGenotyper vG(this->variants[i], this->fileNames[j], this->sampleNames[j], this->sampleDistributions[j], this->options);
             if (this->variantProfiles.size() > 0)
                 vG.genotype(this->variantProfiles[i]);
             else

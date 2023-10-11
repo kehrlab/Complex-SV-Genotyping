@@ -36,25 +36,26 @@ DistributionConverter::DistributionConverter(complexVariant variant, std::unorde
     // createVariantMaps();
     initDistributions(fileHandler, options.getDistributionMode());
     createDistributions();
-    determineDifficulty();
+    if (this->options.getEstimateDiffQual() != 0)
+        determineDifficulty();
 }
 
-DistributionConverter::DistributionConverter(VariantProfile & variantProfile, LibraryDistribution & sampleDistribution, BamFileHandler & fileHandler, ProgramOptions & options)
+DistributionConverter::DistributionConverter(VariantProfile & variantProfile, LibraryDistribution & sampleDistribution, BamFileHandler & fileHandler, bool difficulty)
 {
     this->filter = variantProfile.getFilter();
-    this->options = options;
     this->filename = fileHandler.getFileName();
-    this->filter = variantProfile.getFilter();
 
     std::vector<std::string> cNames = fileHandler.getContigInfo().cNames;
-    auto tempDists = variantProfile.calculateGenotypeDistributions(sampleDistribution, 0.001);
+    std::unordered_map<std::string, GenotypeDistribution> tempDists;
+    variantProfile.calculateGenotypeDistributions(tempDists, sampleDistribution, 0.001);
     for (auto & dist : tempDists)
     {
         dist.second.setPossibleContigs(cNames);
         this->genotypeDistributions.push_back(dist.second);
         this->genotypeNames.push_back(dist.first);
     }
-    determineDifficulty();
+    if (difficulty)
+        determineDifficulty();
 }
 
 void DistributionConverter::initDistributions(BamFileHandler & fileHandler, int distributionMode)
@@ -80,11 +81,9 @@ void DistributionConverter::createDistributions()
 
 void DistributionConverter::determineDifficulty()
 {
-    if (this->options.getEstimateDiffQual() == 0)
-        return;
     std::cout << "-----------------------------------------------------------" << std::endl;
     std::cout << "Variant: " << this->variant.getName() << ";\tFile: " << this->filename << std::endl;
-    std::cout << "Expected number of reads required to reach quality of " << this->options.getEstimateDiffQual() << ": " << std::endl;
+    std::cout << "Expected number of reads required to reach quality of 1000: " << std::endl;
     std::cout << "-----------------------------------------------------------" << std::endl;
     std::cout << "Ground Truth\t#Reads" << std::endl;
     for (int i = 0; i < this->genotypeDistributions.size(); ++i) 
@@ -96,7 +95,7 @@ void DistributionConverter::determineDifficulty()
         {
             if (j != i)
             {
-                int tempReads = (int) (this->options.getEstimateDiffQual() / this->genotypeDistributions[i].calculateKLD(this->genotypeDistributions[j]));
+                int tempReads = (int) (1000 / this->genotypeDistributions[i].calculateKLD(this->genotypeDistributions[j]));
                 if (tempReads > requiredReads)
                 {
                     altName = this->genotypeNames[j];

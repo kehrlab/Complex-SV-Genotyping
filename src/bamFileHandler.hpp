@@ -29,9 +29,11 @@ class BamFileHandler
     public:
     BamFileHandler();
     BamFileHandler(std::string);
+    BamFileHandler(std::string, int);
     BamFileHandler(std::string, ProgramOptions &);
     
     void open(std::string, ProgramOptions &);
+    void open(std::string);
     void openInputFiles();
     void inferBaiFileName();
     void openBamFile();
@@ -94,6 +96,21 @@ class BamFileHandler
     // get contig info
     //
     ContigInfo getContigInfo();
+
+    // getSampleName
+    // 
+    // extracts sample name from the first read group in the header as string
+    std::string getSampleName();
+
+    // getReadLength()
+    //
+    // returns length of the next read sequence in bam file
+    int getReadLength();
+
+    // getRGNumber()
+    //
+    // returns the number of read groups present in the header
+    int getRGNumber();
 };
 
 #endif

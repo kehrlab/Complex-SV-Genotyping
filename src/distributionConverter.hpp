@@ -44,7 +44,7 @@ class DistributionConverter
     public:
     DistributionConverter();
     DistributionConverter(complexVariant, std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &, LibraryDistribution, int, BamFileHandler &, ProgramOptions &);
-    DistributionConverter(VariantProfile &, LibraryDistribution &, BamFileHandler &, ProgramOptions &);
+    DistributionConverter(VariantProfile &, LibraryDistribution &, BamFileHandler &, bool);
 
     void initDistributions(BamFileHandler &, int);
     void createDistributions();

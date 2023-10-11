@@ -14,7 +14,9 @@
 class VariantProfile
 {
     complexVariant variant;
-    ProgramOptions options;
+    std::string name;
+    bool variantPresent;
+    // ProgramOptions options;
     std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> chromosomeStructures;
 
     std::unordered_map<std::string, int> variantAlleleNames;
@@ -38,7 +40,8 @@ class VariantProfile
 
     public:
     VariantProfile();
-    VariantProfile(complexVariant, int, int, int, int, int, const std::unordered_map<std::string, int> &, ProgramOptions &);
+    VariantProfile(std::string);
+    VariantProfile(complexVariant, int, int, int, int, int, const std::unordered_map<std::string, int> &);
 
     void calculateAlleleMasks();
 
@@ -46,13 +49,20 @@ class VariantProfile
     const Eigen::SparseMatrix<float, Eigen::RowMajor> & getVariantMask(const std::string &, int s);
     const Eigen::SparseMatrix<float, Eigen::RowMajor> & getReferenceMask();
 
-    std::unordered_map<std::string, GenotypeDistribution> calculateGenotypeDistributions(LibraryDistribution &, float);
+    void calculateGenotypeDistributions(std::unordered_map<std::string, GenotypeDistribution> &, LibraryDistribution &, float);
     ReadPairFilter & getFilter();
     complexVariant & getVariant();
     std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> & getChromosomeStructures();
 
     void writeProfile(std::string);
     void readProfile(std::string);
+    int getMinInsert();
+    int getMaxInsert();
+    int getMargin();
+    int getReadLength();
+    bool variantStructureIsPresent();
+    bool loadVariantStructure(std::string filename, std::string variantName);
+    std::string getName();
 
     private:
     void determinePossibleGroups();

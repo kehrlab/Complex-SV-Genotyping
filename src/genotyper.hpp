@@ -14,6 +14,7 @@
 #include <chrono>
 #include <boost/filesystem.hpp>
 #include "sample.hpp"
+#include "variantGenotyper.hpp"
 #include "vcfWriter.hpp"
 
 
@@ -26,7 +27,9 @@ class Genotyper
 
     std::vector<std::string> fileNames;
     std::vector<std::vector<GenotypeResult>> genotypeResults;
+    
     std::vector<LibraryDistribution> sampleDistributions;
+    std::vector<std::string> sampleNames;
 
     std::vector<VariantProfile> variantProfiles;
 

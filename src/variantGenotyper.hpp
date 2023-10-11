@@ -3,6 +3,7 @@
 
 #include "genotypeDistribution.hpp"
 #include "genotypeResult.hpp"
+#include "libraryDistribution.hpp"
 #include "likelihoodCalculator.hpp"
 #include "recordManager.hpp"
 #include "variant.hpp"
@@ -13,6 +14,7 @@ class VariantGenotyper
 {
     // references
     LibraryDistribution & sampleDistribution;
+    std::string sampleName;
     complexVariant & variant;
     ProgramOptions & options;
 
@@ -29,7 +31,8 @@ class VariantGenotyper
     void writeInsertSizeDistributions(LikelihoodCalculator &);
 
     public:
-    VariantGenotyper(complexVariant &, std::string, LibraryDistribution &, ProgramOptions &);
+    VariantGenotyper(complexVariant &, Sample &, ProgramOptions &);
+    VariantGenotyper(complexVariant &, std::string, std::string, LibraryDistribution &, ProgramOptions &);
     void genotype();
     void genotype(VariantProfile &);
     GenotypeResult getResult();

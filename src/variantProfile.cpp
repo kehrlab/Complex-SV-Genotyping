@@ -8,6 +8,8 @@
 #include "options.hpp"
 #include "readTemplate.hpp"
 #include "vMapManager.hpp"
+#include "variant.hpp"
+#include "variantParser.hpp"
 #include <fstream>
 #include <ios>
 #include <stdexcept>
@@ -19,6 +21,13 @@ VariantProfile::VariantProfile()
     this->sMaxMapped = 1000;
     this->readLength = 150;
     this->overlap = 20;
+    this->variantPresent = false;
+    this->name = "unnamed";
+}
+
+VariantProfile::VariantProfile(std::string filename)
+{
+    readProfile(filename);
 }
 
 VariantProfile::VariantProfile(
@@ -28,14 +37,15 @@ VariantProfile::VariantProfile(
     int readLength, 
     int sMin,
     int sMax,
-    const std::unordered_map<std::string, int> & contigInfos,
-    ProgramOptions & options
-) : variant(variant), filterMargin(filterMargin), overlap(overlap), readLength(readLength), sMin(sMin), sMax(sMax), options(options)
+    const std::unordered_map<std::string, int> & contigInfos
+) : variant(variant), filterMargin(filterMargin), overlap(overlap), readLength(readLength), sMin(sMin), sMax(sMax)
 {
     this->variant.createAlleleMaps(this->filterMargin, contigInfos);
     this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
     this->sMinMapped = sMin;
     this->sMaxMapped = sMax;
+    this->variantPresent = true;
+    this->name = this->variant.getName();
     determinePossibleGroups();
     initMasks();
 }
@@ -1182,23 +1192,23 @@ inline void VariantProfile::addSimulatedTemplateToMask(int & status, VariantMap 
     std::string breakpointString = sT.getBreakpointString();
     std::string chrString = sT.getChromosomeString();
 
-    if (split && this->options.isOptionNoSplitReads()) {
-        status = 0;
-        return;
-    }
-    if (spanning && this->options.isOptionNoSpanningReads())
-    {
-        status = 0;
-        return;
-    }
-    if (this->options.isOptionNoNormalReads())
-    {
-    if (!interChromosome && !split && !spanning && orientation != "FF" && orientation != "RR" && insertSize > sMin && insertSize < sMax)
-        {
-            status = 0;
-            return;
-        }
-    }
+    // if (split && this->options.isOptionNoSplitReads()) {
+    //     status = 0;
+    //     return;
+    // }
+    // if (spanning && this->options.isOptionNoSpanningReads())
+    // {
+    //     status = 0;
+    //     return;
+    // }
+    // if (this->options.isOptionNoNormalReads())
+    // {
+    // if (!interChromosome && !split && !spanning && orientation != "FF" && orientation != "RR" && insertSize > sMin && insertSize < sMax)
+    //     {
+    //         status = 0;
+    //         return;
+    //     }
+    // }
     
     status = 1;
     // std::cout << i << "\t" << s << std::endl;
@@ -1264,10 +1274,8 @@ const Eigen::SparseMatrix<float, Eigen::RowMajor> & VariantProfile::getReference
     return this->referenceMask;
 }
 
-std::unordered_map<std::string, GenotypeDistribution> VariantProfile::calculateGenotypeDistributions(LibraryDistribution & libraryDistribution, float eps)
+void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::string, GenotypeDistribution> & distributions, LibraryDistribution & libraryDistribution, float eps)
 {
-    std::unordered_map<std::string, GenotypeDistribution> distributions;
-
     std::vector<std::string> alleleNames(this->variantAlleleNames.size() + 1, "");
     alleleNames[0] = "REF";
     for (auto & vN : this->variantAlleleNames)
@@ -1343,7 +1351,7 @@ std::unordered_map<std::string, GenotypeDistribution> VariantProfile::calculateG
     for (int i = 0; i < variantGtDists.size(); ++i)
         distributions[gtNames[i]].setMinProbability(minProb);
     
-    return distributions;
+    return;
 }
 
 ReadPairFilter & VariantProfile::getFilter()
@@ -1397,6 +1405,9 @@ void VariantProfile::writeProfile(std::string filename)
     // write min and max insert size in profiles
     stream.write(reinterpret_cast<const char *>(&this->sMinMapped), sizeof(int));
     stream.write(reinterpret_cast<const char *>(&this->sMaxMapped), sizeof(int));
+
+    // write filter margin
+    stream.write(reinterpret_cast<const char *>(&this->filterMargin), sizeof(int));
 
     // write number of read pair groups and their names
     int nG = this->variantGroups.size();
@@ -1523,7 +1534,7 @@ void VariantProfile::readProfile(std::string filename)
     stream.read(tempString, l);
     if (tempString[l-1] != '\0')
         throw std::runtime_error("");
-    std::string variantName(tempString);
+    this->name = std::string(tempString);
     delete[] tempString;
     
     // get variant path
@@ -1535,12 +1546,19 @@ void VariantProfile::readProfile(std::string filename)
     std::string variantPath(tempString);
     delete[] tempString;
 
-    // get read length and insert minima and maxima
+    // try load the actual variant
+    this->variantPresent = loadVariantStructure(variantPath, this->name);
+
+    // get read length, insert minima and maxima and filter margin
     stream.read(reinterpret_cast<char *>(&this->readLength), sizeof(int));
     stream.read(reinterpret_cast<char *>(&this->sMin), sizeof(int));
     stream.read(reinterpret_cast<char *>(&this->sMax), sizeof(int));
     stream.read(reinterpret_cast<char *>(&this->sMinMapped), sizeof(int));
     stream.read(reinterpret_cast<char *>(&this->sMaxMapped), sizeof(int));
+    stream.read(reinterpret_cast<char *>(&this->filterMargin), sizeof(int));
+
+    if (variantPresent)
+        this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
 
     // get read pair groups
     int nG;
@@ -1629,8 +1647,69 @@ void VariantProfile::readProfile(std::string filename)
             this->variantMask[i][s - this->sMin].finalize();
         }
     }
-    
+
     // free allocated char arrays
     delete[] version;
     stream.close();
+}
+
+int VariantProfile::getMinInsert()
+{
+    return this->sMin;
+}
+
+int VariantProfile::getMaxInsert()
+{
+    return this->sMax;
+}
+
+int VariantProfile::getMargin()
+{
+    return this->filterMargin;
+}
+
+int VariantProfile::getReadLength()
+{
+    return this->readLength;
+}
+
+bool VariantProfile::variantStructureIsPresent()
+{
+    return this->variantPresent;
+}
+
+bool VariantProfile::loadVariantStructure(std::string filename, std::string variantName)
+{
+    // load with variant parser
+    try {
+        variantParser parser(filename);
+        int idx = -1;
+        for (int i = 0; i < parser.getVariantNames().size(); ++i)
+        {
+            if (parser.getVariantNames()[i] == variantName)
+            {
+                idx = i;
+                break;
+            }
+        }
+        if (idx < 0)
+        {
+            std::cerr << "Could not find variant " << variantName << " in specified file (" << filename << ")." << std::endl;
+            return false;
+        }
+
+        this->variant = complexVariant(parser.getVariantNames()[idx], parser.getAlleleNames()[idx], parser.getVariantJunctions()[idx], filename);
+    } 
+    catch (std::runtime_error)
+    {
+        std::cerr << "Could not read variant file (" << filename << ")" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+std::string VariantProfile::getName()
+{
+    return this->name;
 }

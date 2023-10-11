@@ -15,22 +15,21 @@ class RegionSampler
     std::vector<std::string> commonContigs;
     std::vector<int> minContigLengths;
 
-    std::vector<std::string> bamFileNames;
-
     int intervalSizes;
     int totalIntervalLength;
     bool gcBias;
 
     void determineCommonContigs();
     std::vector<GenomicRegion> createGenomicRegions();
-    void subsampleRegions(std::vector<GenomicRegion>, SeqFileHandler &);
+    void subsampleRegions(std::vector<GenomicRegion>);
     bool allRegionsValid(std::vector<GenomicRegion>);
-    void sampleInsertSizeRegions(SeqFileHandler &, std::vector<GenomicRegion>);
+    void sampleInsertSizeRegions(std::vector<GenomicRegion>);
 
     public:
     RegionSampler();
-    RegionSampler(std::vector<ContigInfo>, SeqFileHandler &, std::vector<std::string>, ProgramOptions &, std::vector<GenomicRegion>);
-    std::vector<GenomicRegion> & getSampledInsertRegions();
+    RegionSampler(std::vector<ContigInfo>, std::vector<GenomicRegion>);
+    RegionSampler(std::vector<ContigInfo>, ProgramOptions &, std::vector<GenomicRegion>);
+    std::vector<GenomicRegion> & sampledInsertRegions();
 };
 
 #endif

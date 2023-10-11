@@ -1,20 +1,24 @@
 CXX=g++
 CC=g++
 
-#INCLUDE_PATH=/misc/rci-rg/ag_kehr/user/mit16436/anaconda3/envs/genotyping/include
-#LIB_PATH=/misc/rci-rg/ag_kehr/user/mit16436/anaconda3/envs/genotyping/lib
+# INCLUDE_PATH=/home/tim/.conda/envs/genotyping/include
+# LIB_PATH=/home/tim/.conda/envs/genotyping/lib
 JSON_PATH=./include
 
-BINARY := genotype
+BINARY := ggtyper
 
-override CXXFLAGS += -I $(JSON_PATH) -DSEQAN_HAS_ZLIB -lz -lhts -DSEQAN_DISABLE_VERSION_CHECK -std=c++17 -Wall -O2 -DEIGEN_DONT_PARALLELIZE -fopenmp -lpthread -lboost_filesystem
+DATE := on $(shell git log --pretty=format:"%cd" --date=iso | cut -f 1,2 -d " " | head -n 1)
+VERSION := 0.0.1-$(shell git log --pretty=format:"%h" --date=iso | head -n 1)
+
+override CXXFLAGS += -DDATE=\""$(DATE)"\" -DVERSION=\""$(VERSION)"\"
+override CXXFLAGS += -I $(JSON_PATH) -DSEQAN_HAS_ZLIB -lz -lhts -DSEQAN_DISABLE_VERSION_CHECK -std=c++17 -Wall -O2 -DEIGEN_DONT_PARALLELIZE -fopenmp -lpthread -lboost_filesystem -g
 
 ifdef INCLUDE_PATH
-	CXXFLAGS+=-I $(INCLUDE_PATH)
+	override CXXFLAGS+=-I $(INCLUDE_PATH)
 endif
 
 ifdef LIB_PATH
-	CXXFLAGS+=-L $(LIB_PATH)
+	override CXXFLAGS+=-L $(LIB_PATH)
 endif
 
 ODIR:=build

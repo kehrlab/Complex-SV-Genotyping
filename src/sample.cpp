@@ -14,22 +14,32 @@
 #include <stdexcept>
 #include <unordered_map>
 
-Sample::Sample(Sample && s): 
-    filename(s.filename), refFileName(s.refFileName), options(s.options), 
-    minMapQ(s.minMapQ),
-    distributionDirectory(s.distributionDirectory), sampledRegions(s.sampledRegions), sampleDistribution(s.sampleDistribution)
+// Sample::Sample(Sample && s): 
+//     filename(s.filename), sampleName(s.sampleName),
+//     minMapQ(s.minMapQ),
+//     distributionDirectory(s.distributionDirectory), sampledRegions(s.sampledRegions), 
+//     sampleDistribution(s.sampleDistribution)
+// {
+//     this->bamFileOpen = false;
+// }
+
+Sample & Sample::operator=(Sample s)
 {
+    this->filename = s.filename;
+    this->sampleName = s.sampleName;
+    this->minMapQ = s.minMapQ;
+    this->distributionDirectory = s.distributionDirectory;
+    this->sampledRegions = s.sampledRegions;
+    this->sampleDistribution = s.sampleDistribution;
     this->bamFileOpen = false;
-    this->sampleName = this->filename;
-    this->minMapQ = 0;
+    
+    return *this;
 }
 
 Sample::Sample(
     std::string filename,
-    std::string refFileName, 
-    ProgramOptions & options,
-    RegionSampler & regionSampler
-) : filename(filename), refFileName(refFileName), options(options), sampledRegions(regionSampler.getSampledInsertRegions())
+    const std::vector<GenomicRegion> & givenRegions
+) : filename(filename), sampledRegions(givenRegions)
 {
     this->distributionDirectory = "";
     this->sampleName = this->filename;
@@ -37,7 +47,6 @@ Sample::Sample(
     this->bamFileOpen = false;
 
     openBamFile();
-    createDistributionDirectory();
     calculateDefaultDistributions();
     closeBamFile();
 }
@@ -49,88 +58,50 @@ Sample::Sample(std::string profilePath)
 
     std::ifstream stream;
     this->sampleDistribution = LibraryDistribution();
-    stream.open(profilePath);
-    if (!stream.is_open())
-    {
-        std::string msg = "Could not open Profile " + profilePath;
-        throw std::runtime_error(msg.c_str());
-    }
-    readSampleProfile(stream);
-    stream.close();
+    readSampleProfile(profilePath);
 }
 
 void Sample::openBamFile()
 {
-    this->bamFile.open(this->filename, this->options);
+    this->bamFile.open(this->filename);
     this->bamFileOpen = true;
     this->chromosomeLengths = bamFile.getContigLengths();
+    this->sampleName = bamFile.getSampleName();
 }
 
-void Sample::createDistributionDirectory()
-{
-    if (!this->options.isOptionOutputDistributions())
-        return;
+// void Sample::createDistributionDirectory()
+// {
+//     if (!this->options.isOptionOutputDistributions())
+//         return;
 
-    this->distributionDirectory = this->filename + "_distributions";
+//     this->distributionDirectory = this->filename + "_distributions";
 
-    if (! boost::filesystem::create_directory(this->distributionDirectory))
-    {
-        if (! boost::filesystem::is_directory(this->distributionDirectory))
-        {
-            std::string msg = "Could not create directory '" + this->distributionDirectory + "', but flag -d was set. Make sure you have write permissions in the directory containing bam files.";
-            throw std::runtime_error(msg.c_str());
-        }
-    }
-}
+//     if (! boost::filesystem::create_directory(this->distributionDirectory))
+//     {
+//         if (! boost::filesystem::is_directory(this->distributionDirectory))
+//         {
+//             std::string msg = "Could not create directory '" + this->distributionDirectory + "', but flag -d was set. Make sure you have write permissions in the directory containing bam files.";
+//             throw std::runtime_error(msg.c_str());
+//         }
+//     }
+// }
 
 void Sample::calculateDefaultDistributions()
 {
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::unordered_map<std::string, TemplatePosition> insertPositions;
 
     int readLength;
-    if (!this->options.isOptionUseWholeGenome())
-    {
-        for (GenomicRegion & r : this->sampledRegions)
-            this->regionStrings.push_back(r.getRegionString());
+    if (this->sampledRegions.size() == 0) 
+        insertPositions = this->bamFile.get_insert_size_positions(readLength);
+    else 
         insertPositions = this->bamFile.get_insert_size_positions(readLength, this->regionStrings);
-    } 
-    else
-    {
-        if (this->options.getSamplingRegions().size() == 0) 
-        {
-            insertPositions = this->bamFile.get_insert_size_positions(readLength);
-        } else {
-            for (GenomicRegion & r : this->options.getSamplingRegions())
-                this->regionStrings.push_back(r.getRegionString());
-            insertPositions = this->bamFile.get_insert_size_positions(readLength, this->regionStrings);
-        }
-    }
-    createSampleDistribution(insertPositions);
+
+    this->sampleDistribution = LibraryDistribution(insertPositions);
     this->sampleDistribution.getReadLength() = readLength;
 
     std::unordered_map<std::string, TemplatePosition>().swap(insertPositions);
-
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    if (this->options.isOptionProfile())
-        std::cout << this->filename << "\tTime taken to create default distributions: " << std::chrono::duration_cast<std::chrono::milliseconds>(end-begin).count() << "ms" << std::endl;
 }
 
-void Sample::createSampleDistribution(std::unordered_map<std::string, TemplatePosition> & insertPositions)
-{
-    if (this->options.isOptionGCCorrect() && !this->options.isOptionUseWholeGenome() && this->options.getRefFileName() != "")
-    {
-        this->referenceFile.open(this->refFileName);
-        this->sampleDistribution = LibraryDistribution(insertPositions, this->sampledRegions, this->referenceFile);
-    } else {
-        this->sampleDistribution = LibraryDistribution(insertPositions);
-    }
-    if (this->options.isOptionOutputDistributions())
-    {
-        std::string defaultDistFileName = this->distributionDirectory + "/defaultDistribution.txt";
-        this->sampleDistribution.writeDistribution(defaultDistFileName);
-    }
-}
 
 LibraryDistribution & Sample::getLibraryDistribution()
 {
@@ -177,8 +148,15 @@ int Sample::getMaxReadLength()
     return this->sampleDistribution.getReadLength();
 }
 
-void Sample::writeSampleProfile(std::ofstream & stream)
+void Sample::writeSampleProfile(std::string profilePath)
 {
+    std::ofstream stream(profilePath, std::ios_base::binary | std::ios_base::out);
+    if (!stream.is_open())
+    {
+        std::string msg = "Could not open profile path (" + profilePath + ") for reading.";
+        throw std::runtime_error(msg.c_str());
+    }
+    
     // magic string
     stream.write("GENOTYPER\1", 10);
 
@@ -240,10 +218,18 @@ void Sample::writeSampleProfile(std::ofstream & stream)
     for (auto & p : this->sampleDistribution.getInsertDistribution())
         stream.write(reinterpret_cast<const char *>(&p), sizeof(float));
     
+    stream.close();
 }
 
-void Sample::readSampleProfile(std::ifstream & stream)
+void Sample::readSampleProfile(std::string profilePath)
 {
+    std::ifstream stream(profilePath, std::ios_base::binary | std::ios_base::out);
+    if (!stream.is_open())
+    {
+        std::string msg = "Could not open profile path (" + profilePath + ") for reading.";
+        throw std::runtime_error(msg.c_str());
+    }
+
     char * buffer = new char[100];
     // magic string
     char * magic = new char[10];
@@ -333,6 +319,8 @@ void Sample::readSampleProfile(std::ifstream & stream)
     delete[] magic;
     delete[] version;
     delete[] buffer;
+
+    stream.close();
 }
 
 void Sample::printSampleProfile()
@@ -359,4 +347,9 @@ void Sample::printSampleProfile()
         std::cout << p << "\t";
     std::cout << std::endl;
     std::cout << "--------------------------------------------------------------" << std::endl;
+}
+
+std::string Sample::getSampleName()
+{
+    return this->sampleName;
 }

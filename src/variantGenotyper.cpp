@@ -4,11 +4,19 @@
 #include "likelihoodCalculator.hpp"
 
 VariantGenotyper::VariantGenotyper(
+    complexVariant & variant,
+    Sample & sample,
+    ProgramOptions & options
+) : variant(variant), bamFileName(bamFileName), sampleName(sample.getSampleName()), sampleDistribution(sample.getLibraryDistribution()), options(options)
+{}
+
+VariantGenotyper::VariantGenotyper(
     complexVariant & variant, 
     std::string bamFileName,
+    std::string sampleName,
     LibraryDistribution & sampleDistribution,
     ProgramOptions & options
-) : variant(variant), bamFileName(bamFileName), sampleDistribution(sampleDistribution), options(options)
+) : variant(variant), bamFileName(bamFileName), sampleName(sampleName), sampleDistribution(sampleDistribution), options(options)
 {}
 
 void VariantGenotyper::genotype()
@@ -21,7 +29,7 @@ void VariantGenotyper::genotype()
     for (auto & allele : this->variant.getAlleles())
         chromosomeStructures[allele.getName()] = allele.getChromosomeStructures(this->variant.getAllBreakpoints());
 
-    LikelihoodCalculator likelihoodCalculator(bamRecords, bamFileHandler, variant, sampleDistribution, options);
+    LikelihoodCalculator likelihoodCalculator(bamRecords, bamFileHandler, variant, this->sampleName, this->sampleDistribution, options);
     likelihoodCalculator.createInsertSizeDistributions(chromosomeStructures);
     this->bamRecords.reset();
     likelihoodCalculator.calculateLikelihoods(chromosomeStructures);
@@ -37,7 +45,7 @@ void VariantGenotyper::genotype(VariantProfile & variantProfile)
     BamFileHandler bamFileHandler(this->bamFileName, this->options);
     bamFileHandler.setRegions(variant.calculateAssociatedRegions(this->sampleDistribution));
     this->bamRecords.setReadPairs(bamFileHandler.get_read_pairs());
-    LikelihoodCalculator likelihoodCalculator(bamRecords, bamFileHandler, variantProfile.getVariant(), sampleDistribution, options);
+    LikelihoodCalculator likelihoodCalculator(bamRecords, bamFileHandler, variantProfile.getVariant(), this->sampleName, this->sampleDistribution, options);
     likelihoodCalculator.createInsertSizeDistributions(variantProfile);
     this->bamRecords.reset();
     likelihoodCalculator.calculateLikelihoods(variantProfile);

@@ -10,6 +10,7 @@
 class GenotypeResult
 {
     std::string filename;
+    std::string sampleName;
     bool useQualities;
     int observedReads;
 
@@ -46,8 +47,8 @@ class GenotypeResult
     public:
     GenotypeResult();
     GenotypeResult(std::string, bool);
-    GenotypeResult(std::string, std::vector<std::string>, bool);
-    GenotypeResult(std::string, std::vector<std::string>, ProgramOptions &);
+    GenotypeResult(std::string, std::string, std::vector<std::string>, bool);
+    GenotypeResult(std::string, std::string, std::vector<std::string>, ProgramOptions &);
     
     void callGenotype();
     void scaleToPhred();

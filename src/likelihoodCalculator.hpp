@@ -13,6 +13,7 @@
 #include "recordManager.hpp"
 #include "variant.hpp"
 #include "variantProfile.hpp"
+#include "sample.hpp"
 #include <unordered_map>
 #include <vector>
 
@@ -40,7 +41,8 @@ class LikelihoodCalculator
     ReadPairFilter filter;
 
     public:
-    LikelihoodCalculator(RecordManager &, BamFileHandler &, complexVariant &, LibraryDistribution &, ProgramOptions &);
+    LikelihoodCalculator(RecordManager &, BamFileHandler &, complexVariant &, Sample &, ProgramOptions &);
+    LikelihoodCalculator(RecordManager & recordManager, BamFileHandler & fileHandler, complexVariant & variant, std::string sampleName, LibraryDistribution & sampleDistribution, ProgramOptions & options);
     void createInsertSizeDistributions(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);
     void createInsertSizeDistributions(VariantProfile &);
     void calculateLikelihoods(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);

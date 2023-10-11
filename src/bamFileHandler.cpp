@@ -1,6 +1,8 @@
 #include "bamFileHandler.hpp"
 #include "custom_types.hpp"
 #include "genomicRegion.hpp"
+#include "htslib/kstring.h"
+#include "htslib/sam.h"
 #include "readTemplate.hpp"
 #include <stdexcept>
 #include <unordered_map>
@@ -29,6 +31,19 @@ BamFileHandler::BamFileHandler(std::string bamFileName)
     extractContigInfo();
 }
 
+BamFileHandler::BamFileHandler(std::string bamFileName, int minMapQ)
+{
+    this->bamFileName = bamFileName;
+    this->rID = 0;
+    this->beginPos = 0;
+    this->endPos = 0;
+    this->hasAlignments = false;
+    this->minQ = minMapQ;
+    inferBaiFileName();
+    openInputFiles();
+    extractContigInfo();
+}
+
 
 BamFileHandler::BamFileHandler(std::string bamFileName, ProgramOptions & options)
 {
@@ -48,6 +63,14 @@ void BamFileHandler::open(std::string bamFileName, ProgramOptions & options)
 {
     this->bamFileName = bamFileName;
     this->minQ = options.getMinimumMappingQuality();
+    inferBaiFileName();
+    openInputFiles();
+    extractContigInfo();
+}
+
+void BamFileHandler::open(std::string bamFileName)
+{
+    this->bamFileName = bamFileName;
     inferBaiFileName();
     openInputFiles();
     extractContigInfo();
@@ -213,7 +236,7 @@ std::unordered_map<std::string, std::vector<BamRecord>> BamFileHandler::get_read
                 break;
 	
             BamRecord bamRcrd(record, this->header);
-            if (bamRcrd.passesStandardFilter())
+            if (bamRcrd.passesStandardFilter() && bamRcrd.getMapQ() >= this->minQ)
             {
                 std::string hKey = bamRcrd.getTemplateName();
                 if (recordTable.find(hKey) == recordTable.end())
@@ -243,7 +266,7 @@ std::unordered_map<std::string, std::vector<BamRecord>> BamFileHandler::get_read
             if (record->core.tid < 0)
                 break;
             BamRecord bamRcrd(record, this->header);
-            if (bamRcrd.passesStandardFilter())
+            if (bamRcrd.passesStandardFilter() && bamRcrd.getMapQ() >= this->minQ)
             {
                 std::string hKey = bamRcrd.getTemplateName();
                 if (recordTable.find(hKey) == recordTable.end())
@@ -273,7 +296,7 @@ std::vector<BamRecord> BamFileHandler::region_pileup(std::vector<std::string> re
             if (record->core.tid < 0)
                 break;
             BamRecord bamRcrd(record, this->header);
-            if (bamRcrd.passesStandardFilter())
+            if (bamRcrd.passesStandardFilter() && bamRcrd.getMapQ() >= this->minQ)
                 records.push_back(bamRcrd);
         }
         hts_itr_destroy(itr);
@@ -406,4 +429,34 @@ void BamFileHandler::extractContigInfo()
 ContigInfo BamFileHandler::getContigInfo()
 {
     return this->contigInfo;
+}
+
+std::string BamFileHandler::getSampleName()
+{
+    int id;
+    KSTRING_T tempString;
+    id = sam_hdr_find_tag_id(this->header, "RG", NULL, NULL, "SM", &tempString);
+    std::string sampleName = "";
+    if (id == 0)
+        sampleName = std::string(ks_str(&tempString));
+    return sampleName;
+}
+
+int BamFileHandler::getReadLength()
+{
+    bam1_t * record = bam_init1();
+    hts_itr_t * itr = sam_itr_querys(this->index, this->header, ".");
+
+    int id = sam_itr_next(this->bamFileIn, itr, record);
+    if (id < 0)
+        return -1;
+    if (record->core.tid < 0)
+        return -1;
+    BamRecord bamRcrd(record, this->header);
+    return bamRcrd.getSeqLength();
+}
+
+int BamFileHandler::getRGNumber()
+{
+    return sam_hdr_count_lines(this->header, "RG");
 }
