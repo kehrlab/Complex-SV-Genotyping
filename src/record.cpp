@@ -1,5 +1,4 @@
 #include "record.hpp"
-#include "htslib/sam.h"
 
 BamRecord::BamRecord()
 {}

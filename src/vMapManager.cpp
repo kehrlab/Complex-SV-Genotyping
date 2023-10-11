@@ -1,7 +1,4 @@
 #include "vMapManager.hpp"
-#include "filter.hpp"
-#include "genomicRegion.hpp"
-#include <unordered_map>
 
 VariantMapManager::VariantMapManager()
 {}

@@ -1,11 +1,14 @@
 #ifndef GENOTYPEDISTRIBUTIONHEADER
 #define GENOTYPEDISTRIBUTIONHEADER
 
-#include "insertSizeDistribution.hpp"
 #include <unordered_set>
 #include <unordered_map>
 #include <fstream>
 #include <eigen3/Eigen/Sparse>
+#include <cmath>
+#include <stdexcept>
+
+#include "insertSizeDistribution.hpp"
 
 class GenotypeDistribution
 {

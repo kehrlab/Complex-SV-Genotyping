@@ -1,13 +1,16 @@
 #ifndef LIBDISTHEADER
 #define LIBDISTHEADER
 
-#include "custom_types.hpp"
 #include <eigen3/Eigen/Sparse>
-#include "genomicRegion.hpp"
-#include "readTemplate.hpp"
-#include "seqFileHandler.hpp"
 #include <fstream>
 #include <vector>
+#include <cmath>
+#include <unordered_map>
+
+#include "custom_types.hpp"
+#include "genomicRegion.hpp"
+#include "readTemplate.hpp"
+
 
 class LibraryDistribution
 {

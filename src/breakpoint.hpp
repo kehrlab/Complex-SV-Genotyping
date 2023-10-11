@@ -2,6 +2,7 @@
 #define BREAKPOINTHEADER
 
 #include <string>
+#include <iostream>
 
 class Breakpoint {
     int id;

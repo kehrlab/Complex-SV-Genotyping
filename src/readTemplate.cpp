@@ -1,9 +1,4 @@
 #include "readTemplate.hpp"
-#include "bamFileHandler.hpp"
-#include "genomicRegion.hpp"
-#include "junction.hpp"
-#include "record.hpp"
-#include <string>
 
 ReadTemplate::ReadTemplate()
 {}

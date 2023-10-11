@@ -4,6 +4,7 @@
 #include <string>
 #include <htslib/sam.h>
 #include <iostream>
+
 #include "genomicRegion.hpp"
 
 class BamRecord

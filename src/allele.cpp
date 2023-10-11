@@ -1,9 +1,4 @@
 #include "allele.hpp"
-#include "seqan/modifier/modifier_reverse.h"
-#include "seqan/sequence/sequence_shortcuts.h"
-#include "vMapManager.hpp"
-#include <stdexcept>
-#include <unordered_set>
 
 Allele::Allele()
 {}

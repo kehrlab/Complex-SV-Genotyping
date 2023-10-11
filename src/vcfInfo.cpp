@@ -1,5 +1,4 @@
 #include "vcfInfo.hpp"
-#include <stdexcept>
 
 VcfInfo::VcfInfo()
 {

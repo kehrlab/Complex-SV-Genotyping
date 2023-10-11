@@ -1,7 +1,4 @@
 #include "regionSampler.hpp"
-#include "bamFileHandler.hpp"
-#include "genomicRegion.hpp"
-#include <random>
 
 RegionSampler::RegionSampler()
 {}
@@ -9,16 +6,6 @@ RegionSampler::RegionSampler()
 RegionSampler::RegionSampler(std::vector<ContigInfo> contigInfo, std::vector<GenomicRegion> regions)
 {
     this->gcBias = false;
-    this->intervalSizes = 25000;
-    this->totalIntervalLength = 2000000;
-    this->contigInfo = contigInfo;
-    
-    sampleInsertSizeRegions(regions);
-}
-
-RegionSampler::RegionSampler(std::vector<ContigInfo> contigInfo, ProgramOptions & options, std::vector<GenomicRegion> regions)
-{
-    this->gcBias = options.isOptionGCCorrect();
     this->intervalSizes = 25000;
     this->totalIntervalLength = 2000000;
     this->contigInfo = contigInfo;

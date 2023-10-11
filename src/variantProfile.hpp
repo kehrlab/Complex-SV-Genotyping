@@ -1,15 +1,22 @@
 #ifndef VARPROFILEHEADER
 #define VARPROFILEHEADER
 
-#include "filter.hpp"
-#include "libraryDistribution.hpp"
-#include "options.hpp"
-#include "variant.hpp"
 #include <eigen3/Eigen/Sparse>
 #include <unordered_map>
+#include <fstream>
+#include <ios>
+#include <stdexcept>
+#include <unordered_set>
+
+#include "filter.hpp"
+#include "libraryDistribution.hpp"
+#include "variant.hpp"
 #include "genomicRegion.hpp"
 #include "genotypeDistribution.hpp"
 #include "custom_types.hpp"
+#include "readTemplate.hpp"
+#include "variantParser.hpp"
+
 
 class VariantProfile
 {

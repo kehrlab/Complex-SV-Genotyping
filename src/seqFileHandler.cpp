@@ -1,5 +1,4 @@
 #include "seqFileHandler.hpp"
-#include <stdexcept>
 
 SeqFileHandler::SeqFileHandler()
 {

@@ -1,19 +1,4 @@
 #include "variantProfile.hpp"
-#include "breakpoint.hpp"
-#include "eigen3/Eigen/src/SparseCore/SparseMatrix.h"
-#include "filter.hpp"
-#include "genomicRegion.hpp"
-#include "genotypeDistribution.hpp"
-#include "libraryDistribution.hpp"
-#include "options.hpp"
-#include "readTemplate.hpp"
-#include "vMapManager.hpp"
-#include "variant.hpp"
-#include "variantParser.hpp"
-#include <fstream>
-#include <ios>
-#include <stdexcept>
-#include <unordered_set>
 
 VariantProfile::VariantProfile()
 {
@@ -1191,27 +1176,8 @@ inline void VariantProfile::addSimulatedTemplateToMask(int & status, VariantMap 
     std::string junctionString = sT.getJunctionString();
     std::string breakpointString = sT.getBreakpointString();
     std::string chrString = sT.getChromosomeString();
-
-    // if (split && this->options.isOptionNoSplitReads()) {
-    //     status = 0;
-    //     return;
-    // }
-    // if (spanning && this->options.isOptionNoSpanningReads())
-    // {
-    //     status = 0;
-    //     return;
-    // }
-    // if (this->options.isOptionNoNormalReads())
-    // {
-    // if (!interChromosome && !split && !spanning && orientation != "FF" && orientation != "RR" && insertSize > sMin && insertSize < sMax)
-    //     {
-    //         status = 0;
-    //         return;
-    //     }
-    // }
     
     status = 1;
-    // std::cout << i << "\t" << s << std::endl;
     addValueToMask(allele, s, insertSize, orientation, junctionString, breakpointString, chrString);
     return;
 }
@@ -1233,30 +1199,15 @@ inline void VariantProfile::addValueToMask(Allele & allele, int sOld, int sNew, 
     
     if (group == "" || this->variantGroups.find(group) == this->variantGroups.end()) {
         std::cout << "Warning: Could not assign read pair to any group. Will likely cause errors." << std::endl;
-        // std::cout << "Allele: " << allele.getName() << "\ts: " << sOld << "\t" << sNew << std::endl;
         std::cout << "Group: " << group << std::endl;
-        // std::cout << "Available groups: " << std::endl;
-        // for (auto & g: this->variantGroups)
-        //     std::cout << g.first << "\t" << g.second << std::endl;
     }
 
     int gIdx = this->variantGroups[group];
 
-    // std::cout << "sOld: " << sOld << "\tsNew: " << sNew << "\tGroup: " << group << "\tGroupIndex: " << gIdx << "/" << this->variantGroups.size() << std::endl;
-    // std::cout << "sMinMapped: " << this->sMinMapped << "\tsMaxMapped: " << this->sMaxMapped << std::endl;
     if (allele.getName() == "REF")
-    {
-        // std::cout << "REF:" << std::endl << "Rows: " << this->referenceMask.rows() << "\tCols: " << this->referenceMask.cols() << std::endl;
-        // std::cout << "Insert at " << sOld-this->sMinMapped << "," << gIdx << std::endl;
         this->referenceMask.coeffRef(sOld-this->sMinMapped, gIdx) += 1;
-    }
     else
-    {
-        // std::cout << "VAR:" << std::endl << "Rows: " << this->variantMask[this->variantAlleleNames[allele.getName()]][sOld-this->sMin].rows() << "\tCols: " << this->variantMask[this->variantAlleleNames[allele.getName()]][sOld-this->sMin].cols() << std::endl;
-        // std::cout << "Insert at " << sOld-this->sMin << "," << sNew-this->sMinMapped << "," << gIdx << std::endl;
         this->variantMask[this->variantAlleleNames[allele.getName()]][sOld-this->sMin].coeffRef(sNew - this->sMinMapped, gIdx) += 1;
-    }
-    // std::cout << "Inserted --- Done" << std::endl << std::endl;
 }
 
 const Eigen::SparseMatrix<float, Eigen::RowMajor> & VariantProfile::getVariantMask(int s)

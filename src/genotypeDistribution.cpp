@@ -1,10 +1,4 @@
 #include "genotypeDistribution.hpp"
-#include "insertSizeDistribution.hpp"
-#include <cmath>
-#include <fstream>
-#include <stdexcept>
-#include <unordered_map>
-#include <unordered_set>
 
 GenotypeDistribution::GenotypeDistribution()
 {

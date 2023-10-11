@@ -1,11 +1,4 @@
 #include "bamFileHandler.hpp"
-#include "custom_types.hpp"
-#include "genomicRegion.hpp"
-#include "htslib/kstring.h"
-#include "htslib/sam.h"
-#include "readTemplate.hpp"
-#include <stdexcept>
-#include <unordered_map>
 
 BamFileHandler::BamFileHandler()
 {
@@ -39,30 +32,6 @@ BamFileHandler::BamFileHandler(std::string bamFileName, int minMapQ)
     this->endPos = 0;
     this->hasAlignments = false;
     this->minQ = minMapQ;
-    inferBaiFileName();
-    openInputFiles();
-    extractContigInfo();
-}
-
-
-BamFileHandler::BamFileHandler(std::string bamFileName, ProgramOptions & options)
-{
-    this->bamFileName = bamFileName;
-    this->rID = 0;
-    this->beginPos = 0;
-    this->endPos = 0;
-    this->hasAlignments = false;
-    this->minQ = options.getMinimumMappingQuality();
-    inferBaiFileName();
-    openInputFiles();
-    extractContigInfo();
-}
-
-
-void BamFileHandler::open(std::string bamFileName, ProgramOptions & options)
-{
-    this->bamFileName = bamFileName;
-    this->minQ = options.getMinimumMappingQuality();
     inferBaiFileName();
     openInputFiles();
     extractContigInfo();

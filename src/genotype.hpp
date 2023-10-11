@@ -1,10 +1,18 @@
+#ifndef GENOTYPEHEAEDER
+#define GENOTYPEHEAEDER
+
+#include <boost/filesystem.hpp>
+#include <seqan/arg_parse.h>
+#include <stdexcept>
+
+#include "filter.hpp"
 #include "genotypeDistribution.hpp"
 #include "genotypeResult.hpp"
 #include "libraryDistribution.hpp"
 #include "recordManager.hpp"
 #include "sample.hpp"
-#include "seqan/arg_parse.h"
 #include "variantProfile.hpp"
+
 
 struct genotypeParameters
 {
@@ -47,3 +55,5 @@ void writeInsertSizeDistributions(complexVariant & variant, GenotypeResult & res
 
 void calculateDifficulty(float &, std::vector<std::string> & genotypeNames, std::vector<GenotypeDistribution> & genotypeDistributions);
 
+
+#endif

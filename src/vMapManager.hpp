@@ -4,10 +4,12 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+
 #include "breakpoint.hpp"
 #include "filter.hpp"
 #include "junction.hpp"
 #include "variantMap.hpp"
+#include "genomicRegion.hpp"
 
 
 class VariantMapManager

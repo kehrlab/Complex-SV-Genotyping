@@ -1,7 +1,5 @@
 #include "genomicRegion.hpp"
-#include "boost/algorithm/string.hpp"
-#include "seqan/sequence/sequence_shortcuts.h"
-#include <boost/algorithm/string/classification.hpp>
+
 
 GenomicRegion::GenomicRegion()
 {

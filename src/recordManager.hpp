@@ -1,9 +1,10 @@
 #ifndef RECORDMANAGERHEADER
 #define RECORDMANAGERHEADER
 
+#include <unordered_map>
 #include <vector>
 #include <seqan/bam_io.h>
-#include <unordered_map>
+
 #include "readTemplate.hpp"
 #include "bamFileHandler.hpp"
 #include "record.hpp"

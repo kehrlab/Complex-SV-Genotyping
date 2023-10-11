@@ -1,11 +1,14 @@
 #ifndef ALLELEHEADER
 #define ALLELEHEADER
 
+#include <unordered_set>
+#include <stdexcept>
+
 #include "breakpoint.hpp"
 #include "junction.hpp"
 #include "seqFileHandler.hpp"
 #include "vMapManager.hpp"
-#include <unordered_set>
+
 
 class Allele
 {

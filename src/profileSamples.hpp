@@ -1,15 +1,17 @@
 #ifndef PROFILESAMPLESHEADER
 #define PROFILESAMPLESHEADER
 
-#include "genomicRegion.hpp"
 #include <seqan/arg_parse.h>
+#include <fstream>
+#include <stdexcept>
+
+#include "genomicRegion.hpp"
 #include "bamFileHandler.hpp"
 #include "custom_types.hpp"
 #include "regionSampler.hpp"
 #include "sample.hpp"
 #include "seqFileHandler.hpp"
-#include <fstream>
-#include <stdexcept>
+
 
 struct sampleProfileParams {
     std::vector<std::string> sampleFiles;

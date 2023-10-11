@@ -1,11 +1,4 @@
 #include "genotypeResult.hpp"
-#include "genotypeDistribution.hpp"
-#include <algorithm>
-#include <cmath>
-#include <stdexcept>
-#include <string>
-#include <unordered_map>
-
 
 GenotypeResult::GenotypeResult()
 {
@@ -51,21 +44,6 @@ GenotypeResult::GenotypeResult(std::string filename, std::string sampleName,  st
     setDistributionMode(2);
 }
 
-GenotypeResult::GenotypeResult(std::string filename, std::string sampleName, std::vector<std::string> contigNames, ProgramOptions & options)
-{
-    this->filename = filename;
-    this->sampleName = sampleName;
-    this->observedReads = 0;
-    this->callCertainty = 0;
-    this->lowerBoundQuality = 0;
-    this->upperBoundQuality = 0;
-    this->minQuality = 60;
-    this->maxQuality = 0;
-    this->meanQuality = 0.0;
-    this->useQualities = options.isOptionUseQualities();
-    setPossibleContigs(contigNames);
-    setDistributionMode(options.getDistributionMode());
-}
 
 void GenotypeResult::initLikelihoods(std::vector<std::string> genotypeNames)
 {

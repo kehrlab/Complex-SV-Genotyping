@@ -1,7 +1,13 @@
+#ifndef PROFILEVARIANTSHEADER
+#define PROFILEVARIANTSHEADER
+
+#include <stdexcept>
+#include <seqan/arg_parse.h>
+
 #include "profileSamples.hpp"
 #include "variantProfile.hpp"
 #include "variantParser.hpp"
-
+#include "variant.hpp"
 
 struct variantProfileParams {
     std::string variantFile;
@@ -25,3 +31,5 @@ int profileVariants(int argc, const char ** argv);
 seqan::ArgumentParser::ParseResult parseVariantProfileArgs(seqan::ArgumentParser & argParser, int argc, const char ** argv);
 variantProfileParams getVariantProfileParameters(const seqan::ArgumentParser & argParser);
 std::unordered_map<std::string, int> mergeContigLengths(const std::vector<std::unordered_map<std::string, int>> &);
+
+#endif

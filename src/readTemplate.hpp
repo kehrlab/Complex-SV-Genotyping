@@ -2,13 +2,16 @@
 #define READTEMPLATEHEADER
 
 #include <seqan/bam_io.h>
+#include <vector>
+#include <unordered_set>
+#include <string>
+
 #include "bamFileHandler.hpp"
 #include "record.hpp"
 #include "filter.hpp"
 #include "junction.hpp"
 #include "custom_types.hpp"
-#include <vector>
-#include <unordered_set>
+#include "genomicRegion.hpp"
 
 class ReadTemplate
 {

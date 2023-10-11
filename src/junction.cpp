@@ -1,6 +1,4 @@
 #include "junction.hpp"
-#include <stdexcept>
-#include <iostream>
 
 Junction::Junction(
     int id, 

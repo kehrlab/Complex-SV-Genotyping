@@ -1,5 +1,4 @@
 #include "profileSamples.hpp"
-#include "seqan/arg_parse/arg_parse_doc.h"
 
 #ifndef DATE
 #define DATE "1.1.1970"

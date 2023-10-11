@@ -3,6 +3,13 @@
 
 #include <fstream>
 #include <vector>
+#include <chrono>
+#include <boost/filesystem.hpp>
+#include <cstring>
+#include <ostream>
+#include <stdexcept>
+#include <unordered_map>
+
 #include "bamFileHandler.hpp"
 #include "genotypeDistribution.hpp"
 #include "genotypeResult.hpp"
@@ -11,7 +18,9 @@
 #include "seqFileHandler.hpp"
 #include "variant.hpp"
 #include "libraryDistribution.hpp"
-#include <chrono>
+#include "custom_types.hpp"
+#include "filter.hpp"
+
 
 class Sample
 {
@@ -33,15 +42,11 @@ class Sample
 
     // private functions
     void calculateDefaultDistributions();
-    // void createSampleDistribution(std::unordered_map<std::string, TemplatePosition> &);
-    // void createDistributionDirectory();
 
     private:
     void openBamFile();
 
     public:
-    Sample & operator=(Sample);
-    // Sample(Sample&&);
     Sample(std::string, const std::vector<GenomicRegion> &);
     Sample(std::string);
     

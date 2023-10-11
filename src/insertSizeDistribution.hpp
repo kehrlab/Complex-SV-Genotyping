@@ -1,12 +1,15 @@
 #ifndef INSERTSIZEDISTHEADER
 #define INSERTSIZEDISTHEADER
 
+#include <random>
+#include <fstream>
 #include <vector>
 #include <cmath>
 #include <iostream>
+
 #include "breakpoint.hpp"
 #include "junction.hpp"
-#include <random>
+
 
 class InsertSizeDistribution
 {

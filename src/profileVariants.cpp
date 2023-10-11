@@ -1,11 +1,4 @@
 #include "profileVariants.hpp"
-#include "seqan/arg_parse/arg_parse_argument.h"
-#include "seqan/arg_parse/arg_parse_option.h"
-#include "seqan/arg_parse/argument_parser.h"
-#include "seqan/modifier/modifier_padding.h"
-#include "variant.hpp"
-#include "variantProfile.hpp"
-#include <stdexcept>
 
 #ifndef DATE
 #define DATE "1.1.1970"

@@ -1,15 +1,4 @@
 #include "vcfWriter.hpp"
-#include "seqan/stream/formatted_file.h"
-#include "seqan/vcf_io/vcf_header.h"
-#include "seqan/vcf_io/vcf_header_record.h"
-#include "seqan/vcf_io/vcf_io_context.h"
-#include "seqan/vcf_io/vcf_record.h"
-#include "variant.hpp"
-#include "vcfInfo.hpp"
-#include <algorithm>
-#include <ctime>
-#include <stdexcept>
-#include <string>
 
 VcfWriter::VcfWriter()
 {}

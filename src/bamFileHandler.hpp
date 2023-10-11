@@ -1,15 +1,19 @@
 #ifndef BAMFILEHANDLERHEADER
 #define BAMFILEHANDLERHEADER
 
+#include <stdexcept>
+#include <unordered_map>
 #include <iostream>
 #include <seqan/bam_io.h>
-#include "genomicRegion.hpp"
-#include <unordered_map>
 #include <vector>
-#include "custom_types.hpp"
-#include "options.hpp"
 #include <htslib/sam.h>
+#include <htslib/kstring.h>
+
+#include "genomicRegion.hpp"
+#include "custom_types.hpp"
 #include "record.hpp"
+
+
 
 class BamFileHandler
 {
@@ -30,9 +34,7 @@ class BamFileHandler
     BamFileHandler();
     BamFileHandler(std::string);
     BamFileHandler(std::string, int);
-    BamFileHandler(std::string, ProgramOptions &);
-    
-    void open(std::string, ProgramOptions &);
+
     void open(std::string);
     void openInputFiles();
     void inferBaiFileName();

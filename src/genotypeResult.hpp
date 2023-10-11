@@ -1,11 +1,15 @@
 #ifndef GENOTYPERESULTHEADER
 #define GENOTYPERESULTHEADER
 
-#include "genotypeDistribution.hpp"
 #include <iostream>
 #include <random>
 #include <unordered_map>
-#include "options.hpp"
+#include <algorithm>
+#include <cmath>
+#include <stdexcept>
+#include <string>
+
+#include "genotypeDistribution.hpp"
 
 class GenotypeResult
 {
@@ -48,7 +52,6 @@ class GenotypeResult
     GenotypeResult();
     GenotypeResult(std::string, bool);
     GenotypeResult(std::string, std::string, std::vector<std::string>, bool);
-    GenotypeResult(std::string, std::string, std::vector<std::string>, ProgramOptions &);
     
     void callGenotype();
     void scaleToPhred();

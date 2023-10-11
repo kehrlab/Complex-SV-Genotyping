@@ -1,8 +1,15 @@
 #ifndef VARIANTPARSERHEADER
 #define VARIANTPARSERHEADER
 
-#include "junction.hpp"
+#include <iostream>
+#include <fstream>
+#include <exception>
+#include <stdexcept>
+
 #include "json.hpp"
+
+#include "junction.hpp"
+
 
 typedef std::vector<std::vector<Junction>> variantData;
 

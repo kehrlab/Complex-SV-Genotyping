@@ -1,5 +1,4 @@
 #include "insertSizeDistribution.hpp"
-#include <fstream>
 
 InsertSizeDistribution::InsertSizeDistribution()
 {

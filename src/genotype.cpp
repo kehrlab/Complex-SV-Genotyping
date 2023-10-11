@@ -1,17 +1,4 @@
 #include "genotype.hpp"
-#include "filter.hpp"
-#include "genotypeDistribution.hpp"
-#include "genotypeResult.hpp"
-#include "libraryDistribution.hpp"
-#include "options.hpp"
-#include "recordManager.hpp"
-#include "sample.hpp"
-#include "seqan/arg_parse/arg_parse_argument.h"
-#include "seqan/arg_parse/arg_parse_option.h"
-#include "seqan/arg_parse/argument_parser.h"
-#include "variantGenotyper.hpp"
-#include "variantProfile.hpp"
-#include <stdexcept>
 
 #ifndef DATE
 #define DATE "1.1.1970"
@@ -40,8 +27,6 @@ int genotype(int argc, const char **argv)
     else if (result != seqan::ArgumentParser::PARSE_OK)
         return 1;
 
-    if (!parseGenotypeArgs(argParser, argc, argv))
-        return 1;
     genotypeParameters params = getGenotypeParameters(argParser);
 
 
@@ -413,8 +398,9 @@ genotypeParameters getGenotypeParameters(seqan::ArgumentParser &argParser)
     genotypeParameters params;
     seqan::getArgumentValue(params.variantList, argParser, 0);
     seqan::getArgumentValue(params.sampleList, argParser, 1);
+    seqan::getArgumentValue(params.outputPrefix, argParser, 2);
+
     seqan::getOptionValue(params.nThreads, argParser, "threads");
-    seqan::getOptionValue(params.outputPrefix, argParser, "output-prefix");
     seqan::getOptionValue(params.difficulties, argParser, "estimate-difficulty");
     seqan::getOptionValue(params.minMapQ, argParser, "minimum-quality");
     seqan::getOptionValue(params.distributions, argParser, "write-distributions");

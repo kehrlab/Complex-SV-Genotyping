@@ -1,10 +1,13 @@
 #ifndef REGIONSAMPLERHEADER
 #define REGIONSAMPLERHEADER
 
-#include "custom_types.hpp"
 #include <vector>
+#include <random>
+
+#include "custom_types.hpp"
 #include "genomicRegion.hpp"
-#include "options.hpp"
+#include "bamFileHandler.hpp"
+#include "genomicRegion.hpp"
 
 class RegionSampler
 {
@@ -28,7 +31,6 @@ class RegionSampler
     public:
     RegionSampler();
     RegionSampler(std::vector<ContigInfo>, std::vector<GenomicRegion>);
-    RegionSampler(std::vector<ContigInfo>, ProgramOptions &, std::vector<GenomicRegion>);
     std::vector<GenomicRegion> & sampledInsertRegions();
 };
 

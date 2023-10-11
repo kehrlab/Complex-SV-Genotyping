@@ -1,13 +1,4 @@
 #include "variant.hpp"
-#include "breakpoint.hpp"
-#include "genomicRegion.hpp"
-#include "libraryDistribution.hpp"
-#include "seqFileHandler.hpp"
-#include "variantParser.hpp"
-#include <iterator>
-#include <iostream>
-#include <unordered_set>
-#include <vector>
 
 complexVariant::complexVariant()
 {}

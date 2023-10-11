@@ -1,12 +1,19 @@
 #ifndef VARIANTHEADER
 #define VARIANTHEADER
 
+#include <iterator>
+#include <iostream>
+#include <vector>
+#include <unordered_set>
+
 #include "genomicRegion.hpp"
 #include "insertSizeDistribution.hpp"
 #include "libraryDistribution.hpp"
 #include "allele.hpp"
 #include "variantParser.hpp"
-#include <unordered_set>
+#include "breakpoint.hpp"
+#include "seqFileHandler.hpp"
+
 
 class complexVariant {
     std::vector<Allele> variantAlleles;

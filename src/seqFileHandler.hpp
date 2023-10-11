@@ -1,8 +1,9 @@
 #ifndef SEQFILEHANDLERHEADER
 #define SEQFILEHANDLERHEADER
 
-#include "seqan/seq_io.h"
-#include "seqan/sequence.h"
+#include <seqan/seq_io.h>
+#include <seqan/sequence.h>
+#include <stdexcept>
 #include <unordered_set>
 
 class SeqFileHandler

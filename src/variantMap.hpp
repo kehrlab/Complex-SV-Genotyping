@@ -2,6 +2,7 @@
 #define VARIANTMAPHEADER
 
 #include <string>
+
 #include "genomicRegion.hpp"
 #include "readTemplate.hpp"
 #include "record.hpp"

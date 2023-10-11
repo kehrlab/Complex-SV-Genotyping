@@ -3,9 +3,12 @@
 
 #include <vector>
 #include <string>
+#include <seqan/vcf_io.h>
+#include <stdexcept>
+
 #include "allele.hpp"
 #include "genotypeResult.hpp"
-#include "seqan/vcf_io.h"
+
 
 class VcfInfo
 {

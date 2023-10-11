@@ -1,40 +1,4 @@
 #include "sample.hpp"
-#include "bamFileHandler.hpp"
-#include "custom_types.hpp"
-#include "filter.hpp"
-#include "genotypeResult.hpp"
-#include "libraryDistribution.hpp"
-#include "recordManager.hpp"
-#include "variant.hpp"
-#include "variantGenotyper.hpp"
-#include <chrono>
-#include <boost/filesystem.hpp>
-#include <cstring>
-#include <ostream>
-#include <stdexcept>
-#include <unordered_map>
-
-// Sample::Sample(Sample && s): 
-//     filename(s.filename), sampleName(s.sampleName),
-//     minMapQ(s.minMapQ),
-//     distributionDirectory(s.distributionDirectory), sampledRegions(s.sampledRegions), 
-//     sampleDistribution(s.sampleDistribution)
-// {
-//     this->bamFileOpen = false;
-// }
-
-Sample & Sample::operator=(Sample s)
-{
-    this->filename = s.filename;
-    this->sampleName = s.sampleName;
-    this->minMapQ = s.minMapQ;
-    this->distributionDirectory = s.distributionDirectory;
-    this->sampledRegions = s.sampledRegions;
-    this->sampleDistribution = s.sampleDistribution;
-    this->bamFileOpen = false;
-    
-    return *this;
-}
 
 Sample::Sample(
     std::string filename,
@@ -68,23 +32,6 @@ void Sample::openBamFile()
     this->chromosomeLengths = bamFile.getContigLengths();
     this->sampleName = bamFile.getSampleName();
 }
-
-// void Sample::createDistributionDirectory()
-// {
-//     if (!this->options.isOptionOutputDistributions())
-//         return;
-
-//     this->distributionDirectory = this->filename + "_distributions";
-
-//     if (! boost::filesystem::create_directory(this->distributionDirectory))
-//     {
-//         if (! boost::filesystem::is_directory(this->distributionDirectory))
-//         {
-//             std::string msg = "Could not create directory '" + this->distributionDirectory + "', but flag -d was set. Make sure you have write permissions in the directory containing bam files.";
-//             throw std::runtime_error(msg.c_str());
-//         }
-//     }
-// }
 
 void Sample::calculateDefaultDistributions()
 {

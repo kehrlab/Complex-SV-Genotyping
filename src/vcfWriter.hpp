@@ -1,13 +1,19 @@
 #ifndef VCFWRITERHEADER
 #define VCFWRITERHEADER
 
-#include "bamFileHandler.hpp"
-#include "variant.hpp"
+#include <algorithm>
+#include <ctime>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include <seqan/vcf_io.h>
 #include <ctime>
+
+#include "bamFileHandler.hpp"
+#include "variant.hpp"
 #include "genotypeResult.hpp"
+#include "vcfInfo.hpp"
+
 
 class VcfWriter
 {

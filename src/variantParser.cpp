@@ -1,8 +1,4 @@
 #include "variantParser.hpp"
-#include <iostream>
-#include <fstream>
-#include <exception>
-#include <stdexcept>
 
 variantParser::variantParser(std::string filename)
 {

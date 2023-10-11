@@ -1,4 +1,3 @@
-#include <cstring>
 #ifndef SEQAN_ENABLE_PARALLELISM
 #define SEQAN_ENABLE_PARALLELISM 1
 #endif
@@ -15,11 +14,8 @@
 #define DATE "1.1.1970"
 #endif
 
-#include <eigen3/Eigen/Core>
-#include "options.hpp"
-#include <chrono>
 #include <omp.h>
-#include <unistd.h>
+#include <cstring>
 #include "profileSamples.hpp"
 #include "profileVariants.hpp"
 #include "genotype.hpp"

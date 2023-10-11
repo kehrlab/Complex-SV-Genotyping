@@ -2,6 +2,7 @@
 #define READPAIRFILTERHEADER
 
 #include <vector>
+
 #include "breakpoint.hpp"
 #include "genomicRegion.hpp"
 #include "record.hpp"

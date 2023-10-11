@@ -1,10 +1,14 @@
 #ifndef JUNCTIONHEADER
 #define JUNCTIONHEADER
 
+#include <stdexcept>
+#include <iostream>
 #include <string>
 #include <vector>
+
 #include "breakpoint.hpp"
 #include "record.hpp"
+
 
 class Junction {
     int id;

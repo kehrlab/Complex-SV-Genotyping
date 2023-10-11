@@ -1,9 +1,11 @@
 #ifndef CUSTOM_TYPE_HEADER
 #define CUSTOM_TYPE_HEADER
+
 #include <seqan/sequence.h> 
 #include <seqan/bam_io.h>
 #include <string>
 #include <vector>
+
 #include "genomicRegion.hpp"
 #include "junction.hpp"
 #include "breakpoint.hpp"

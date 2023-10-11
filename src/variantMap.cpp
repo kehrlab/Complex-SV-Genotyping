@@ -1,7 +1,4 @@
 #include "variantMap.hpp"
-#include "genomicRegion.hpp"
-#include "readTemplate.hpp"
-#include "record.hpp"
 
 VariantMap::VariantMap()
 {
@@ -110,11 +107,6 @@ seqan::Dna5String VariantMap::getBaseAtIndex(int index)
 
 std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIndex, bool isReverse, bool first)
 {
-    // is there a distinction between clipping at 5' and 3' ends?
-    // not sure...
-    // there might be a bias towards keeping 5' ends due to higher quality base calls...
-    // I think I am still observing edge effects for small complex variants
-
     std::vector<BamRecord> createdRecords;
     int firstIndex = getRegionIndex(beginIndex);
     int lastIndex = getRegionIndex(endIndex);
