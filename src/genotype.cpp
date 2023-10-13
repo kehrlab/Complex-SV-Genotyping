@@ -1,4 +1,11 @@
 #include "genotype.hpp"
+#include "genotypeResult.hpp"
+#include "seqan/arg_parse/arg_parse_argument.h"
+#include "seqan/arg_parse/arg_parse_option.h"
+#include "variantProfile.hpp"
+#include "vcfWriter.hpp"
+#include <bits/chrono.h>
+#include <stdexcept>
 
 #ifndef DATE
 #define DATE "1.1.1970"
@@ -32,30 +39,33 @@ int genotype(int argc, const char **argv)
 
     now = time(0);
     date = std::string(ctime(&now));
-    std::cout << date << "\tLoading variant profiles..." << std::endl;
-
-    // load variant profiles (currently all)
-    std::vector<VariantProfile> variantProfiles;
-    loadVariantProfiles(variantProfiles, params);
-    
-    // check consistency of profile parameters (readLength, sMin, sMax)
-    int sMinVar {0}, sMaxVar {0}, readLengthVar {0};
-    checkProfileParameters(sMinVar, sMaxVar, readLengthVar, variantProfiles, params);
-
-    now = time(0);
-    date = std::string(ctime(&now));
-    std::cout << date << "\tGet sample parameters..." << std::endl;
-
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Get sample parameters..." << std::endl;
     // load sample profile paths and check parameter consistency (sMin, sMax, readLength)
     std::vector<std::string> sampleProfiles;
-    checkSampleParameters(sampleProfiles, sMinVar, sMaxVar, readLengthVar, params);
+    int sMin {-1}, sMax{-1}, readLength{-1};
+    checkSampleParameters(sampleProfiles, sMin, sMax, readLength, params);
+
+    // get list of variant profile files
+    std::vector<std::string> variantFiles;
+    std::string filename;
+    std::ifstream vStream(params.variantList);
+    if (!vStream.is_open())
+        throw std::runtime_error("Could not open list of variant profiles for reading.");
+    while (vStream.peek() != EOF)
+    {
+        std::getline(vStream, filename);
+        variantFiles.push_back(filename);
+    }
+    vStream.close();
     
 
     now = time(0);
     date = std::string(ctime(&now));
-    std::cout << date << "\tGenotyping " << variantProfiles.size() << " variants in ";
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Genotyping " << variantFiles.size() << " variants in ";
     std::cout << sampleProfiles.size() << " samples using " << params.nThreads << " threads..." << std::endl;
-    
+
     // open output file and write header
     std::ofstream outFile(params.outputPrefix + "_genotype_results.tsv");
     if (!outFile.is_open())
@@ -68,137 +78,189 @@ int genotype(int argc, const char **argv)
         outFile << "\tDifficulty";
     outFile << std::endl;
 
-    // genotype all variants
-    #pragma omp parallel for schedule(dynamic) collapse(2) num_threads(params.nThreads)
-    for (int i = 0; i < variantProfiles.size(); ++i)
+    // open VCF output
+    VcfWriter vcfFile;
+    if (params.vcfFile != "")
+        vcfFile.setFileName(params.vcfFile);
+
+    // genotyping
+    int block {0};
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    while (block * params.nThreads < variantFiles.size())
     {
-        // in all samples
-        for (int j = 0; j < sampleProfiles.size(); ++j)
+        // load variant profiles (currently all)
+        std::vector<VariantProfile> variantProfiles;
+        loadVariantProfiles(variantProfiles, params, variantFiles, block);
+
+        // check consistency of profile parameters (readLength, sMin, sMax)
+        checkProfileParameters(sMin, sMax, readLength, variantProfiles, params);
+
+        // genotype results
+        std::vector<std::vector<GenotypeResult>> tempResults(variantProfiles.size(), std::vector<GenotypeResult>(sampleProfiles.size()));
+
+        // genotype current variants
+        #pragma omp parallel for schedule(dynamic) collapse(2) num_threads(params.nThreads)
+        for (int i = 0; i < variantProfiles.size(); ++i)
         {
-            Sample s(sampleProfiles[j]);
-            GenotypeResult result(s.getFileName(), s.getSampleName(), s.getContigInfo().cNames, false);
-
-            // load the relevant read pairs
-            RecordManager bamRecords;
-            BamFileHandler bamFileHandler(s.getFileName(), params.minMapQ);
-            loadReadPairs(variantProfiles[i], bamRecords, bamFileHandler, s);
-
-            // create the genotype distributions
-            std::vector<std::string> genotypeNames;
-            std::vector<GenotypeDistribution> genotypeDistributions;
-            ReadPairFilter filter = variantProfiles[i].getFilter();
-            std::vector<std::string> cNames = bamFileHandler.getContigInfo().cNames;
-            LibraryDistribution & sampleDistribution = s.getLibraryDistribution();
-            createGenotypeDistributions(
-                variantProfiles[i], 
-                genotypeNames, 
-                genotypeDistributions, 
-                0.001, 
-                cNames,
-                sampleDistribution
-            );
-    
-            // calculate genotype difficulties based on KLD
-            float difficulty = 0;
-            if (params.difficulties)
-                calculateDifficulty(difficulty, genotypeNames, genotypeDistributions);
-
-            // calculate the genotype likelihoods
-            calculateGenotypeLikelihoods(
-                variantProfiles[i], 
-                genotypeNames, 
-                genotypeDistributions, 
-                bamRecords, 
-                filter, 
-                result
-            );
-
-
-            // call the genotype
-            result.callGenotype();
-
-            // write distributions if required
-            if (params.distributions)
+            // in all samples
+            for (int j = 0; j < sampleProfiles.size(); ++j)
             {
-                writeInsertSizeDistributions(variantProfiles[i].getVariant(), result, genotypeNames, genotypeDistributions);
-                sampleDistribution.writeDistribution(result.getFilename() + "_distributions/defaultDistribution.txt");
+                Sample s(sampleProfiles[j]);
+                GenotypeResult result(s.getFileName(), s.getSampleName(), s.getContigInfo().cNames, false);
+
+                // load the relevant read pairs
+                RecordManager bamRecords;
+                BamFileHandler bamFileHandler(s.getFileName(), params.minMapQ);
+                loadReadPairs(variantProfiles[i], bamRecords, bamFileHandler, s);
+
+                // create the genotype distributions
+                std::vector<std::string> genotypeNames;
+                std::vector<GenotypeDistribution> genotypeDistributions;
+                ReadPairFilter filter = variantProfiles[i].getFilter();
+                std::vector<std::string> cNames = bamFileHandler.getContigInfo().cNames;
+                LibraryDistribution & sampleDistribution = s.getLibraryDistribution();
+                createGenotypeDistributions(
+                    variantProfiles[i], 
+                    genotypeNames, 
+                    genotypeDistributions, 
+                    0.001, 
+                    cNames,
+                    sampleDistribution
+                );
+        
+                // calculate genotype difficulties based on KLD
+                float difficulty = 0;
+                if (params.difficulties)
+                    calculateDifficulty(difficulty, genotypeNames, genotypeDistributions);
+
+                // calculate the genotype likelihoods
+                calculateGenotypeLikelihoods(
+                    variantProfiles[i], 
+                    genotypeNames, 
+                    genotypeDistributions, 
+                    bamRecords, 
+                    filter, 
+                    result
+                );
+
+
+                // call the genotype
+                result.callGenotype();
+
+                // write distributions if required
+                if (params.distributions)
+                {
+                    writeInsertSizeDistributions(variantProfiles[i].getVariant(), result, genotypeNames, genotypeDistributions);
+                    sampleDistribution.writeDistribution(result.getFilename() + "_distributions/defaultDistribution.txt");
+                }
+
+                result.clearData();
+                tempResults[i][j] = result;
+
+                // clean up
+                bamFileHandler.closeInputFile();
+                s.close();
+
+                // write the genotype call to output file
+                std::string outString = variantProfiles[i].getVariant().getName() + "\t" + result.getOutputString();
+                if (params.difficulties)
+                    outString += ("\t" + std::to_string(difficulty));
+                #pragma omp critical
+                outFile << outString << std::endl;
             }
-
-            // clean up
-            bamFileHandler.closeInputFile();
-            s.close();
-
-            // write the genotype call to output file
-            std::string outString = variantProfiles[i].getVariant().getName() + "\t" + result.getOutputString();
-            if (params.difficulties)
-                outString += ("\t" + std::to_string(difficulty));
-            #pragma omp critical
-            outFile << outString << std::endl;
         }
+
+        // add VCF records
+        if (params.vcfFile != "")
+            for (int i = 0; i < variantProfiles.size(); ++i)
+                vcfFile.addVariantRecords(tempResults[i], variantProfiles[i].getVariant());
+
+
+        std::chrono::steady_clock::time_point current = std::chrono::steady_clock::now();
+        auto tAvg = std::chrono::duration_cast<std::chrono::seconds>(current-begin).count() / std::min((block + 1) * params.nThreads, (int) variantFiles.size());
+
+        now = time(0);
+        date = std::string(ctime(&now));
+        date[date.find_last_of("\n")] = '\t';
+        std::cout << "\r\e[K" << std::flush;
+        std::cout << date << "Genotyped ";
+        std::cout << std::min((block + 1) * params.nThreads, (int) variantFiles.size());
+        std::cout << "/" << variantFiles.size() << " variants.\t\t\t";
+        std::cout << "ETA: " << tAvg * (variantFiles.size() - std::min((block + 1) * params.nThreads, (int) variantFiles.size())) << "s     " << std::flush;
+
+        ++block;
     }
+    std::cout << std::endl;
+    
     outFile.close();
-
-    now = time(0);
-    date = std::string(ctime(&now));
-    std::cout << date << "\tDone" << std::endl;
-
+    if (params.vcfFile != "")
+    {
+        vcfFile.write();
+        vcfFile.closeVcfFile();
+    }
+    
     return 0;
 }
 
-inline void loadVariantProfiles(std::vector<VariantProfile> & variantProfiles, genotypeParameters & params)
-{
-    std::string filename;
-    std::ifstream vStream(params.variantList);
-    if (!vStream.is_open())
-        throw std::runtime_error("Could not open list of variant profiles for reading.");
-    while (vStream.peek() != EOF)
-    {
-        std::getline(vStream, filename);
-        variantProfiles.push_back(VariantProfile(filename));
-    }
-    vStream.close();
+inline void loadVariantProfiles(std::vector<VariantProfile> & variantProfiles, genotypeParameters & params, std::vector<std::string> & profilePaths, int block)
+{   
+    int beginIdx = block * params.nThreads;
+    int endIdx = std::min(((block + 1) * params.nThreads - 1), (int) profilePaths.size() - 1);
+    std::vector<VariantProfile>().swap(variantProfiles);
+
+    for (int i = beginIdx; i <= endIdx; ++i)
+        variantProfiles.push_back(VariantProfile(profilePaths[i]));
     if (variantProfiles.size() == 0)
         throw std::runtime_error("No variant profiles successfully read.");
     return;
 }
 
-inline void checkProfileParameters(int & sMinVar, int & sMaxVar, int & readLengthVar, std::vector<VariantProfile> & variantProfiles, genotypeParameters & params)
+inline void checkProfileParameters(int & sMin, int & sMax, int & readLength, std::vector<VariantProfile> & variantProfiles, genotypeParameters & params)
 {
-    sMinVar = variantProfiles[0].getMinInsert();
-    sMaxVar = variantProfiles[0].getMaxInsert();
-    readLengthVar = variantProfiles[0].getReadLength();
-
-    for (int i = 1; i < variantProfiles.size(); ++i)
+    for (auto it = variantProfiles.begin(); it != variantProfiles.end(); )
     {
-        sMinVar = std::max(sMinVar, variantProfiles[i].getMinInsert());
-        sMaxVar = std::min(sMaxVar, variantProfiles[i].getMaxInsert());
-        if (variantProfiles[i].getReadLength() != readLengthVar)
-            throw std::runtime_error(
-                "Read lengths are not consistent across profiles.\
-                Make sure that variant profiles are generated with parameters\
-                matching the profiles of samples on which they will be used."
-                );
-        if (!variantProfiles[i].variantStructureIsPresent())
+        if (it->getMinInsert() > sMin || it->getMaxInsert() < sMax)
         {
+            std::string msg = "At least one sample contains insert sizes not covered by profile for variant " + it->getName();
+            std::cerr << msg << std::endl;
+            it = variantProfiles.erase(it);
+            continue;
+            //throw std::runtime_error(msg.c_str());
+        }
+        if (it->getReadLength() != readLength)
+        {
+            std::string msg = "Read length of profile " + 
+                it->getName() + 
+                " does not match the given samples. Make sure that variant profiles are generated with parameters matching the profiles of samples on which they will be used.";
+            std::cerr << msg << std::endl;
+            it = variantProfiles.erase(it);
+            continue;
+            //throw std::runtime_error(msg.c_str());
+        }
+        if (!it->variantStructureIsPresent())
+        {
+            std::cout << "There is no structure present?" << std::endl;
+            std::cout << it->getName() << "\t" << it->variantStructureIsPresent() << std::endl;
             if (params.variantFile == "")
             {
                 std::string msg = "Variant description could not be loaded from profile. A variant description file needs to be specified.";
                 throw std::runtime_error(msg.c_str());
             } else {
-                if (!variantProfiles[i].loadVariantStructure(params.variantFile, variantProfiles[i].getName()))
+                if (!it->loadVariantStructure(params.variantFile, it->getName()))
                 {
-                    std::string msg =  "Description of variant " + variantProfiles[i].getName() + " could not be loaded from file " + params.variantFile + ".";
+                    std::string msg =  "Description of variant " + it->getName() + " could not be loaded from file " + params.variantFile + ".";
                     throw std::runtime_error(msg.c_str());
                 } else {
-                    variantProfiles[i].getFilter() = ReadPairFilter(variantProfiles[i].getVariant().getAllBreakpoints(), variantProfiles[i].getMargin(), 0);
+                    it->getFilter() = ReadPairFilter(it->getVariant().getAllBreakpoints(), it->getMargin(), 0);
                 }
             }
         }
+        ++it;
     }
     return;
 }
 
-inline void checkSampleParameters(std::vector<std::string> & sampleProfiles, int sMinVar, int sMaxVar, int readLengthVar, genotypeParameters & params)
+inline void checkSampleParameters(std::vector<std::string> & sampleProfiles, int & sMin, int & sMax, int & readLength, genotypeParameters & params)
 {
     std::string filename;
     std::ifstream stream(params.sampleList);
@@ -209,12 +271,15 @@ inline void checkSampleParameters(std::vector<std::string> & sampleProfiles, int
         std::getline(stream, filename);
         sampleProfiles.push_back(filename);
         Sample s(filename);
-        if (s.getLibraryDistribution().getReadLength() != readLengthVar)
-            throw std::runtime_error("Read length in sample does not match read length in variant profiles.");
-        if (s.getLibraryDistribution().getMinInsert() < sMinVar)
-            throw std::runtime_error("Minimum insert size in sample distribution is not contained in at least one variant profile.");
-        if (s.getLibraryDistribution().getMaxInsert() > sMaxVar)
-            throw std::runtime_error("Maximum insert size in sample distribution is not contained in at least one variant profile.");
+        if (readLength < 0)
+            readLength = s.getLibraryDistribution().getReadLength();
+        else if (s.getLibraryDistribution().getReadLength() != readLength)
+            throw std::runtime_error("Read length in samples does not match. Variant profiles for these samples must be generated separately.");
+        sMax = std::max(sMax, s.getLibraryDistribution().getMaxInsert());
+        if (sMin < 0)
+            sMin = s.getLibraryDistribution().getMinInsert();
+        else
+            sMin = std::min(s.getLibraryDistribution().getMinInsert(), sMin);
         s.close();
     }
     stream.close();
@@ -383,6 +448,11 @@ seqan::ArgumentParser::ParseResult parseGenotypeArgs(seqan::ArgumentParser &argP
         "Required quality for alignments to be considered during genotyping. Default: 0.",
         seqan::ArgParseOption::ArgumentType::INTEGER, "MINMAPQ"
         ));
+    seqan::addOption(argParser, seqan::ArgParseOption(
+        "V", "vcf-out", "Path of desired vcf output file. Note: VCF output is experimental and incomplete, not recommended.",
+        seqan::ArgParseOption::OUTPUT_FILE, "VCF"
+    ));
+    seqan::setValidValues(argParser, "vcf-out", "vcf VCF");
 
     seqan::addDescription(argParser, "Genotype given variants (specified by profiles) in all samples (specified by profiles).");
     seqan::addUsageLine(argParser, "ggtyper genotype VARIANT_PROFILES SAMPLE_PROFILES OUTPUT_PREFIX [\033[4mOPTIONS\033[0m].");
@@ -404,6 +474,7 @@ genotypeParameters getGenotypeParameters(seqan::ArgumentParser &argParser)
     seqan::getOptionValue(params.difficulties, argParser, "estimate-difficulty");
     seqan::getOptionValue(params.minMapQ, argParser, "minimum-quality");
     seqan::getOptionValue(params.distributions, argParser, "write-distributions");
+    seqan::getOptionValue(params.vcfFile, argParser, "vcf-out");
 
     return params;
 }

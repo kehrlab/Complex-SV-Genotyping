@@ -415,3 +415,8 @@ void GenotypeResult::clearData()
     std::vector<float>().swap(genotypeLikelihoods);
     std::vector<float>().swap(genotypeLikelihoods);
 }
+
+std::string GenotypeResult::getSampleName()
+{
+    return this->sampleName;
+}

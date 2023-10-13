@@ -21,12 +21,15 @@ struct genotypeParameters
 
     std::string outputPrefix;
     std::string variantFile;
+    std::string vcfFile;
+
     int nThreads, minMapQ;
     bool difficulties, distributions;
 
     genotypeParameters():
     variantList(""), sampleList(""), outputPrefix(""), variantFile(""),
-    nThreads(1), minMapQ(0), difficulties(false), distributions(false)
+    vcfFile(""), nThreads(1), minMapQ(0), difficulties(false), 
+    distributions(false)
     {}
 };
 
@@ -36,9 +39,9 @@ seqan::ArgumentParser::ParseResult parseGenotypeArgs(seqan::ArgumentParser & arg
 
 genotypeParameters getGenotypeParameters(seqan::ArgumentParser & argParser);
 
-inline void loadVariantProfiles(std::vector<VariantProfile> &, genotypeParameters &);
+inline void loadVariantProfiles(std::vector<VariantProfile> &, genotypeParameters &, std::vector<std::string> &, int);
 inline void checkProfileParameters(int &, int &, int &, std::vector<VariantProfile> &, genotypeParameters &);
-inline void checkSampleParameters(std::vector<std::string> &, int, int, int, genotypeParameters &);
+inline void checkSampleParameters(std::vector<std::string> &, int &, int &, int &, genotypeParameters &);
 inline void loadReadPairs(VariantProfile &, RecordManager &, BamFileHandler &, Sample &);
 inline void createGenotypeDistributions(
     VariantProfile &, std::vector<std::string> &, std::vector<GenotypeDistribution> &, 

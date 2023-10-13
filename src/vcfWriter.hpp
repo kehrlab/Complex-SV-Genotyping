@@ -22,13 +22,11 @@ class VcfWriter
     seqan::VcfHeader header;
 
     std::vector<std::string> sampleNames;
-    std::vector<std::string> contigNames;
+    std::unordered_set<std::string> contigNames;
     std::unordered_map<std::string, int> rIDs;
 
     std::vector<seqan::VcfRecord> vcfRecords;
     
-    void getContigNames(std::vector<complexVariant> &);
-    void getSampleNames(std::vector<std::string> fileNames);
     void writeHeader();
     void setFormalities();
     void setSampleNames();
@@ -36,15 +34,14 @@ class VcfWriter
     void initHeader();
     void createRefIDs();
 
-    void createVcfRecords(std::vector<complexVariant> &, std::vector<std::vector<GenotypeResult>> &);
     void writeVcfRecords();
     void joinRecords(seqan::VcfRecord &, seqan::VcfRecord);
 
     public:
     VcfWriter();
     VcfWriter(std::string);
-    VcfWriter(std::string, std::vector<complexVariant> &, std::vector<std::string>, std::vector<std::vector<GenotypeResult>> &);
 
+    void addVariantRecords(std::vector<GenotypeResult> &, complexVariant &);
     void setFileName(std::string);
     void openVcfFile();
     void closeVcfFile();

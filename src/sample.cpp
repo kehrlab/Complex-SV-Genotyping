@@ -107,9 +107,6 @@ void Sample::writeSampleProfile(std::string profilePath)
     // magic string
     stream.write("GENOTYPER\1", 10);
 
-    // write version
-    stream.write("0.9", 3);
-
     // write sample name
     int sampleNameLen = this->sampleName.size() + 1;
     stream.write(reinterpret_cast<const char *>(&sampleNameLen), sizeof sampleNameLen);
@@ -176,25 +173,23 @@ void Sample::readSampleProfile(std::string profilePath)
         std::string msg = "Could not open profile path (" + profilePath + ") for reading.";
         throw std::runtime_error(msg.c_str());
     }
-
-    char * buffer = new char[100];
-    // magic string
-    char * magic = new char[10];
-    stream.read(magic, 10);
     
+    // compare magic string
+    char * tempString = new char[10];
+    stream.read(tempString, 10);
     if (!stream.good())
         throw std::runtime_error("Unable to read magic string.");
-    if (std::strcmp(magic, "GENOTYPER\1") != 0)
-        throw std::runtime_error("Magic string is wrong");
-    
-    // version
-    char * version = new char[3];
-    stream.read(version, 3);
+    if (tempString[9] != '\1')
+        throw std::runtime_error("Magic string does not match. Wrong / corrupted profile?");
+    tempString[9] = '\0';
+    if (std::strcmp(tempString, "GENOTYPER") != 0)
+        throw std::runtime_error("Magic string does not match. Wrong / corrupted profile?");
+    delete[] tempString;
 
     // sample name
     int sampleNameSize;
     stream.read(reinterpret_cast<char *>(&sampleNameSize), sizeof(int));
-    char * tempString = new char[sampleNameSize];
+    tempString = new char[sampleNameSize];
     stream.read(tempString, sampleNameSize);
     if (tempString[sampleNameSize - 1] != '\0')
         throw std::runtime_error("In Sample Profile: String must end with 0!");
@@ -262,10 +257,6 @@ void Sample::readSampleProfile(std::string profilePath)
     for (int i = 0; i < distribution.size(); ++i)
         stream.read(reinterpret_cast<char *>(&distribution[i]), sizeof(float));
     this->sampleDistribution.getInsertDistribution() = distribution;
-
-    delete[] magic;
-    delete[] version;
-    delete[] buffer;
 
     stream.close();
 }

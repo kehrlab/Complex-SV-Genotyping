@@ -79,6 +79,7 @@ class GenotypeResult
     void clearData();
     void calculateReadStats();
     std::unordered_map<std::string, float> getReadStats();
+    std::string getSampleName();
 };
 
 #endif

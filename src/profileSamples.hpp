@@ -21,6 +21,7 @@ struct sampleProfileParams {
 
     bool wholeGenome;
     int nThreads;
+    bool forceRG;
 
     sampleProfileParams ():
     sampleFiles(std::vector<std::string>()),

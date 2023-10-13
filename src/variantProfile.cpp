@@ -1332,9 +1332,6 @@ void VariantProfile::writeProfile(std::string filename)
     // write magic string
     stream.write("GENOTYPER\1", 10);
     
-    // write version
-    stream.write("0.9", 3);
-    
     // write variant name
     int vnSize = this->variant.getName().size() + 1;
     stream.write(reinterpret_cast<const char *>(&vnSize), sizeof(int));
@@ -1474,10 +1471,6 @@ void VariantProfile::readProfile(std::string filename)
         throw std::runtime_error("Magic string does not match. Wrong / corrupted profile?");
     delete[] tempString;
 
-    // get version
-    char * version = new char[3];
-    stream.read(version, 3);
-
     // get variant name
     int l;
     stream.read(reinterpret_cast<char *>(&l), sizeof(int));
@@ -1600,7 +1593,6 @@ void VariantProfile::readProfile(std::string filename)
     }
 
     // free allocated char arrays
-    delete[] version;
     stream.close();
 }
 

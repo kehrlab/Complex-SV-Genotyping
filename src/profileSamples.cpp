@@ -1,4 +1,6 @@
 #include "profileSamples.hpp"
+#include "seqan/arg_parse/arg_parse_option.h"
+#include "seqan/arg_parse/argument_parser.h"
 
 #ifndef DATE
 #define DATE "1.1.1970"
@@ -37,20 +39,29 @@ int profileSamples(int argc, const char ** argv)
     std::vector<ContigInfo> contigInfos;
     std::vector<int> readLengths(params.sampleFiles.size());
     std::vector<int> readGroups(params.sampleFiles.size());
+    bool rgError {false};
     for (int i = 0; i < params.sampleFiles.size(); ++i)
     {
         BamFileHandler tempFile(params.sampleFiles[i]);
         readGroups[i] = tempFile.getRGNumber();
         readLengths[i] = tempFile.getReadLength();
 
+        if (readGroups[i] != 1 && !params.forceRG)
+        {
+            rgError = true;
+            std::cerr << "There is more than one (" << readGroups[i];
+            std::cerr << ") read group present in sample " << params.sampleFiles[i] << std::endl;
+        }
+
         contigInfos.push_back(tempFile.getContigInfo());
         tempFile.closeInputFile();
     }
 
-    //
-    // to do: deal with too many read groups and different read lengths
-    // Maybe flags for whether to allow deviations?
-    //
+    if (rgError)
+    {
+        std::cerr << "Abort. Samples with more than one read group detected. This may lead to errors. To ignore this, use flag '-f'." << std::endl;
+        return 1;
+    }
     
     // determine regions from which insert size distribution is calclated
     std::vector<GenomicRegion> regions;
@@ -120,6 +131,10 @@ seqan::ArgumentParser::ParseResult parseSampleProfileArgs(seqan::ArgumentParser 
         "Number of threads used to parallelize sample profile calculation. Default: 1.",
         seqan::ArgParseOption::ArgumentType::INTEGER, "THREADS"
         ));
+    seqan::addOption(argParser, seqan::ArgParseOption(
+        "f", "force-rg",
+        "Ignore presence of multiple read groups and force calculation of library distribution across all read groups."
+    ));
 
     seqan::addDescription(argParser, "Create profiles of given bam files and write them to disk.");
     seqan::addUsageLine(argParser, "ggtyper profile-samples BAM_FILE(LIST) OUTPUT_FILE OUTPUT_DIR [\033[4mOPTIONS\033[0m].");
@@ -163,6 +178,7 @@ sampleProfileParams getSampleProfileParameters(const seqan::ArgumentParser &argP
     // get whole genome flag
     seqan::getOptionValue(params.wholeGenome, argParser, "whole-genome");
     seqan::getOptionValue(params.nThreads, argParser, "threads");
+    seqan::getOptionValue(params.forceRG, argParser, "force-rg");
 
     // get regions (if any)
     if (seqan::isSet(argParser, "regions"))
