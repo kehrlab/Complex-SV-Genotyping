@@ -18,13 +18,12 @@ cd Complex-SV-Genotyping
 - Seqan v2.4
 - htslib v1.17
 - zlib
-- boost
 - openmp
 - eigen
 
 All requirements can be easily installed using conda:
 ```
-conda create -c bioconda -c conda-forge -n genotyping cxx-compiler seqan=2.4 zlib boost intel-openmp htslib=1.17 eigen=3.4.0
+conda create -c bioconda -c conda-forge -n genotyping cxx-compiler seqan=2.4 zlib intel-openmp htslib=1.17 eigen=3.4.0
 conda activate genotyping
 ```
 

@@ -331,7 +331,7 @@ void LibraryDistribution::writeDistribution(std::string filename)
 	        }
         }
     } else {
-        std::cerr << "Could not open file: " << filename << "for writing." << std::endl;
+        std::cerr << "Could not open file: " << filename << " for writing." << std::endl;
     }
     f.close();
 }

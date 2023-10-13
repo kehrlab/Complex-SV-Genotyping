@@ -32,8 +32,15 @@ GenomicRegion::GenomicRegion(std::string regionString)
 {
     std::vector<std::string> parts1;
     std::vector<std::string> parts2;
-    boost::algorithm::split(parts1, regionString, boost::is_any_of(":"));
-    boost::algorithm::split(parts2, parts1[1], boost::is_any_of("-"));
+
+    int idx = regionString.find_first_of(":");
+    parts1.push_back(regionString.substr(0, idx));
+    parts1.push_back(regionString.substr(idx));
+
+    idx = parts1[1].find_last_of("-");
+    parts2.push_back(parts1[1].substr(0, idx + 1));
+    parts2.push_back(parts1[1].substr(idx + 1));
+
     setReferenceName(parts1[0]);
     setRegionStart(std::stoi(parts2[0]));
     setRegionEnd(std::stoi(parts2[1]));

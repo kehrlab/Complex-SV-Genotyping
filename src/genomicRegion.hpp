@@ -4,7 +4,6 @@
 #include <string>
 #include <iostream>
 #include <vector>
-#include <boost/algorithm/string.hpp>
 
 #include "seqFileHandler.hpp"
 

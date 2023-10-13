@@ -5,6 +5,7 @@
 #include "variantProfile.hpp"
 #include "vcfWriter.hpp"
 #include <bits/chrono.h>
+#include <filesystem>
 #include <stdexcept>
 
 #ifndef DATE
@@ -22,7 +23,6 @@ int genotype(int argc, const char **argv)
 
     // create parser and get parameters
     seqan::ArgumentParser argParser;
-
     seqan::ArgumentParser::ParseResult result = parseGenotypeArgs(argParser, argc, argv);
     
     if (result == seqan::ArgumentParser::PARSE_HELP || 
@@ -59,7 +59,7 @@ int genotype(int argc, const char **argv)
     }
     vStream.close();
     
-
+    // status
     now = time(0);
     date = std::string(ctime(&now));
     date[date.find_last_of("\n")] = '\t';
@@ -88,15 +88,18 @@ int genotype(int argc, const char **argv)
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     while (block * params.nThreads < variantFiles.size())
     {
-        // load variant profiles (currently all)
+        // load variant profiles (currently all) and check parameters
         std::vector<VariantProfile> variantProfiles;
         loadVariantProfiles(variantProfiles, params, variantFiles, block);
-
-        // check consistency of profile parameters (readLength, sMin, sMax)
         checkProfileParameters(sMin, sMax, readLength, variantProfiles, params);
 
-        // genotype results
-        std::vector<std::vector<GenotypeResult>> tempResults(variantProfiles.size(), std::vector<GenotypeResult>(sampleProfiles.size()));
+        // temporary genotype results, required for VCF
+        std::vector<std::vector<GenotypeResult>> tempResults;
+        if (params.vcfFile != "")
+            tempResults = std::vector<std::vector<GenotypeResult>>(
+                variantProfiles.size(), 
+                std::vector<GenotypeResult>(sampleProfiles.size())
+                );
 
         // genotype current variants
         #pragma omp parallel for schedule(dynamic) collapse(2) num_threads(params.nThreads)
@@ -149,13 +152,12 @@ int genotype(int argc, const char **argv)
 
                 // write distributions if required
                 if (params.distributions)
-                {
                     writeInsertSizeDistributions(variantProfiles[i].getVariant(), result, genotypeNames, genotypeDistributions);
-                    sampleDistribution.writeDistribution(result.getFilename() + "_distributions/defaultDistribution.txt");
-                }
 
                 result.clearData();
-                tempResults[i][j] = result;
+
+                if (params.vcfFile != "")
+                    tempResults[i][j] = result;
 
                 // clean up
                 bamFileHandler.closeInputFile();
@@ -176,6 +178,7 @@ int genotype(int argc, const char **argv)
                 vcfFile.addVariantRecords(tempResults[i], variantProfiles[i].getVariant());
 
 
+        // Status and ETA
         std::chrono::steady_clock::time_point current = std::chrono::steady_clock::now();
         auto tAvg = std::chrono::duration_cast<std::chrono::seconds>(current-begin).count() / std::min((block + 1) * params.nThreads, (int) variantFiles.size());
 
@@ -188,15 +191,28 @@ int genotype(int argc, const char **argv)
         std::cout << "/" << variantFiles.size() << " variants.\t\t\t";
         std::cout << "ETA: " << tAvg * (variantFiles.size() - std::min((block + 1) * params.nThreads, (int) variantFiles.size())) << "s     " << std::flush;
 
+        // move to the next block of variants
         ++block;
     }
     std::cout << std::endl;
-    
     outFile.close();
+
+    // write VCF
     if (params.vcfFile != "")
     {
         vcfFile.write();
         vcfFile.closeVcfFile();
+    }
+
+    // write sample distributions
+    if (params.distributions)
+    {
+        for (auto & p : sampleProfiles)
+        {
+            Sample s(p);
+            s.getLibraryDistribution().writeDistribution(s.getFileName() + "_distributions/defaultDistribution.txt");
+            s.close();
+        }
     }
     
     return 0;
@@ -221,21 +237,20 @@ inline void checkProfileParameters(int & sMin, int & sMax, int & readLength, std
     {
         if (it->getMinInsert() > sMin || it->getMaxInsert() < sMax)
         {
-            std::string msg = "At least one sample contains insert sizes not covered by profile for variant " + it->getName();
+            std::string msg = "At least one sample contains insert sizes not covered by profile for variant " + it->getName() + ". Dropping variant.";
             std::cerr << msg << std::endl;
             it = variantProfiles.erase(it);
             continue;
-            //throw std::runtime_error(msg.c_str());
         }
         if (it->getReadLength() != readLength)
         {
             std::string msg = "Read length of profile " + 
                 it->getName() + 
-                " does not match the given samples. Make sure that variant profiles are generated with parameters matching the profiles of samples on which they will be used.";
+                " does not match the given samples. Dropping variant. " +
+                "Make sure that variant profiles are generated with parameters matching the profiles of samples on which they will be used.";
             std::cerr << msg << std::endl;
             it = variantProfiles.erase(it);
             continue;
-            //throw std::runtime_error(msg.c_str());
         }
         if (!it->variantStructureIsPresent())
         {
@@ -382,19 +397,21 @@ void writeInsertSizeDistributions(complexVariant & variant, GenotypeResult & res
         variantName = variant.getName();
     
     std::string directory = result.getFilename() + "_distributions/";
-    if (! boost::filesystem::create_directory(directory)) {
-        if (! boost::filesystem::is_directory(directory)) {
-            std::cerr << "Could not create variant distribution directory" << std::endl;
-            return;
-        }
+    try {
+        std::filesystem::create_directory(directory);
+    } catch (std::filesystem::filesystem_error)
+    {
+        std::cerr << "Could not create variant distribution directory" << std::endl;
+        return;
     }
 
     directory += (variantName + "/");
-    if (! boost::filesystem::create_directory(directory)) {
-        if (! boost::filesystem::is_directory(directory)) {
-            std::cerr << "Could not create variant distribution directory" << std::endl;
-            return;
-        }
+    try {
+        std::filesystem::create_directory(directory);
+    }catch (std::filesystem::filesystem_error)
+    {
+        std::cerr << "Could not create variant distribution directory" << std::endl;
+        return;
     }
 
     // write theoretical distributions

@@ -4,7 +4,6 @@
 #include <fstream>
 #include <vector>
 #include <chrono>
-#include <boost/filesystem.hpp>
 #include <cstring>
 #include <ostream>
 #include <stdexcept>

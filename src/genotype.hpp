@@ -1,7 +1,6 @@
 #ifndef GENOTYPEHEAEDER
 #define GENOTYPEHEAEDER
 
-#include <boost/filesystem.hpp>
 #include <seqan/arg_parse.h>
 #include <stdexcept>
 

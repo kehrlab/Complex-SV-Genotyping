@@ -11,7 +11,7 @@ DATE := on $(shell git log --pretty=format:"%cd" --date=iso | cut -f 1,2 -d " " 
 VERSION := 0.0.1-$(shell git log --pretty=format:"%h" --date=iso | head -n 1)
 
 override CXXFLAGS += -DDATE=\""$(DATE)"\" -DVERSION=\""$(VERSION)"\"
-override CXXFLAGS += -I $(JSON_PATH) -DSEQAN_HAS_ZLIB -lz -lhts -DSEQAN_DISABLE_VERSION_CHECK -std=c++17 -Wall -O2 -DEIGEN_DONT_PARALLELIZE -fopenmp -lpthread -lboost_filesystem -g
+override CXXFLAGS += -I $(JSON_PATH) -DSEQAN_HAS_ZLIB -lz -lhts -DSEQAN_DISABLE_VERSION_CHECK -std=c++17 -Wall -O2 -DEIGEN_DONT_PARALLELIZE -fopenmp -lpthread -g
 
 ifdef INCLUDE_PATH
 	override CXXFLAGS+=-I $(INCLUDE_PATH)
