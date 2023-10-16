@@ -298,7 +298,7 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
                 beginIdx = jRegion.junctionIndices[i-1] + (recordRegion.getRegionStart() - r.getRegionStart());
                 endIdx = jRegion.junctionIndices[i-1] + (recordRegion.getRegionEnd() - r.getRegionStart());
 
-                if (record.getClipLeft() > 0 && recordRegion.overlaps(GenomicRegion{r.getReferenceName(), r.getRegionStart(), r.getRegionStart() + overlap}) && r.getRegionStart() - recordRegion.getRegionStart() < smallMargin)
+                if (record.getClipLeft() >= overlap && recordRegion.overlaps(GenomicRegion{r.getReferenceName(), r.getRegionStart(), r.getRegionStart() + overlap}) && r.getRegionStart() - recordRegion.getRegionStart() < smallMargin)
                 {    
                     beginIdx -= record.getClipLeft();
                     tempIndices.push_back(jRegion.junctions[i-1].getID());
@@ -309,7 +309,7 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
                 beginIdx = jRegion.junctionIndices[i-1] + (r.getRegionEnd() - recordRegion.getRegionEnd());
                 endIdx = jRegion.junctionIndices[i-1] + (r.getRegionEnd() - recordRegion.getRegionStart());
 
-                if (record.getClipRight() > 0 && recordRegion.overlaps(GenomicRegion{r.getReferenceName(), r.getRegionEnd() - overlap, r.getRegionEnd()}) && recordRegion.getRegionEnd() - r.getRegionEnd() < smallMargin)
+                if (record.getClipRight() >= overlap && recordRegion.overlaps(GenomicRegion{r.getReferenceName(), r.getRegionEnd() - overlap, r.getRegionEnd()}) && recordRegion.getRegionEnd() - r.getRegionEnd() < smallMargin)
                 {    
                     beginIdx -= record.getClipRight();
                     tempIndices.push_back(jRegion.junctions[i-1].getID());
@@ -326,7 +326,7 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
                 if (endIdx < 0)
                     endIdx = jRegion.junctionIndices[i] - (r.getRegionEnd() - recordRegion.getRegionEnd());
 
-                if (record.getClipRight() > 0 && recordRegion.overlaps(GenomicRegion{r.getReferenceName(), r.getRegionEnd() - overlap, r.getRegionEnd()}) && recordRegion.getRegionEnd() - r.getRegionEnd() < smallMargin)
+                if (record.getClipRight() >= overlap && recordRegion.overlaps(GenomicRegion{r.getReferenceName(), r.getRegionEnd() - overlap, r.getRegionEnd()}) && recordRegion.getRegionEnd() - r.getRegionEnd() < smallMargin)
                 {
                     endIdx += record.getClipRight();
                     tempIndices.push_back(jRegion.junctions[i].getID());
@@ -339,7 +339,7 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
                 if (endIdx < 0)
                     endIdx = jRegion.junctionIndices[i] - (recordRegion.getRegionEnd() - r.getRegionStart());
 
-                if (record.getClipLeft() > 0 && recordRegion.overlaps(GenomicRegion{r.getReferenceName(), r.getRegionStart(), r.getRegionStart() + overlap}) && r.getRegionStart() - recordRegion.getRegionStart() < smallMargin)
+                if (record.getClipLeft() >= overlap && recordRegion.overlaps(GenomicRegion{r.getReferenceName(), r.getRegionStart(), r.getRegionStart() + overlap}) && r.getRegionStart() - recordRegion.getRegionStart() < smallMargin)
                 {
                     endIdx += record.getClipLeft();
                     tempIndices.push_back(jRegion.junctions[i].getID());

@@ -65,8 +65,9 @@ int profileSamples(int argc, const char ** argv)
     
     // determine regions from which insert size distribution is calclated
     std::vector<GenomicRegion> regions;
+    RegionSampler sampler(contigInfos, params.regions);
     if (!params.wholeGenome)
-        regions = RegionSampler(contigInfos, params.regions).sampledInsertRegions();
+        regions = sampler.sampledInsertRegions();
     else
         regions = params.regions;
 

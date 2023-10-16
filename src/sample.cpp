@@ -10,6 +10,10 @@ Sample::Sample(
     this->minMapQ = 0;
     this->bamFileOpen = false;
 
+    this->regionStrings = std::vector<std::string>();
+    for (auto & r : this->sampledRegions)
+	    this->regionStrings.push_back(r.getRegionString());
+
     openBamFile();
     calculateDefaultDistributions();
     closeBamFile();

@@ -530,10 +530,6 @@ void VariantProfile::determineVariantGroups(VariantRegions & vRegions)
 
 void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups, VariantRegions & vRegions)
 {
-    //
-    // the calculation of new insert sizes is faulty!
-    //
-    //
     groups.insert("RF");
     for (int regionIdx = 0; regionIdx < vRegions.regions.size(); ++regionIdx)
     {
@@ -1037,7 +1033,7 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
 
             // go over possible end positions for the second read in pair
             int j = i + 1;
-            // std::cout << "Second read" << std::endl;
+            
             for (; j < jRegion.junctions.size(); ++j)
             {
                 if (jRegion.junctionIndices[j] + 1 - jRegion.junctionIndices[i] > this->sMax - 2*this->overlap)
@@ -1049,15 +1045,12 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
 
                 for (int k = j - 1; k > i; --k)
                 {
-                    if (jRegion.junctionIndices[k] >= secondReadStart) {
+                    if (jRegion.junctionIndices[k] >= secondReadStart)
                         secondIndices.push_back(jRegion.junctions[k].getID());
-                    }
                     else
-                    { 
                         break;
-                    }
                 }
-
+		
                 std::vector<std::unordered_set<int>> tempGroups = createIndexCombinations(firstIndices, secondIndices, junctionMatches);
                 for (auto & set : tempGroups)
                     indexGroups.push_back(set);
@@ -1084,7 +1077,7 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
                         else
                             break;
                     }
-
+		
                     std::vector<std::unordered_set<int>> tempGroups = createIndexCombinations(firstIndices, secondIndices, junctionMatches);
                     for (auto & set : tempGroups)
                         indexGroups.push_back(set);
@@ -1200,8 +1193,10 @@ inline void VariantProfile::addValueToMask(Allele & allele, int sOld, int sNew, 
         group = "RF";
     
     if (group == "" || this->variantGroups.find(group) == this->variantGroups.end()) {
-        std::cout << "Warning: Could not assign read pair to any group. Will likely cause errors." << std::endl;
-        std::cout << "Group: " << group << std::endl;
+        std::cout << "Warning: Could not assign read pair to any group. May cause problems if too frequent." << std::endl;
+        std::cout << "Variant: " << this->variant.getName() << std::endl; 
+	std::cout << "Group: " << group << std::endl;
+	return;
     }
 
     int gIdx = this->variantGroups[group];
@@ -1210,6 +1205,7 @@ inline void VariantProfile::addValueToMask(Allele & allele, int sOld, int sNew, 
         this->referenceMask.coeffRef(sOld-this->sMinMapped, gIdx) += 1;
     else
         this->variantMask[this->variantAlleleNames[allele.getName()]][sOld-this->sMin].coeffRef(sNew - this->sMinMapped, gIdx) += 1;
+    return;
 }
 
 const Eigen::SparseMatrix<float, Eigen::RowMajor> & VariantProfile::getVariantMask(int s)
