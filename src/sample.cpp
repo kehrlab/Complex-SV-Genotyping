@@ -30,7 +30,13 @@ void Sample::openBamFile()
     this->bamFile.open(this->filename);
     this->bamFileOpen = true;
     this->chromosomeLengths = bamFile.getContigLengths();
-    this->sampleName = bamFile.getSampleName();
+
+    this->sampleName = this->bamFile.getSampleName();
+    if (this->sampleName == "")
+    {
+        std::string file = this->filename.substr(this->filename.find_last_of("/") + 1);
+        this->sampleName = file.substr(0, file.find(".bam"));
+    }
 }
 
 void Sample::calculateDefaultDistributions()

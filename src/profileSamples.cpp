@@ -49,8 +49,8 @@ int profileSamples(int argc, const char ** argv)
         if (readGroups[i] != 1 && !params.forceRG)
         {
             rgError = true;
-            std::cerr << "There is more than one (" << readGroups[i];
-            std::cerr << ") read group present in sample " << params.sampleFiles[i] << std::endl;
+            std::cerr << "Number of read groups (" << readGroups[i];
+            std::cerr << ") in sample " << params.sampleFiles[i] << " is not 1." << std::endl;
         }
 
         contigInfos.push_back(tempFile.getContigInfo());

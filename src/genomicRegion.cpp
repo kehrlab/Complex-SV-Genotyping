@@ -35,10 +35,10 @@ GenomicRegion::GenomicRegion(std::string regionString)
 
     int idx = regionString.find_first_of(":");
     parts1.push_back(regionString.substr(0, idx));
-    parts1.push_back(regionString.substr(idx));
+    parts1.push_back(regionString.substr(idx + 1));
 
     idx = parts1[1].find_last_of("-");
-    parts2.push_back(parts1[1].substr(0, idx + 1));
+    parts2.push_back(parts1[1].substr(0, idx));
     parts2.push_back(parts1[1].substr(idx + 1));
 
     setReferenceName(parts1[0]);
