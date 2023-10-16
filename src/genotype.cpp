@@ -4,7 +4,7 @@
 #include "seqan/arg_parse/arg_parse_option.h"
 #include "variantProfile.hpp"
 #include "vcfWriter.hpp"
-#include <bits/chrono.h>
+#include <chrono>
 #include <filesystem>
 #include <stdexcept>
 
