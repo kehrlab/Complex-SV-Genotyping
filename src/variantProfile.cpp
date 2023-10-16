@@ -1,4 +1,6 @@
 #include "variantProfile.hpp"
+#include "eigen3/Eigen/src/SparseCore/SparseMatrix.h"
+#include "genotypeDistribution.hpp"
 
 VariantProfile::VariantProfile()
 {
@@ -1226,7 +1228,7 @@ const Eigen::SparseMatrix<float, Eigen::RowMajor> & VariantProfile::getReference
 }
 
 void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::string, GenotypeDistribution> & distributions, LibraryDistribution & libraryDistribution, float eps)
-{
+{   
     std::vector<std::string> alleleNames(this->variantAlleleNames.size() + 1, "");
     alleleNames[0] = "REF";
     for (auto & vN : this->variantAlleleNames)
@@ -1502,7 +1504,10 @@ void VariantProfile::readProfile(std::string filename)
     stream.read(reinterpret_cast<char *>(&this->filterMargin), sizeof(int));
 
     if (variantPresent)
+    {
+        this->variant.setFilterMargin(this->filterMargin);
         this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
+    }
 
     // get read pair groups
     int nG;

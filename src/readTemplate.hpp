@@ -50,7 +50,7 @@ class ReadTemplate
     
     int softClippingLeftLength(BamRecord &);
     int softClippingRightLength(BamRecord &);
-    void findSplitsBasedOnClipping(std::unordered_map<std::string, JunctionRegion> &, SplitAlignmentInfo &);
+    void findSplitsBasedOnClipping(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);
     void findSplitsBasedOnGaps(std::vector<Junction> &);
     void findClippedSplitsOnChromosome(std::string, JunctionRegion &, SplitAlignmentInfo &);
     bool alignsWithinExpectedDistance(std::vector<Junction> &, int, BamRecord &, BamRecord &);
@@ -63,7 +63,6 @@ class ReadTemplate
     ReadTemplate();
     ReadTemplate(std::vector<BamRecord>);
 
-    // void determineGroup(std::vector<Junction> &, std::vector<Breakpoint> &, std::vector<GenomicRegion> &);
     void findSplitReads(std::vector<Junction> &, std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);
     void findSpanningReads(std::vector<Breakpoint> &);
     void determineOverlappingRegions(std::vector<GenomicRegion> &);

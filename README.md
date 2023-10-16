@@ -165,6 +165,6 @@ Reference allele name is `REF`, variant allele name is given in variant descript
 Last update: 2023-10-11
 GGTyper version: 0.0.9
 SeqAn version: 2.4
-HTSLib version: 1.18
+HTSLib version: 1.17
 Author: Tim Mirus (Tim.Mirus[at]ukr.de)
 ```

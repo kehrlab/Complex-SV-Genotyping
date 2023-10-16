@@ -125,13 +125,6 @@ void ReadTemplate::determineOrientation()
         this->orientation = "FF";
 }
 
-// void ReadTemplate::determineGroup(std::vector<Junction> & junctions, std::vector<Breakpoint> & breakpoints, std::vector<GenomicRegion> & regions)
-// {
-//     findSplitReads(junctions);
-//     findSpanningReads(breakpoints);
-//     determineOverlappingRegions(regions);
-// }
-
 void ReadTemplate::determineOverlappingRegions(std::vector<GenomicRegion> & regions)
 {
     GenomicRegion fR = this->records[this->primaryFirst].getAlignmentRegion();
@@ -188,23 +181,14 @@ void ReadTemplate::findSplitReads(std::vector<Junction> & junctions, std::unorde
     if (!isProperPair())
         return;
     
-    SplitAlignmentInfo splitInfo;
-    for (auto & alleleStruct : chromosomeStructures)
-        findSplitsBasedOnClipping(alleleStruct.second, splitInfo);
-    if (splitInfo.junctionIndices.size() > 1) {
-        this->junctionString = "ambiguous";
-        this->split = true;
-    } else if (splitInfo.junctionIndices.size() == 1) {
-        for (auto & idx : splitInfo.junctionIndices[0])
-            this->splittingJunctions.insert(idx);
-        this->split = true;
-    }
+    // there are two modes of detection / two different kinds of splits
+    findSplitsBasedOnClipping(chromosomeStructures);
     findSplitsBasedOnGaps(junctions);
     return;
 }
 
 
-void ReadTemplate::findSplitsBasedOnClipping(std::unordered_map<std::string, JunctionRegion> & chromosomeStructures, SplitAlignmentInfo & splitInfo)
+void ReadTemplate::findSplitsBasedOnClipping(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> & chromosomeStructures)
 {
     BamRecord rFirst = this->records[this->primaryFirst];
     BamRecord rLast = this->records[this->primaryLast];
@@ -213,9 +197,25 @@ void ReadTemplate::findSplitsBasedOnClipping(std::unordered_map<std::string, Jun
     if (!rFirst.isClipped() && !rLast.isClipped())
 	    return;
 
-    // search on each chromosome
-    for (auto & chr : chromosomeStructures)
-        findClippedSplitsOnChromosome(chr.first, chr.second, splitInfo);
+    SplitAlignmentInfo splitInfo;
+
+    // go over all chromosomes on all alleles
+    for (auto & alleleStruct : chromosomeStructures)
+        if (alleleStruct.first != "REF")
+            for (auto chr : alleleStruct.second)
+                findClippedSplitsOnChromosome(chr.first, chr.second, splitInfo);
+    
+    // evaluate the results
+    if (splitInfo.junctionIndices.size() > 1) {
+        this->junctionString = "ambiguous";
+        this->split = true;
+    } else if (splitInfo.junctionIndices.size() == 1) {
+        for (auto & idx : splitInfo.junctionIndices[0])
+            this->splittingJunctions.insert(idx);
+        this->split = true;
+    }
+
+    return;    
 }
 
 void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, JunctionRegion & jRegion, SplitAlignmentInfo & splitInfo)

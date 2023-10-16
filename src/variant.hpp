@@ -24,6 +24,7 @@ class complexVariant {
     std::vector<GenomicRegion> variantRegions;
 
     int nAlleles;
+    int filterMargin;
     std::string variantFileName;
 
     int calculateSearchDistance(double, double);
@@ -49,6 +50,7 @@ class complexVariant {
     std::vector<GenomicRegion> & getVariantRegions();
     void createAlleleMaps(int, std::unordered_map<std::string, int>);
     std::string getVariantFileName();
+    void setFilterMargin(int);
 };
 
 #endif

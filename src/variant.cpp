@@ -1,12 +1,15 @@
 #include "variant.hpp"
 
 complexVariant::complexVariant()
-{}
+{
+    this->filterMargin = 500;
+}
 
 complexVariant::complexVariant(std::string variantName, std::vector<std::string> alleleNames, variantData variantJunctions)
 {
     this->variantName = variantName;
     this->variantFileName = "";
+    this->filterMargin = 500;
 
     for (int i = 0; i < variantJunctions.size(); ++i)
         this->variantAlleles.push_back(Allele(variantJunctions[i], alleleNames[i]));
@@ -23,6 +26,7 @@ complexVariant::complexVariant(std::string variantName, std::vector<std::string>
 {
     this->variantName = variantName;
     this->variantFileName = variantFileName;
+    this->filterMargin = 500;
 
     for (int i = 0; i < variantJunctions.size(); ++i)
         this->variantAlleles.push_back(Allele(variantJunctions[i], alleleNames[i]));
@@ -40,6 +44,7 @@ complexVariant::complexVariant(std::vector<Junction> novelJunctions)
     this->variantName = "Unnamed Variant";
     this->variantFileName = "Unknown";
     this->nAlleles = 1;
+    this->filterMargin = 500;
     this->variantAlleles.push_back(Allele(novelJunctions, "VAR"));
     poolBreakpoints();
     poolJunctions();
@@ -113,7 +118,7 @@ std::vector<GenomicRegion> complexVariant::calculateAssociatedRegions(LibraryDis
 
 int complexVariant::calculateSearchDistance(double insertMean, double insertSD)
 {
-    return (int) 3*(insertMean + 3 * insertSD);
+    return (int) (this->filterMargin + (insertMean + 3 * insertSD));
 }
 
 std::vector<GenomicRegion> complexVariant::createRegionsFromBreakpoints(int searchDistance)
@@ -193,4 +198,9 @@ void complexVariant::createAlleleMaps(int filterMargin, std::unordered_map<std::
 std::string complexVariant::getVariantFileName()
 {
     return this->variantFileName;
+}
+
+void complexVariant::setFilterMargin(int filterMargin)
+{
+    this->filterMargin = filterMargin;
 }

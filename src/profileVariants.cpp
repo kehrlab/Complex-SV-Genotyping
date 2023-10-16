@@ -40,7 +40,10 @@ int profileVariants(int argc, const char **argv)
     std::vector<std::vector<std::string>> alleleNames = vParser.getAlleleNames();
 
     for (int i = 0; i < variantNames.size(); ++i)
+    {
         variants.push_back(complexVariant(variantNames[i], alleleNames[i], allVariantJunctions[i], params.variantFile));
+        variants[i].setFilterMargin(params.margin);
+    }
 
     now = time(0);
     date = std::string(ctime(&now));
