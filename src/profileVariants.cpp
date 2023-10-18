@@ -52,6 +52,7 @@ int profileVariants(int argc, const char **argv)
 
     // get sMin, sMax and readLength from sample profiles
     int sMin {1000}, sMax {0}, readLength {-1};
+    bool readLengthError {false};
     float insertMean = 0;
     std::vector<std::unordered_map<std::string, int>> contigInfos;
 
@@ -76,7 +77,10 @@ int profileVariants(int argc, const char **argv)
                 if (readLength < 0)
                     readLength = s.getMaxReadLength();
                 else if (readLength != s.getMaxReadLength())
-                    throw std::runtime_error("Read lengths of sample profiles do not match. Cannot create common variant profiles.");
+		{
+		    readLengthError = true;
+		    std::cerr << "Read Length error in sample " << s.getSampleName() << ": " << s.getMaxReadLength() << std::endl;
+		}
                 s.close();
             }
             if (counter > 0)
@@ -91,6 +95,11 @@ int profileVariants(int argc, const char **argv)
         sMax = params.sMax;
         readLength = params.readLength;
     }
+    if (readLengthError) {
+	std::cerr << "Consensus read length: " << readLength << std::endl;
+	throw std::runtime_error("Read lengths of sample profiles do not match. Cannot create common variant profiles.");
+    }
+
 
     if (params.margin <= 0 && insertMean > 0)
         params.margin = insertMean;

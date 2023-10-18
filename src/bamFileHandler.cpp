@@ -116,6 +116,7 @@ std::unordered_map<std::string, TemplatePosition> BamFileHandler::get_insert_siz
 
     int readCounter = 0;
     maxReadLength = 0;
+    
     for (auto & r : regions)
     {
         hts_itr_t * itr = sam_itr_querys(this->index, this->header, r.c_str());
@@ -402,12 +403,17 @@ ContigInfo BamFileHandler::getContigInfo()
 
 std::string BamFileHandler::getSampleName()
 {
-    int id;
+    int id = -1;
     KSTRING_T tempString;
-    id = sam_hdr_find_tag_id(this->header, "RG", NULL, NULL, "SM", &tempString);
+    ks_initialize(&tempString);
     std::string sampleName = "";
+
+    if (sam_hdr_count_lines(this->header, "RG") > 0)
+    	id = sam_hdr_find_tag_id(this->header, "RG", NULL, NULL, "SM", &tempString);
     if (id == 0)
         sampleName = std::string(ks_str(&tempString));
+    
+    free(tempString.s);
     return sampleName;
 }
 
@@ -417,11 +423,20 @@ int BamFileHandler::getReadLength()
     hts_itr_t * itr = sam_itr_querys(this->index, this->header, ".");
 
     int id = sam_itr_next(this->bamFileIn, itr, record);
-    if (id < 0)
+    
+    hts_itr_destroy(itr);
+
+    if (id < 0) {
+        bam_destroy1(record);
         return -1;
+    }
     if (record->core.tid < 0)
+    {
+        bam_destroy1(record);
         return -1;
+    }
     BamRecord bamRcrd(record, this->header);
+    bam_destroy1(record);
     return bamRcrd.getSeqLength();
 }
 
