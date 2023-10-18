@@ -1,4 +1,5 @@
 #include "readTemplate.hpp"
+#include <algorithm>
 
 ReadTemplate::ReadTemplate()
 {}
@@ -13,7 +14,6 @@ ReadTemplate::ReadTemplate(std::vector<BamRecord> records)
     this->templateWeight = 0;
     this->templateGCContent = 0;
     this->templateName = records[0].getTemplateName();
-    this->regionString = "";
     this->junctionString = "";
     this->chromosomeString = "";
     this->bpString = "";
@@ -88,7 +88,9 @@ void ReadTemplate::calculateInsertSize()
             std::vector<std::string> cNamePair;
             cNamePair.push_back(this->records[this->primaryFirst].getReferenceName());
             cNamePair.push_back(this->records[this->primaryLast].getReferenceName());
-            this->interChromosomeNames.push_back(cNamePair);
+            std::sort(cNamePair.begin(), cNamePair.end());
+            this->chromosomeString = cNamePair[0] + cNamePair[1];
+            this->interChromosome = true;
             return;
         }
     
@@ -125,31 +127,8 @@ void ReadTemplate::determineOrientation()
         this->orientation = "FF";
 }
 
-void ReadTemplate::determineOverlappingRegions(std::vector<GenomicRegion> & regions)
-{
-    GenomicRegion fR = this->records[this->primaryFirst].getAlignmentRegion();
-    GenomicRegion lR = this->records[this->primaryLast].getAlignmentRegion();
-
-    for (int i = 0; i < regions.size(); ++i) {
-        if (fR.overlaps(regions[i], 10) && !this->records[this->primaryFirst].isClipped())
-            this->overlappingRegions.insert(i);
-        if (lR.overlaps(regions[i], 10) && !this->records[this->primaryLast].isClipped())
-            this->overlappingRegions.insert(i);
-    }
-}
-
 void ReadTemplate::determineLocationStrings()
 {
-    if (this->overlappingRegions.size() > 0)
-    {
-        std::vector<int> regions;
-        for (auto id : this->overlappingRegions)
-        regions.push_back(id);
-        std::sort(regions.begin(), regions.end());
-        this->regionString = "";
-        for (int i : regions)
-            this->regionString = this->regionString + std::to_string(i);
-    }
     
     if (this->splittingJunctions.size() > 0)
     {
@@ -171,7 +150,6 @@ void ReadTemplate::determineLocationStrings()
         this->bpString = "";
         for (int i : breakpoints)
             this->bpString = this->bpString + std::to_string(i);
-
     }
 }
 
@@ -618,11 +596,6 @@ float ReadTemplate::getTemplateWeight()
     return this->templateWeight;
 }
 
-std::vector<std::vector<std::string>> ReadTemplate::getInterChromosomeNames()
-{
-    return this->interChromosomeNames;
-}
-
 void ReadTemplate::print()
 {
     if (this->isProperPair()){
@@ -649,11 +622,6 @@ float ReadTemplate::getGCContent()
 std::string ReadTemplate::getName()
 {
 	return this->templateName;
-}
-
-std::string ReadTemplate::getRegionString()
-{
-    return this->regionString;
 }
 
 std::string ReadTemplate::getJunctionString()
@@ -686,22 +654,5 @@ bool ReadTemplate::containsSuspectedSplit()
 
 std::string ReadTemplate::getChromosomeString()
 {
-    this->chromosomeString = "";
-    if (!this->isProperPair())
-    {
-        return "";
-    }
-    else
-    {
-        if (this->interChromosomeNames.size() > 0)
-        {
-            if (this->interChromosomeNames[0].size() == 2)
-            {
-                std::sort(this->interChromosomeNames[0].begin(), this->interChromosomeNames[0].end());
-                for (auto & chrName : this->interChromosomeNames[0])
-                    this->chromosomeString += chrName;
-            }
-        }
-    }
     return this->chromosomeString;
 }

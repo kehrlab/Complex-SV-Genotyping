@@ -1,46 +1,42 @@
 #include "genotypeDistribution.hpp"
+#include "insertSizeDistribution.hpp"
 
 GenotypeDistribution::GenotypeDistribution()
 {
     this->normalizationFactor = 1;
     this->minProbability = 0.0;
-    this->mode = 2;
-}
-
-GenotypeDistribution::GenotypeDistribution(std::vector<std::string> contigNames, int mode)
-{
-    this->normalizationFactor = 1;
-    this->minProbability = 0.0;
-    this->mode = 2;
-    setPossibleContigs(contigNames);
-    setDistributionMode(mode);
 }
 
 GenotypeDistribution::GenotypeDistribution(const Eigen::SparseMatrix<float> & dist, std::unordered_map<std::string, int> & groupIndices, int sMin, int sMax)
 {
     this->normalizationFactor = 1;
     this->minProbability = 0.0;
-    this->mode = 2;
 
     for (auto & g : groupIndices)
     {
+        int nonZero = 0;
         std::vector<float> temp(dist.rows(), 0);
         for (int i = 0; i < dist.rows(); ++i)
-            temp[i] = dist.coeff(i, g.second);
-        this->distributions[g.first] = InsertSizeDistribution(sMin, sMax, temp);
-    }
-    calculateMinProbability();
-}
+        {
+            float p = dist.coeff(i, g.second);
+            if (p > 0)
+            {
+                ++nonZero;
+                temp[i] = p;
+            }
+        }
 
-void GenotypeDistribution::setDistributionMode(int mode)
-{
-    if (mode >= 0 && mode <=3)
-        this->mode = mode;
-    else {
-        std::cout << "Invalid mode. Set to default (2)." << std::endl;
+        if (nonZero == 1 && temp[0 - sMin] > 0)
+            this->interChromosomeCounts[g.first] = temp[0 - sMin];
+        else
+            this->distributions[g.first] = InsertSizeDistribution(sMin, sMax, temp);
     }
-    this->distributions.erase(this->distributions.begin(), this->distributions.end());
-    this->distributionProbabilities.erase(this->distributionProbabilities.begin(), this->distributionProbabilities.end());
+    
+    for (auto & dist : this->distributions)
+        this->distributionProbabilities[dist.first] = dist.second.getIntegral();
+    this->distributionProbabilities["interchromosome"] = getTotalInterChromosomeProbability();
+    
+    calculateMinProbability();
 }
 
 GenotypeDistribution & GenotypeDistribution::operator+=(GenotypeDistribution & rhs)
@@ -51,10 +47,6 @@ GenotypeDistribution & GenotypeDistribution::operator+=(GenotypeDistribution & r
         else
             this->distributions[it.first] += it.second;
     }
-
-    std::unordered_set<std::string> rhs_contigs = rhs.getPossibleContigs();
-    for (auto cName : rhs_contigs)
-        this->contigs.insert(cName);
 
     std::unordered_map<std::string, float> rhs_probs = rhs.getInterChromosomeProbabilites();
     for (auto it : rhs_probs)
@@ -95,92 +87,28 @@ GenotypeDistribution operator*(float factor, GenotypeDistribution rhs)
     return rhs;
 }
 
-void GenotypeDistribution::addInsertSizeProbability(int insertSize, std::string orientation, bool split, bool spanning, bool interChromosome, std::string regionString, std::string junctionString, std::string breakpointString, std::vector<std::vector<std::string>> rNamePairs, float probability)
+void GenotypeDistribution::addInsertSizeProbability(int insertSize, std::string orientation, std::string junctionString, std::string breakpointString, std::string chromosomeString, float probability)
 {
-    if (interChromosome)
+    if (chromosomeString != "")
     {
-        if (rNamePairs.size() < 1)
-            std::cout << "WARNING: No chromosome names for inter-chromosome read pair" << std::endl;
-        for (unsigned i = 0; i < rNamePairs.size(); ++i)
-        {
-            if (rNamePairs[i].size() != 2)
-                throw std::runtime_error("Invalid number of chromosome names for inter-chromosome read pair");
-            std::string contigIdentifier = getContigIdentifier(rNamePairs[i][0], rNamePairs[i][1]);
-            if (contigIdentifier != "")
-                addInterChromosomeProbability(contigIdentifier, probability);
-        }
-        if (insertSize == 0)
-            return;
+        addInterChromosomeProbability(chromosomeString, probability);
+        return;
     }
 
-    std::vector<std::string> distKeys = GenotypeDistribution::determineDistributionKeys(orientation, split, spanning, this->mode, regionString, junctionString, breakpointString);
-    for (std::string distKey : distKeys) {
-        if (this->distributions.find(distKey) == this->distributions.end()) {
-            this->distributions[distKey] = InsertSizeDistribution();
-            this->distributionProbabilities[distKey] = 0.;
-        }
-        this->distributions[distKey].addInsertSizeProbability(insertSize, probability);
+    std::string group = GenotypeDistribution::determineGroup(
+        orientation, junctionString, breakpointString, chromosomeString
+        );
+
+    if (group == "")
+    {
+        std::cerr << "Could not assign group to read pair" << std::endl;
+        return;
     }
+
+    if (this->distributions.find(group) == this->distributions.end())
+        this->distributions[group] = InsertSizeDistribution();
+    this->distributions[group].addInsertSizeProbability(insertSize, probability);
     return;
-}
-
-std::vector<std::string> GenotypeDistribution::determineDistributionKeys(std::string orientation, bool split, bool spanning, int mode, std::string regionString, std::string junctionString, std::string breakpointString)
-{
-    std::vector<std::string> distKeys;
-
-    if (mode == 1) {
-        if (orientation == "FR" || orientation == "RF")
-        {
-            if (split)
-                distKeys.push_back("splitRF");
-            if (spanning)
-                distKeys.push_back("spanningRF");
-            if (!split && !spanning)
-                distKeys.push_back("RF");
-        }
-        else if (orientation == "RR")
-        {
-            if (split)
-                distKeys.push_back("splitRR");
-            if (spanning)
-                distKeys.push_back("spanningRR");
-            if (!split && !spanning)
-                distKeys.push_back("RR");
-        } 
-        else if (orientation == "FF")
-        {
-            if (split)
-                distKeys.push_back("splitFF");
-            if (spanning)
-                distKeys.push_back("spanningFF");
-            if (!split && !spanning)
-                distKeys.push_back("FF");
-        }
-    } else {
-        if (split)
-            distKeys.push_back("split");
-        else if (spanning)
-            distKeys.push_back("spanning");
-        else {
-            if (orientation == "FR" || orientation == "RF")
-                distKeys.push_back("RF");
-            else
-                distKeys.push_back(orientation);
-        }
-    }
-
-    if (mode == 2)
-    {
-        for (int i = 0; i < distKeys.size(); ++i)
-        {
-            if (distKeys[i] == "spanning" && breakpointString != "")
-                distKeys[i] = distKeys[i] + "_" + breakpointString;
-            else if (distKeys[i] == "split" && junctionString != "")
-                distKeys[i] = distKeys[i] + "_" + junctionString;
-        }
-    }
-    
-    return distKeys;
 }
 
 float GenotypeDistribution::getTotalInterChromosomeProbability()
@@ -214,52 +142,21 @@ float GenotypeDistribution::getNormalizationFactor()
     return this->normalizationFactor;
 }
 
-float GenotypeDistribution::getProbability(int insertSize, std::string orientation, bool split, bool spanning, bool interChromosome, std::string regionString, std::string junctionString, std::string breakpointString, std::vector<std::vector<std::string>> rNamePairs, bool useInsertSize)
+float GenotypeDistribution::getProbability(int insertSize, std::string orientation, std::string junctionString, std::string breakpointString, std::string chromosomeString, bool & outlier)
 {
-    if (interChromosome)
-    {
-        float prob = this->minProbability;
-        for (unsigned i = 0; i < rNamePairs.size(); ++i)
-        {
-            if (rNamePairs[i].size() != 2)
-                throw std::runtime_error("Invalid number of chromosome names for inter-chromosome read pair.");
-            prob = std::max(prob, getInterChromosomeProbability(getContigIdentifier(rNamePairs[i][0], rNamePairs[i][1])));
-        }
-        return prob;
-    }
+    if (chromosomeString != "")
+        return getInterChromosomeProbability(chromosomeString);
 
-    std::vector<std::string> distKeys = determineDistributionKeys(orientation, split, spanning, this->mode, regionString, junctionString, breakpointString);
+    std::string group = GenotypeDistribution::determineGroup(
+        orientation, junctionString, breakpointString, chromosomeString
+        );
 
-    float p = 0.0;
-    if (useInsertSize)
-    {
-        if (this->mode != 3)
-        {
-            if (distKeys.size() == 2)
-                p = std::max(this->distributions[distKeys[0]].getInsertSizeProbability(insertSize), this->distributions[distKeys[1]].getInsertSizeProbability(insertSize));
-            else if (distKeys.size() == 1)
-                p = this->distributions[distKeys[0]].getInsertSizeProbability(insertSize);
-        } else {
-            if (distKeys.size() == 2)
-            {
-                p = std::max(this->distributions[distKeys[0]].getInsertSizeProbability(insertSize), this->distributions[distKeys[1]].getInsertSizeProbability(insertSize));
-            }
-            else if (distKeys.size() == 1)
-            {
-                if (distKeys[0] == "RF")
-                    p = this->distributions[distKeys[0]].getInsertSizeProbability(insertSize);
-                else
-                    p = this->distributionProbabilities[distKeys[0]];
-            }
-        }
-    } else {
-        if (distKeys.size() == 2)
-            p = std::max(this->distributionProbabilities[distKeys[0]], this->distributionProbabilities[distKeys[1]]);
-        else if (distKeys.size() == 1)
-            p = this->distributionProbabilities[distKeys[0]];
-    }
-    
-    return std::max(this->minProbability, p);
+    if (this->distributions.find(group) != this->distributions.end())
+        return std::max(this->distributions[group].getInsertSizeProbability(insertSize), this->minProbability);
+
+    // otherwise
+    outlier = true;
+    return this->minProbability;
 }
 
 std::unordered_map<std::string, InsertSizeDistribution> & GenotypeDistribution::getDistributions()
@@ -356,28 +253,6 @@ int GenotypeDistribution::getMaxInsertSize()
 	return maxIS;
 }
 
-void GenotypeDistribution::setPossibleContigs(std::vector<std::string> cNames)
-{
-    this->contigs.erase(this->contigs.begin(), this->contigs.end());
-    for (auto cName : cNames)
-        this->contigs.insert(cName);
-}
-
-std::string GenotypeDistribution::getContigIdentifier(std::string rName1, std::string rName2)
-{
-    std::string identifier = "";
-
-    if (this->contigs.size() > 0)
-        if (this->contigs.find(rName1) == this->contigs.end() || this->contigs.find(rName2) == this->contigs.end())
-            return "";
-
-    if (rName1 <= rName2)
-        identifier = rName1 + rName2;
-    else
-        identifier = rName2 + rName1;
-    return identifier;
-}
-
 void GenotypeDistribution::addInterChromosomeProbability(std::string identifier, float probability)
 {
     auto it = this->interChromosomeCounts.find(identifier);
@@ -389,20 +264,19 @@ void GenotypeDistribution::addInterChromosomeProbability(std::string identifier,
 float GenotypeDistribution::getInterChromosomeProbability(std::string identifier)
 {
     auto it = this->interChromosomeCounts.find(identifier);
-    if (it != this->interChromosomeCounts.end())
+    if (it != this->interChromosomeCounts.end()) 
+    {
         return this->interChromosomeCounts[identifier];
-    else
+    } else
+    {
+        std::cerr << "Did not find inter-chromosome group " << identifier << std::endl;
         return this->minProbability;
+    }
 }
 
 std::unordered_map<std::string, float> GenotypeDistribution::getInterChromosomeProbabilites()
 {
     return this->interChromosomeCounts;
-}
-
-std::unordered_set<std::string> GenotypeDistribution::getPossibleContigs()
-{
-    return this->contigs;
 }
 
 void GenotypeDistribution::calculateMinProbability()

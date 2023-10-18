@@ -73,7 +73,7 @@ int genotype(int argc, const char **argv)
         std::string msg = "Could not open output file " + params.outputPrefix + "_genotype_results.tsv for writing.";
         throw std::runtime_error(msg.c_str());
     }
-    outFile << "Variant\tSample\tFile\tGenotype\tMean_Quality\tLower_Bound\tUpper_Bound\tCertainty\tReads\tAvgMapQ\tMinMapQ\tMaxMapQ\tQualityPass";
+    outFile << "Variant\tSample\tFile\tGenotype\tMean_Quality\tLower_Bound\tUpper_Bound\tCertainty\tTotalReads\tOutliers\tAvgMapQ\tMinMapQ\tMaxMapQ\tQualityPass";
     if (params.difficulties)
         outFile << "\tDifficulty";
     outFile << std::endl;
@@ -109,7 +109,7 @@ int genotype(int argc, const char **argv)
             for (int j = 0; j < sampleProfiles.size(); ++j)
             {
                 Sample s(sampleProfiles[j]);
-                GenotypeResult result(s.getFileName(), s.getSampleName(), s.getContigInfo().cNames, false);
+                GenotypeResult result(s.getFileName(), s.getSampleName(), false);
 
                 // load the relevant read pairs
                 RecordManager bamRecords;
@@ -180,7 +180,7 @@ int genotype(int argc, const char **argv)
 
         // Status and ETA
         std::chrono::steady_clock::time_point current = std::chrono::steady_clock::now();
-        auto tAvg = std::chrono::duration_cast<std::chrono::seconds>(current-begin).count() / std::min((block + 1) * params.nThreads, (int) variantFiles.size());
+        auto tAvg = (float) std::chrono::duration_cast<std::chrono::seconds>(current-begin).count() / std::min((block + 1) * params.nThreads, (int) variantFiles.size());
 
         now = time(0);
         date = std::string(ctime(&now));
@@ -189,7 +189,7 @@ int genotype(int argc, const char **argv)
         std::cout << date << "Genotyped ";
         std::cout << std::min((block + 1) * params.nThreads, (int) variantFiles.size());
         std::cout << "/" << variantFiles.size() << " variants.\t\t\t";
-        std::cout << "ETA: " << tAvg * (variantFiles.size() - std::min((block + 1) * params.nThreads, (int) variantFiles.size())) << "s     " << std::flush;
+        std::cout << "ETA: " << (int) (tAvg * (variantFiles.size() - std::min((block + 1) * params.nThreads, (int) variantFiles.size()))) << "s     " << std::flush;
 
         // move to the next block of variants
         ++block;
@@ -317,7 +317,6 @@ inline void createGenotypeDistributions(VariantProfile & variantProfile, std::ve
     
     for (auto & dist : gtDists)
     {
-        dist.second.setPossibleContigs(cNames);
         genotypeNames.push_back(dist.first);
         genotypeDistributions.push_back(dist.second);
     }
@@ -352,29 +351,26 @@ inline void adjustLikelihoods(ReadTemplate & readTemplate, std::vector<std::stri
 
     int insertSize = readTemplate.getInsertSize();
     std::string orientation = readTemplate.getOrientation();
-    bool split = readTemplate.containsSplitRead();
-    bool spanning = readTemplate.containsSpanningRead();
-    bool interChromosome = readTemplate.alignsAcrossChromosomes();
-    std::string regionString = readTemplate.getRegionString();
     std::string junctionString = readTemplate.getJunctionString();
     std::string breakpointString = readTemplate.getBreakpointString();
+    std::string chromosomeString = readTemplate.getChromosomeString();
     std::vector<int> mappingQualities = readTemplate.getMappingQualities();
-
-    std::vector<std::vector<std::string>> rNamePairs = readTemplate.getInterChromosomeNames();
 
     std::vector<float> probabilities;
     bool insertSizeWithinLimits = false;
+    bool outlier = false;
     for (auto dist : genotypeDistributions) {
 	if (insertSize >= dist.getMinInsertSize() - 500 && insertSize <= dist.getMaxInsertSize() + 500)
 		insertSizeWithinLimits = true;
-        probabilities.push_back(
-            std::max(dist.getProbability(insertSize, orientation, split, spanning, interChromosome, regionString, junctionString, breakpointString, rNamePairs, true), minValue)
-            );
+        probabilities.push_back(dist.getProbability(
+            insertSize, orientation, junctionString, breakpointString, chromosomeString, outlier
+            ));
     } 
     
     if (insertSizeWithinLimits)
-    	result.storeEvidence(insertSize, orientation, split, spanning, interChromosome, regionString, junctionString, breakpointString, rNamePairs, mappingQualities);	
+    	result.storeEvidence(insertSize, orientation, junctionString, breakpointString, chromosomeString, mappingQualities);	
     result.addTemplateProbabilities(genotypeNames, probabilities, readTemplate.getTemplateWeight());
+    result.addOutlier(outlier);
 
     return;
 }
@@ -426,7 +422,7 @@ void writeInsertSizeDistributions(complexVariant & variant, GenotypeResult & res
         if (variantName != "")
             prefix.append("_" + variantName);
         prefix.append("_" + gtName);
-        genotypeDistributions[i].writeDistributionBinned(prefix);
+        genotypeDistributions[i].writeDistribution(prefix);
     }
 
     // write observed distribution

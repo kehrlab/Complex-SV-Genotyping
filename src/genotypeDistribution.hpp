@@ -17,46 +17,33 @@ class GenotypeDistribution
     std::unordered_map<std::string, float> distributionProbabilities;
 
     float normalizationFactor;
-    std::unordered_set<std::string> contigs;
-
     float minProbability;
-    int mode;
-    void calculateMinProbability();
-    void initDistributions();
-    void initDistributionsDefault();
-    void initDistributionsFine();
-    void initDistributionsLocal();
+    
 
     public:
     GenotypeDistribution();
-    GenotypeDistribution(std::vector<std::string>, int);
     GenotypeDistribution(const Eigen::SparseMatrix<float> &, std::unordered_map<std::string, int> &, int, int);
 
     GenotypeDistribution & operator+=(GenotypeDistribution &);
     GenotypeDistribution & operator*=(float &);
 
-    void addInsertSizeProbability(int, std::string, bool, bool, bool, std::string, std::string, std::string, std::vector<std::vector<std::string>>, float);
+    void addInsertSizeProbability(int, std::string, std::string, std::string, std::string, float);
+    void addInterChromosomeProbability(std::string, float);
+
     void calculateNormalizationFactor();
     void scaleDistribution();
 
-    static std::vector<std::string> determineDistributionKeys(std::string, bool, bool, int, std::string, std::string, std::string);
-    float getProbability(int, std::string, bool, bool, bool, std::string, std::string, std::string, std::vector<std::vector<std::string>>, bool);
+    float getProbability(int, std::string, std::string, std::string, std::string, bool &);
+    float getInterChromosomeProbability(std::string);
 
     void writeDistribution(std::string);
     void writeDistributionBinned(std::string);
-
-    void setPossibleContigs(std::vector<std::string>);
-    void setDistributionMode(int);
-
-    std::string getContigIdentifier(std::string, std::string);
-    void addInterChromosomeProbability(std::string, float);
     
     std::unordered_map<std::string, InsertSizeDistribution> & getDistributions();
-
-    float getInterChromosomeProbability(std::string);
     std::unordered_map<std::string, float> getInterChromosomeProbabilites();
-    std::unordered_set<std::string> getPossibleContigs();
     float getTotalInterChromosomeProbability();
+
+    void calculateMinProbability();
     float getMinProbability();
     void setMinProbability(float);
     float calculateKLD(GenotypeDistribution &);
@@ -64,6 +51,25 @@ class GenotypeDistribution
     int getMaxInsertSize();
     void smoothDistribution();
     float getNormalizationFactor();
+
+    static std::string determineGroup(std::string orientation, std::string junctionString, std::string breakpointString, std::string chromosomeString)
+    {
+        std::string group;
+        if (junctionString != "")
+            group = "split_" + junctionString;
+        else if (breakpointString != "")
+            group = "spanning_" + breakpointString;
+        else if (orientation != "")
+            group = orientation;
+        else 
+        {
+            std::cerr << "Could not assign a group to read pair." << std::endl;
+            group = "";
+        }
+        if (group == "FR")
+            group = "RF";
+        return group;
+    }
 };
 
 GenotypeDistribution operator+(GenotypeDistribution, GenotypeDistribution);

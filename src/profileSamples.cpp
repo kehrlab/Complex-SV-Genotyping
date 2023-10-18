@@ -33,7 +33,8 @@ int profileSamples(int argc, const char ** argv)
 
     now = time(0);
     date = std::string(ctime(&now));
-    std::cout << date << "\t Gathering required information about BAM files and regions..." << std::endl;
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Gathering required information about BAM files and regions..." << std::endl;
 
     // get contig infos from bam files
     std::vector<ContigInfo> contigInfos;
@@ -76,7 +77,8 @@ int profileSamples(int argc, const char ** argv)
     
     now = time(0);
     date = std::string(ctime(&now));
-    std::cout << date << "\t Creating sample profiles..." << std::endl;
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Creating sample profiles..." << std::endl;
 
     #pragma omp parallel for num_threads(params.nThreads)
     for (int i = 0; i < params.sampleFiles.size(); ++i)
@@ -100,7 +102,8 @@ int profileSamples(int argc, const char ** argv)
 
     now = time(0);
     date = std::string(ctime(&now));
-    std::cout << date << "\t Done" << std::endl;
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Done" << std::endl;
 
     return 0;
 }

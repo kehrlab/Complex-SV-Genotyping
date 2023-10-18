@@ -35,9 +35,7 @@ class ReadTemplate
     float templateGCContent;
 
     float templateWeight;
-    std::vector<std::vector<std::string>> interChromosomeNames;
     std::unordered_set<int> overlappingRegions;
-    std::string regionString;
     std::string junctionString;
     std::string chromosomeString;
     std::string bpString;
@@ -65,7 +63,6 @@ class ReadTemplate
 
     void findSplitReads(std::vector<Junction> &, std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);
     void findSpanningReads(std::vector<Breakpoint> &);
-    void determineOverlappingRegions(std::vector<GenomicRegion> &);
     void determineLocationStrings();
     void determineFivePrimeEnds();
     void markSuspectedSplit();
@@ -83,13 +80,11 @@ class ReadTemplate
     std::vector<BamRecord> & getRecords();
     std::vector<BamRecord> getPrimaryRecords();
     float getTemplateWeight();
-    std::vector<std::vector<std::string>> getInterChromosomeNames();
     void print();
     void setGCContent(float);
     float getGCContent();
     bool containsSuspectedSplit();
     std::string getName();
-    std::string getRegionString();
     std::string getJunctionString();
     std::string getBreakpointString();
     std::string getChromosomeString();

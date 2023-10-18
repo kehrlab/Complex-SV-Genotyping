@@ -29,8 +29,8 @@ int profileVariants(int argc, const char **argv)
     
     now = time(0);
     date = std::string(ctime(&now));
-    
-    std::cout << date << "\tLoading variant descriptions and creating structures..." << std::endl;
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Loading variant descriptions and creating structures..." << std::endl;
 
     // load variants
     std::vector<complexVariant> variants;
@@ -47,7 +47,8 @@ int profileVariants(int argc, const char **argv)
 
     now = time(0);
     date = std::string(ctime(&now));
-    std::cout << date << "\tGathering required parameters..." << std::endl;
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Gathering required parameters..." << std::endl;
 
     // get sMin, sMax and readLength from sample profiles
     int sMin {1000}, sMax {0}, readLength {-1};
@@ -99,7 +100,8 @@ int profileVariants(int argc, const char **argv)
     // create variant profiles
     now = time(0);
     date = std::string(ctime(&now));
-    std::cout << date << "\tCalculating variant profiles..." << std::endl;
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Calculating variant profiles..." << std::endl;
 
     std::vector<std::string> profilePaths(variants.size());
     std::unordered_map<std::string, int> contigLengths = mergeContigLengths(contigInfos);
@@ -130,7 +132,8 @@ int profileVariants(int argc, const char **argv)
 
     now = time(0);
     date = std::string(ctime(&now));
-    std::cout << date << "\tDone" << std::endl;
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Done" << std::endl;
 
     return 0;
 }

@@ -37,7 +37,7 @@ $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	@$(CXX) -c $(CXXFLAGS) $< -o $@
 
 clean:
-	if [ -f ./genotype ]; then rm genotype; fi
+	if [ -f ./ggtyper ]; then rm ggtyper; fi
 	rm -r $(ODIR)
 
 install:

@@ -1179,24 +1179,13 @@ inline void VariantProfile::addSimulatedTemplateToMask(int & status, VariantMap 
 
 inline void VariantProfile::addValueToMask(Allele & allele, int sOld, int sNew, std::string & orientation, std::string & jString, std::string & bpString, std::string & chromosomes)
 {
-    std::string group {""};
-    if (chromosomes != "")
-        group = chromosomes;
-    else if (jString != "")
-        group = "split_" + jString;
-    else if (bpString != "")
-        group = "spanning_" + bpString;
-    else if (orientation != "")
-        group = orientation;
-
-    if (group == "FR")
-        group = "RF";
+    std::string group = GenotypeDistribution::determineGroup(orientation, jString, bpString, chromosomes);
     
     if (group == "" || this->variantGroups.find(group) == this->variantGroups.end()) {
         std::cout << "Warning: Could not assign read pair to any group. May cause problems if too frequent." << std::endl;
         std::cout << "Variant: " << this->variant.getName() << std::endl; 
-	std::cout << "Group: " << group << std::endl;
-	return;
+        std::cout << "Group: " << group << std::endl;
+        return;
     }
 
     int gIdx = this->variantGroups[group];
@@ -1258,7 +1247,7 @@ void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::stri
     Eigen::SparseMatrix<float, Eigen::RowMajor> temp(variantAlleleDists[0].rows(), variantAlleleDists[0].cols());
     for (int i = 0; i < variantAlleleDists.size(); ++i)
     {
-        temp = variantAlleleDists[i] * majorFactor;
+        temp = 2 * variantAlleleDists[i] * majorFactor;
         for (int j = 0; j < variantAlleleDists.size(); ++j)
         {
             if (j == i)
@@ -1270,7 +1259,7 @@ void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::stri
 
         for (int j = i + 1; j < variantAlleleDists.size(); ++j)
         {
-            temp  = (variantAlleleDists[i] + variantAlleleDists[j]) * (majorFactor / 2);
+            temp  = (variantAlleleDists[i] + variantAlleleDists[j]) * majorFactor;
             for (int k = 0; k < variantAlleleDists.size(); ++k)
             {
                 if (k == i || k == j)
@@ -1287,7 +1276,9 @@ void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::stri
     {
         float sum = dist.sum();
         dist /= sum;
+	// std::cout << "0 / chr20chr21: " << dist.coeffRef(0 - this->sMinMapped, this->variantGroups["chr20chr21"]) << std::endl;
     }
+    
 
     // create GenotypeDistributions and map
     float minProb = 1;
@@ -1351,6 +1342,9 @@ void VariantProfile::writeProfile(std::string filename)
     // write min and max insert size in profiles
     stream.write(reinterpret_cast<const char *>(&this->sMinMapped), sizeof(int));
     stream.write(reinterpret_cast<const char *>(&this->sMaxMapped), sizeof(int));
+
+    //if (this->variant.getName() == "Translocation_0")
+    ///	     std::cout << "Writing...\tsMin: " << this->sMinMapped << "\t" << this->sMaxMapped << std::endl;
 
     // write filter margin
     stream.write(reinterpret_cast<const char *>(&this->filterMargin), sizeof(int));
@@ -1446,6 +1440,7 @@ void VariantProfile::writeProfile(std::string filename)
             stream.write(reinterpret_cast<const char *>(this->variantMask[i][s].innerIndexPtr()), sizeof(int)*nnzS)  ;
         }
     }
+    // std::cout << "m, n: " << this->variantMask[0][0].rows() << ", " << this->variantMask[0][0].cols() << std::endl;
     stream.close();
 }
 
@@ -1504,6 +1499,8 @@ void VariantProfile::readProfile(std::string filename)
         this->variant.setFilterMargin(this->filterMargin);
         this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
     }
+    //if (this->variant.getName() == "Translocation_0")
+    //    std::cout << "Reading...\tsMin: " << this->sMinMapped << "\t" << this->sMaxMapped << std::endl;
 
     // get read pair groups
     int nG;
@@ -1592,6 +1589,7 @@ void VariantProfile::readProfile(std::string filename)
             this->variantMask[i][s - this->sMin].finalize();
         }
     }
+    // std::cout << "m, n: " << this->variantMask[0][0].rows() << ", " << this->variantMask[0][0].cols() << std::endl;
 
     // free allocated char arrays
     stream.close();

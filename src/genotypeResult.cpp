@@ -11,6 +11,7 @@ GenotypeResult::GenotypeResult()
     this->minQuality = 0;
     this->maxQuality = 0;
     this->meanQuality = 0.0;
+    this->outlierCount = 0;
     this->useQualities = false;
 }
 
@@ -25,23 +26,23 @@ GenotypeResult::GenotypeResult(std::string filename, bool useQualities)
     this->minQuality = 60;
     this->maxQuality = 0;
     this->meanQuality = 0.0;
+    this->outlierCount = 0;
     this->useQualities = useQualities;
 }
 
-GenotypeResult::GenotypeResult(std::string filename, std::string sampleName,  std::vector<std::string> contigNames, bool useQualities)
+GenotypeResult::GenotypeResult(std::string filename, std::string sampleName, bool useQualities)
 {
     this->filename = filename;
     this->sampleName = sampleName;
     this->observedReads = 0;
-    setPossibleContigs(contigNames);
     this->callCertainty = 0;
     this->lowerBoundQuality = 0;
     this->upperBoundQuality = 0;
     this->minQuality = 60;
     this->maxQuality = 0;
     this->meanQuality = 0.0;
+    this->outlierCount = 0;
     this->useQualities = useQualities;
-    setDistributionMode(2);
 }
 
 
@@ -59,7 +60,6 @@ void GenotypeResult::callGenotype()
     bootstrapLikelihoods();
     getLikelihoodsFromBootstrapping();
     bootstrapQuality();
-    
 
     if (this->genotypeLikelihoods.size() < 3)
         throw std::runtime_error("ERROR: There must be at least 3 different genotypes.");
@@ -82,7 +82,6 @@ void GenotypeResult::callGenotype()
     this->calledGenotype = this->genotypeNames[minIndex];
     this->quality = lSecond - lMin;
 
-    calculateReadStats();
     createOutputString();
 }
 
@@ -311,6 +310,8 @@ void GenotypeResult::createOutputString()
     outputString.append("\t");
     outputString.append(std::to_string(this->observedReads));
     outputString.append("\t");
+    outputString.append(std::to_string(this->outlierCount));
+    outputString.append("\t");
     outputString.append(std::to_string(this->meanQuality));
     outputString.append("\t");
     outputString.append(std::to_string(this->minQuality));
@@ -343,24 +344,13 @@ void GenotypeResult::determineQualityStats()
     this->meanQuality /= this->mappingQualities.size();
 }
 
-void GenotypeResult::storeEvidence(int insertSize, std::string orientation, bool split, bool spanning, bool interChromosome, std::string regionString, std::string junctionString, std::string breakpointString, std::vector<std::vector<std::string>> rNamePairs, std::vector<int> mapQs)
+void GenotypeResult::storeEvidence(int insertSize, std::string orientation, std::string junctionString, std::string breakpointString, std::string chromosomeString, std::vector<int> mapQs)
 {
     ++ this->observedReads;
     for (int mapQ : mapQs)
         this->mappingQualities.push_back(mapQ);
-    std::vector<std::string> keys = GenotypeDistribution::determineDistributionKeys(orientation, split, spanning, mode, regionString, junctionString, breakpointString);
-    addPairGroups(keys);
-    this->sampleDistribution.addInsertSizeProbability(insertSize, orientation, split, spanning, interChromosome, regionString, junctionString, breakpointString, rNamePairs, 1.0);
-}
 
-void GenotypeResult::addPairGroups(std::vector<std::string> keys)
-{
-    for (auto key : keys) {
-        if (this->readPairGroups.find(key) != this->readPairGroups.end())
-            this->readPairGroups[key].push_back(this->observedReads - 1);
-        else
-            this->readPairGroups[key] = std::vector<int>(1, this->observedReads - 1);
-    }
+    this->sampleDistribution.addInsertSizeProbability(insertSize, orientation, junctionString, breakpointString, chromosomeString, 1.0);
 }
 
 void GenotypeResult::writeEvidence(std::string prefix)
@@ -369,44 +359,15 @@ void GenotypeResult::writeEvidence(std::string prefix)
     this->sampleDistribution.writeDistributionBinned(prefix);
 }
 
-void GenotypeResult::setPossibleContigs(std::vector<std::string> contigNames)
-{
-    this->sampleDistribution.setPossibleContigs(contigNames);
-}
-
-void GenotypeResult::setDistributionMode(int mode)
-{
-    this->sampleDistribution.setDistributionMode(mode);
-}
-
 float GenotypeResult::getQuality()
 {
     return this->quality;
-}
-
-void GenotypeResult::calculateReadStats()
-{
-    std::unordered_map<std::string, float> groupQualities;
-    for (auto & key : this->readPairGroups) 
-    {
-        std::vector<float> qualities;
-        for (int & i : key.second)
-            qualities.push_back(this->mappingQualities[i]);
-        groupQualities[key.first] = mean(qualities);
-    }
-    this->groupQualities = groupQualities;
-}
-
-std::unordered_map<std::string, float> GenotypeResult::getReadStats()
-{
-    return this->groupQualities;
 }
 
 void GenotypeResult::clearData()
 {
     this->sampleDistribution = GenotypeDistribution();
     std::vector<int>().swap(this->mappingQualities);
-    std::unordered_map<std::string, std::vector<int>>().swap(this->readPairGroups);
     std::vector<float>().swap(this->templateWeights);
     std::vector<float>().swap(this->bootstrappedQualities);
     std::vector<std::vector<float>>().swap(this->bootstrappedLikelihoods);
@@ -419,4 +380,11 @@ void GenotypeResult::clearData()
 std::string GenotypeResult::getSampleName()
 {
     return this->sampleName;
+}
+
+void GenotypeResult::addOutlier(bool outlier)
+{
+    if (outlier)
+        ++this->outlierCount;
+    return;
 }
