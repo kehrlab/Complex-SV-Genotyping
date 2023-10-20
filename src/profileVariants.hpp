@@ -23,7 +23,7 @@ struct variantProfileParams {
 
     variantProfileParams():
     variantFile (""), outFile(""), outDir(""), sampleProfileFile (""),
-    sMin(1), sMax(1000), readLength(100), margin(500)
+    sMin(1), sMax(1000), readLength(100), margin(500), nThreads(1)
     {} 
 };
 
