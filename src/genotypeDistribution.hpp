@@ -55,6 +55,8 @@ class GenotypeDistribution
     static std::string determineGroup(std::string orientation, std::string junctionString, std::string breakpointString, std::string chromosomeString)
     {
         std::string group;
+        if (chromosomeString != "")
+            group = chromosomeString;
         if (junctionString != "")
             group = "split_" + junctionString;
         else if (breakpointString != "")
