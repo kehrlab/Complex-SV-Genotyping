@@ -57,30 +57,24 @@ void GenotypeResult::initLikelihoods(std::vector<std::string> genotypeNames)
 
 void GenotypeResult::callGenotype()
 {
-    bootstrapLikelihoods();
-    getLikelihoodsFromBootstrapping();
-    bootstrapQuality();
+    // call genotype and quality based on R
+    calculateLikelihoods();
 
     if (this->genotypeLikelihoods.size() < 3)
         throw std::runtime_error("ERROR: There must be at least 3 different genotypes.");
 
-    float lMin = 0;
-    int minIndex;
-
-    std::vector<float>::iterator result = std::min_element(this->genotypeLikelihoods.begin(), this->genotypeLikelihoods.end());
-    lMin = *result;
-    minIndex = std::distance(this->genotypeLikelihoods.begin(), result);
-
-    float lSecond = *(std::max_element(this->genotypeLikelihoods.begin(), this->genotypeLikelihoods.end()));
-    for (int i = 0; i < this->genotypeLikelihoods.size(); ++i)
-    {
-        if (i == minIndex)
-            continue;
-        lSecond = std::min(lSecond, this->genotypeLikelihoods[i]);
-    }
-
-    this->calledGenotype = this->genotypeNames[minIndex];
+    std::vector<float> likelihoods = this->genotypeLikelihoods;
+    std::sort(likelihoods.begin(), likelihoods.end());
+    int minIdx = std::find(this->genotypeLikelihoods.begin(), this->genotypeLikelihoods.end(), likelihoods[0]) - this->genotypeLikelihoods.begin();
+    int secondIdx = std::find(this->genotypeLikelihoods.begin(), this->genotypeLikelihoods.end(), likelihoods[1]) - this->genotypeLikelihoods.begin();
+    float lMin = this->genotypeLikelihoods[minIdx];
+    float lSecond = this->genotypeLikelihoods[secondIdx];
+    this->calledGenotype = this->genotypeNames[minIdx];
     this->quality = lSecond - lMin;
+
+    // create bootstrap samples and determine Q_k,i and Q(S) for each sample
+    bootstrapLikelihoods();
+    bootstrapQuality(minIdx, secondIdx);
 
     createOutputString();
 }
@@ -179,36 +173,30 @@ void GenotypeResult::bootstrapLikelihoods()
     }
 }
 
-void GenotypeResult::getLikelihoodsFromBootstrapping()
+void GenotypeResult::bootstrapQuality(int minIdx, int secondIdx)
 {
-    this->genotypeLikelihoods.erase(this->genotypeLikelihoods.begin(), this->genotypeLikelihoods.end());
-    for (int i = 0; i < this->genotypeNames.size(); ++i)
-    {
-        float gtMean = mean(this->bootstrappedLikelihoods[i]);
-        float gtSD = sd(this->bootstrappedLikelihoods[i], gtMean);
-        this->genotypeLikelihoods.push_back(gtMean);
-        this->genotypeLikelihoodSDs.push_back(gtSD);
-    }
-}
-
-void GenotypeResult::bootstrapQuality()
-{
-    std::vector<float> likelihoods = this->genotypeLikelihoods;
-    std::sort(likelihoods.begin(), likelihoods.end());
-    int minIdx = std::find(this->genotypeLikelihoods.begin(), this->genotypeLikelihoods.end(), likelihoods[0]) - this->genotypeLikelihoods.begin();
-    int secondIdx = std::find(this->genotypeLikelihoods.begin(), this->genotypeLikelihoods.end(), likelihoods[1]) - this->genotypeLikelihoods.begin();
-
     int nSameCall = 0;
     float q = 0;
-    for (int i = 0; i < this->bootstrappedLikelihoods[minIdx].size(); ++i)
+    for (int i = 0; i < this->bootstrappedLikelihoods[0].size(); ++i)
     {
+        // get min and second index within bootstrap sample
         q = this->bootstrappedLikelihoods[secondIdx][i] - this->bootstrappedLikelihoods[minIdx][i];
         this->bootstrappedQualities.push_back(q);
-        if (q > 0)
+        
+        // check wheter the calls are actually the same
+        std::vector<float> likelihoods;
+        for (int j = 0; j < this->bootstrappedLikelihoods.size(); ++j)
+            likelihoods.push_back(this->bootstrappedLikelihoods[j][i]);
+        std::vector<float> tempLikelihoods = likelihoods;
+        std::sort(tempLikelihoods.begin(), tempLikelihoods.end());
+        int minIndex = std::find(likelihoods.begin(), likelihoods.end(), tempLikelihoods[0]) - likelihoods.begin();
+        if (minIndex == minIdx)
             ++nSameCall;
     }
+    // determine certainty
     this->callCertainty = (float) nSameCall / (float) this->bootstrappedLikelihoods[minIdx].size();
 
+    //get confidence interval
     std::vector<float> bQs = this->bootstrappedQualities;
     std::sort(bQs.begin(), bQs.end());
     int minPercentileIdx = (int) (0.025 * bQs.size()) - 1;

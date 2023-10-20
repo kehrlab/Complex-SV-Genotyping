@@ -44,7 +44,6 @@ class GenotypeResult
     int maxQuality;
     float meanQuality;
 
-    void getLikelihoodsFromBootstrapping();
     void determineQualityStats();
 
     public:
@@ -72,7 +71,7 @@ class GenotypeResult
     float mean(std::vector<float>);
     float sd(std::vector<float>, float);
     void writeBootstrapData(std::string);
-    void bootstrapQuality();
+    void bootstrapQuality(int, int);
     void clearData();
     void addOutlier(bool);
     std::string getSampleName();
