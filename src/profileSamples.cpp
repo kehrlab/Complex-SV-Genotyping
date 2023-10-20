@@ -1,6 +1,9 @@
 #include "profileSamples.hpp"
 #include "seqan/arg_parse/arg_parse_option.h"
 #include "seqan/arg_parse/argument_parser.h"
+#include <cstdlib>
+#include <filesystem>
+#include <stdexcept>
 
 #ifndef DATE
 #define DATE "1.1.1970"
@@ -141,7 +144,7 @@ seqan::ArgumentParser::ParseResult parseSampleProfileArgs(seqan::ArgumentParser 
     ));
 
     seqan::addDescription(argParser, "Create profiles of given bam files and write them to disk.");
-    seqan::addUsageLine(argParser, "ggtyper profile-samples BAM_FILE(LIST) OUTPUT_FILE OUTPUT_DIR [\033[4mOPTIONS\033[0m].");
+    seqan::addUsageLine(argParser, "BAM_FILE(LIST) OUTPUT_FILE OUTPUT_DIR [\033[4mOPTIONS\033[0m].");
     seqan::setDate(argParser, DATE);
     seqan::setVersion(argParser, VERSION);
 
@@ -178,6 +181,12 @@ sampleProfileParams getSampleProfileParameters(const seqan::ArgumentParser &argP
     // get the output arguments
     seqan::getArgumentValue(params.outFile, argParser, 1);
     seqan::getArgumentValue(params.outDir, argParser, 2);
+    if (!std::filesystem::exists(params.outDir))
+    {
+        std::string msg = "ERROR: Directory '" + params.outDir + "' does not exist.";
+        std::cerr << msg << std::endl;
+        std::exit(1);
+    }
     
     // get whole genome flag
     seqan::getOptionValue(params.wholeGenome, argParser, "whole-genome");

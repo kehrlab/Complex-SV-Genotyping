@@ -193,7 +193,7 @@ seqan::ArgumentParser::ParseResult parseVariantProfileArgs(seqan::ArgumentParser
     ));
 
     seqan::addDescription(argParser, "Create profiles of given variants and write them to disk.");
-    seqan::addUsageLine(argParser, "ggtyper profile-variants VARIANT_FILE OUTPUT_FILE OUTPUT_DIRECTORY [\033[4mOPTIONS\033[0m].");
+    seqan::addUsageLine(argParser, "VARIANT_FILE OUTPUT_FILE OUTPUT_DIRECTORY [\033[4mOPTIONS\033[0m].");
     seqan::setDate(argParser, DATE);
     seqan::setVersion(argParser, VERSION);
     
@@ -207,6 +207,13 @@ variantProfileParams getVariantProfileParameters(const seqan::ArgumentParser &ar
     seqan::getArgumentValue(params.outFile, argParser, 1);
     seqan::getArgumentValue(params.outDir, argParser, 2);
 
+    if (!std::filesystem::exists(params.outDir))
+    {
+        std::string msg = "ERROR: Directory '" + params.outDir + "' does not exist.";
+        std::cerr << msg << std::endl;
+        std::exit(1);
+    }
+
     if (! (seqan::isSet(argParser, "samples") || 
           (seqan::isSet(argParser, "min-insert-size") && 
            seqan::isSet(argParser, "max-insert-size") && 
@@ -214,7 +221,7 @@ variantProfileParams getVariantProfileParameters(const seqan::ArgumentParser &ar
           )
         )
     {
-        throw std::runtime_error("Error in input parameters: Need to specify either samples or sMin, sMax and l.");
+        throw std::runtime_error("Error in input parameters: Need to specify either '--samples' or '--min-insert-size', '--max-insert-size' and '--read-length'.");
     }
 
     seqan::getOptionValue(params.sampleProfileFile, argParser, "samples");

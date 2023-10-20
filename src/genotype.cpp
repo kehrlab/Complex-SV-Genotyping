@@ -70,7 +70,7 @@ int genotype(int argc, const char **argv)
     std::ofstream outFile(params.outputPrefix + "_genotype_results.tsv");
     if (!outFile.is_open())
     {
-        std::string msg = "Could not open output file " + params.outputPrefix + "_genotype_results.tsv for writing.";
+        std::string msg = "Could not open output file " + params.outputPrefix + "_genotype_results.tsv for writing. Check whether the path exists and is writeable.";
         throw std::runtime_error(msg.c_str());
     }
     outFile << "Variant\tSample\tFile\tGenotype\tMean_Quality\tLower_Bound\tUpper_Bound\tCertainty\tTotalReads\tOutliers\tAvgMapQ\tMinMapQ\tMaxMapQ\tQualityPass";
@@ -468,7 +468,7 @@ seqan::ArgumentParser::ParseResult parseGenotypeArgs(seqan::ArgumentParser &argP
     seqan::setValidValues(argParser, "vcf-out", "vcf VCF");
 
     seqan::addDescription(argParser, "Genotype given variants (specified by profiles) in all samples (specified by profiles).");
-    seqan::addUsageLine(argParser, "ggtyper genotype VARIANT_PROFILES SAMPLE_PROFILES OUTPUT_PREFIX [\033[4mOPTIONS\033[0m].");
+    seqan::addUsageLine(argParser, "VARIANT_PROFILES SAMPLE_PROFILES OUTPUT_PREFIX [\033[4mOPTIONS\033[0m].");
     seqan::setDate(argParser, DATE);
     seqan::setVersion(argParser, VERSION);
     
