@@ -37,11 +37,11 @@ $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	@$(CXX) -c $(CXXFLAGS) $< -o $@
 
 clean:
-	if [ -f ./ggtyper ]; then rm ggtyper; fi
+	if [ -f $(BINARY) ]; then rm $(BINARY); fi
 	rm -r $(ODIR)
 
 install:
-	if [ -f ./genotype ]; then cp genotype /usr/bin; fi
+	if [ -f $(BINARY) ]; then cp $(BINARY) /usr/bin; fi
 
 uninstall:
-	if [ -f /usr/bin/genotype ]; then rm /usr/bin/genotype; fi
+	if [ -f /usr/bin/$(BINARY) ]; then rm /usr/bin/$(BINARY); fi

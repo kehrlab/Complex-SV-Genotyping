@@ -81,6 +81,7 @@ filePath2.bam
 ...
 ```
 
+*Note:* profile-samples expects one read group per BAM file. If more (or less) are present in the header, the command will fail. To force the use of such BAM files, use flag `-f`. All read groups within one file will be merged in that case.
 
 ## profile-variants
 
