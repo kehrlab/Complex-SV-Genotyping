@@ -154,7 +154,8 @@ Reference allele name is `REF`, variant allele name is given in variant descript
 - Lower_Bound: Lower boundary of 95-% CI (determined by bootstrapping).
 - Upper_Bound: Upper boundary of 95-% CI (determined by bootstrapping).
 - Certainty: Genotype certainty (determined by bootstrapping).
-- Reads: Number of read pairs the genotype call is based on.
+- TotalReads: Number of read pairs the genotype call is based on.
+- Outliers: Number of observed read pairs that could not be assigned to a group present in the profile.
 - AvgMapQ: Average mapping quality of the used reads.
 - MinMapQ: Lowest mapping quality among the used reads.
 - MaxMapQ: Largest mapping quality among the used reads
