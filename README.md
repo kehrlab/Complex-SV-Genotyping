@@ -133,7 +133,7 @@ The results will be written to `${PREFIX}_genotype_results.tsv`.
 
 We can genotype the variants and samples specified in variantProfiles.txt and sampleProfiles.txt for with
 ```
-./ggtyper genotype variantProfiles.txt sampleProfiles.txt ./out -T 10 -o ./example_run
+./ggtyper genotype variantProfiles.txt sampleProfiles.txt ./out -T 10 -e
 ```
 
 ### Other parameters
