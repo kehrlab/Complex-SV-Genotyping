@@ -7,6 +7,7 @@
 #include <chrono>
 #include <filesystem>
 #include <stdexcept>
+#include <string>
 
 #ifndef DATE
 #define DATE "1.1.1970"
@@ -286,10 +287,17 @@ inline void checkSampleParameters(std::vector<std::string> & sampleProfiles, int
         std::getline(stream, filename);
         sampleProfiles.push_back(filename);
         Sample s(filename);
-        if (readLength < 0)
+        if (readLength < 0) {
             readLength = s.getLibraryDistribution().getReadLength();
-        else if (s.getLibraryDistribution().getReadLength() != readLength)
-            throw std::runtime_error("Read length in samples does not match. Variant profiles for these samples must be generated separately.");
+        } else if (s.getLibraryDistribution().getReadLength() != readLength) {
+		std::string msg;
+		if (sampleProfiles.size() >= 2) {
+            		msg = "Read length in samples does not match.\nCurrent consensus: " + std::to_string(readLength) + "\n" + filename + ": " + std::to_string(s.getLibraryDistribution().getReadLength()) + "\nLast profile with consensus length: " + sampleProfiles[sampleProfiles.size() - 2] + "\nVariant profiles for divergent samples must be generated separately.";
+		} else {
+			msg = "Read length in samples does not match.\nCurrent consensus: " + std::to_string(readLength) + "\n" + filename + ": " + std::to_string(s.getLibraryDistribution().getReadLength()) + "\nVariant profiles for divergent samples must be generated separately.";
+		}
+		throw std::runtime_error(msg.c_str());
+        }
         sMax = std::max(sMax, s.getLibraryDistribution().getMaxInsert());
         if (sMin < 0)
             sMin = s.getLibraryDistribution().getMinInsert();
