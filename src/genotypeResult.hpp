@@ -25,6 +25,8 @@ class GenotypeResult
     std::vector<std::string> genotypeNames;
     std::vector<int> mappingQualities;
 
+    std::unordered_map<std::string, float> genotypePriors;
+
     std::vector<std::vector<float>> templateProbabilities;
     std::vector<float> templateWeights;
     std::vector<std::vector<float>> bootstrappedLikelihoods;
@@ -50,6 +52,7 @@ class GenotypeResult
     GenotypeResult();
     GenotypeResult(std::string, bool);
     GenotypeResult(std::string, std::string, bool);
+    GenotypeResult(std::string, std::string, bool, std::unordered_map<std::string, float>);
     
     void callGenotype();
     void scaleToPhred();

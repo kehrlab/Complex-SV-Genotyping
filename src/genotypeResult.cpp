@@ -45,6 +45,22 @@ GenotypeResult::GenotypeResult(std::string filename, std::string sampleName, boo
     this->useQualities = useQualities;
 }
 
+GenotypeResult::GenotypeResult(std::string filename, std::string sampleName, bool useQualities, std::unordered_map<std::string, float> priors)
+{
+    this->filename = filename;
+    this->sampleName = sampleName;
+    this->observedReads = 0;
+    this->callCertainty = 0;
+    this->lowerBoundQuality = 0;
+    this->upperBoundQuality = 0;
+    this->minQuality = 60;
+    this->maxQuality = 0;
+    this->meanQuality = 0.0;
+    this->outlierCount = 0;
+    this->useQualities = useQualities;
+    this->genotypePriors = priors;
+}
+
 
 void GenotypeResult::initLikelihoods(std::vector<std::string> genotypeNames)
 {
@@ -53,6 +69,38 @@ void GenotypeResult::initLikelihoods(std::vector<std::string> genotypeNames)
         std::vector<float> emptyVec;
         this->templateProbabilities.push_back(emptyVec);
     }
+    
+    // prepare genotype priors
+    bool fittingPriors {true};
+    if (this->genotypePriors.size() != this->genotypeNames.size())
+    {
+        fittingPriors = false; 
+    } else {
+        for (auto & gt : this->genotypeNames)
+        {
+            if (this->genotypePriors.find(gt) == this->genotypePriors.end())
+            {
+                fittingPriors = false;
+                break;
+            }
+        }
+    }
+    // create equal priors if the given priors do not fit
+    if(!fittingPriors)
+    {
+        this->genotypePriors = std::unordered_map<std::string, float>();
+        for (auto & gt : this->genotypeNames)
+            this->genotypePriors[gt] = 1.;   
+    }
+
+    // rescale to 1
+    float sum = 0.;
+    for (auto & p : this->genotypePriors)
+        sum += p.second;
+    for (auto & p : this->genotypePriors)
+        p.second /= sum;
+
+    return;
 }
 
 void GenotypeResult::callGenotype()
@@ -127,6 +175,7 @@ void GenotypeResult::calculateLikelihoods()
         float L = 0;
         for (int j = 0; j < this->templateProbabilities[i].size(); ++j)
             L += this->templateProbabilities[i][j];
+        L += -10 * std::log10(this->genotypePriors[this->genotypeNames[i]]);
         this->genotypeLikelihoods.push_back(L);
     }
 }

@@ -2,6 +2,7 @@
 #include "genotypeResult.hpp"
 #include "seqan/arg_parse/arg_parse_argument.h"
 #include "seqan/arg_parse/arg_parse_option.h"
+#include "seqan/arg_parse/argument_parser.h"
 #include "variantProfile.hpp"
 #include "vcfWriter.hpp"
 #include <chrono>
@@ -46,6 +47,10 @@ int genotype(int argc, const char **argv)
     std::vector<std::string> sampleProfiles;
     int sMin {-1}, sMax{-1}, readLength{-1};
     checkSampleParameters(sampleProfiles, sMin, sMax, readLength, params);
+
+    // get genotype priors
+    std::unordered_map<std::string, std::unordered_map<std::string, float>> priors;
+    getGenotypePriors(priors, params);
 
     // get list of variant profile files
     std::vector<std::string> variantFiles;
@@ -110,7 +115,12 @@ int genotype(int argc, const char **argv)
             for (int j = 0; j < sampleProfiles.size(); ++j)
             {
                 Sample s(sampleProfiles[j]);
-                GenotypeResult result(s.getFileName(), s.getSampleName(), false);
+
+                GenotypeResult result;
+                if (priors.find(variantProfiles[i].getName()) != priors.end())
+                    result = GenotypeResult(s.getFileName(), s.getSampleName(), false, priors[variantProfiles[i].getName()]);
+                else
+                    result = GenotypeResult(s.getFileName(), s.getSampleName(), false);
 
                 // load the relevant read pairs
                 RecordManager bamRecords;
@@ -309,6 +319,42 @@ inline void checkSampleParameters(std::vector<std::string> & sampleProfiles, int
     return;
 }
 
+inline void getGenotypePriors(std::unordered_map<std::string, std::unordered_map<std::string, float>> &genotypePriors, genotypeParameters & params)
+{
+    if (params.priorFile == "")
+        return;
+    std::ifstream stream(params.priorFile);
+    if (!stream.is_open())
+    {
+        std::cerr << "Could not open genotype prior file '" << params.priorFile << "' for reading. Default to 1 for all priors." << std::endl;
+        return;
+    }
+
+    std::string variantName{""};
+    float p0{0.0}, p1{0.0},p2{0.0};
+    while (stream.peek() != EOF)
+    {
+        stream >> variantName;
+        stream >> p0;
+        stream >> p1;
+        stream >> p2;
+
+        if (p0 <= 0 || p0 > 1. || p1 <= 0 || p1 > 1. || p2 <= 0 || p2 > 1.) {
+            std::cerr << "Invalid genotype priors for variant " << variantName << ". Must fulfill 0 < p <= 1. Defaulting to equal priors for this variant.";
+            continue;
+        }
+        std::unordered_map<std::string, float> temp;
+        temp["REF/REF"] = std::max(0.01f, p0);
+        temp["REF/VAR"] = std::max(0.01f, p1);
+        temp["VAR/VAR"] = std::max(0.01f, p2);
+        genotypePriors[variantName] = temp;
+
+        stream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+    stream.close();
+    return;
+}
+
 inline void loadReadPairs(VariantProfile & variantProfile, RecordManager & recordManager, BamFileHandler & bamFileHandler, Sample & s)
 {
     bamFileHandler.setRegions(
@@ -474,6 +520,12 @@ seqan::ArgumentParser::ParseResult parseGenotypeArgs(seqan::ArgumentParser &argP
         seqan::ArgParseOption::OUTPUT_FILE, "VCF"
     ));
     seqan::setValidValues(argParser, "vcf-out", "vcf VCF");
+    seqan::addOption(argParser, seqan::ArgParseOption(
+        "P", "priors", "Path of txt file containing prior genotype probabilities. One variant per line, format: VARIANT\tp(G0)\tp(G1)\tp(G2).",
+        seqan::ArgParseOption::INPUT_FILE, "PRIORS"
+    ));
+    seqan::setValidValues(argParser, "priors", "txt");
+    
 
     seqan::addDescription(argParser, "Genotype given variants (specified by profiles) in all samples (specified by profiles).");
     seqan::addUsageLine(argParser, "VARIANT_PROFILES SAMPLE_PROFILES OUTPUT_PREFIX [\033[4mOPTIONS\033[0m].");
@@ -496,6 +548,7 @@ genotypeParameters getGenotypeParameters(seqan::ArgumentParser &argParser)
     seqan::getOptionValue(params.minMapQ, argParser, "minimum-quality");
     seqan::getOptionValue(params.distributions, argParser, "write-distributions");
     seqan::getOptionValue(params.vcfFile, argParser, "vcf-out");
+    seqan::getOptionValue(params.priorFile, argParser, "priors");
 
     return params;
 }

@@ -47,7 +47,7 @@ void Sample::calculateDefaultDistributions()
 {
     std::unordered_map<std::string, TemplatePosition> insertPositions;
 
-    int readLength;
+    int readLength = 0;
     if (this->sampledRegions.size() == 0) 
         insertPositions = this->bamFile.get_insert_size_positions(readLength);
     else 

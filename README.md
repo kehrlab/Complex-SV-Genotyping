@@ -141,6 +141,8 @@ We can genotype the variants and samples specified in variantProfiles.txt and sa
 - Option `-d` writes created distributions and results into a directory created in the same directory as the bam file, .i.e., "[bamFile.bam]\_distributions"
 - minQ specifies the minimum mapping quality required for reads to be considered. Default 0. 
 - Estimation of Variant difficulty is enabled with `-e`, and returns for each genotype of a variant the number of reads required to genotype the variant with expected quality Q.
+- Option `-P` allows specification of genotype priors. This currently works only for bi-allelic variants. There must be one variant per line. Each line has the format: [variantName] \t [p(G_0)] \t [p(G_1)] \t [p(g_2)]
+- VCF output is optional and can be enable with `-V`. This split all variants into breakends. The feature is experimental and not all quality metrics are reported in the file.
 
 ## Output 
 The output of `genotype` is a tab-separated file with the following columns:
