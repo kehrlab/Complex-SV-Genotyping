@@ -1,4 +1,5 @@
 #include "profileVariants.hpp"
+#include "seqan/arg_parse/argument_parser.h"
 
 #ifndef DATE
 #define DATE "1.1.1970"
@@ -34,17 +35,22 @@ int profileVariants(int argc, const char **argv)
 
     // load variants
     std::vector<complexVariant> variants;
-    variantParser vParser(params.variantFile);
-    std::vector<variantData> allVariantJunctions = vParser.getVariantJunctions();
-    std::vector<std::string> variantNames = vParser.getVariantNames();
-    std::vector<std::vector<std::string>> alleleNames = vParser.getAlleleNames();
 
-    for (int i = 0; i < variantNames.size(); ++i)
+    // for each given variant file
+    for (std::string filename : params.variantFileNames)
     {
-        variants.push_back(complexVariant(variantNames[i], alleleNames[i], allVariantJunctions[i], params.variantFile));
-        variants[i].setFilterMargin(params.margin);
-    }
+        // load variant descriptions from json file
+        variantParser vParser(filename);
+        std::vector<variantData> allVariantJunctions = vParser.getVariantJunctions();
+        std::vector<std::string> variantNames = vParser.getVariantNames();
+        std::vector<std::vector<std::string>> alleleNames = vParser.getAlleleNames();
 
+        for (int i = 0; i < variantNames.size(); ++i)
+        {
+            variants.push_back(complexVariant(variantNames[i], alleleNames[i], allVariantJunctions[i], filename));
+            variants[i].setFilterMargin(params.margin);
+        }
+    }
     now = time(0);
     date = std::string(ctime(&now));
     date[date.find_last_of("\n")] = '\t';
@@ -161,7 +167,7 @@ seqan::ArgumentParser::ParseResult parseVariantProfileArgs(seqan::ArgumentParser
         seqan::ArgParseArgument::OUTPUT_DIRECTORY, "OUTPUT DIR")
     );
 
-    seqan::setValidValues(argParser, 0, "JSON json");
+    seqan::setValidValues(argParser, 0, "JSON json txt");
     seqan::setValidValues(argParser, 1, "txt");
 
     // options
@@ -203,7 +209,33 @@ seqan::ArgumentParser::ParseResult parseVariantProfileArgs(seqan::ArgumentParser
 variantProfileParams getVariantProfileParameters(const seqan::ArgumentParser &argParser)
 {
     variantProfileParams params;
-    seqan::getArgumentValue(params.variantFile, argParser, 0);
+
+    std::string variantFileName;
+    seqan::getArgumentValue(variantFileName, argParser, 0);
+    
+    if (seqan::getArgumentFileExtension(argParser, 0) == "txt")
+    {
+        std::ifstream stream(variantFileName);
+        if (!stream.is_open())
+        {
+            std::cerr << "Could not open file " << variantFileName << " for reading." << std::endl;
+            std::exit(1);
+        }
+
+        std::string filename;
+        while (stream.peek() != EOF)
+        {
+            std::getline(stream, filename);
+            params.variantFileNames.push_back(filename);
+        }
+        stream.close();
+    } 
+    else if (seqan::getArgumentFileExtension(argParser, 0) == "json")
+    {
+        params.variantFileNames.push_back(variantFileName);
+    } 
+
+
     seqan::getArgumentValue(params.outFile, argParser, 1);
     seqan::getArgumentValue(params.outDir, argParser, 2);
 

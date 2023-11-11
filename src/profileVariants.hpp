@@ -10,7 +10,7 @@
 #include "variant.hpp"
 
 struct variantProfileParams {
-    std::string variantFile;
+    std::vector<std::string> variantFileNames;
     std::string outFile;
     std::string outDir;
 
@@ -22,7 +22,7 @@ struct variantProfileParams {
     int nThreads;
 
     variantProfileParams():
-    variantFile (""), outFile(""), outDir(""), sampleProfileFile (""),
+    variantFileNames (std::vector<std::string>()), outFile(""), outDir(""), sampleProfileFile (""),
     sMin(1), sMax(1000), readLength(100), margin(500), nThreads(1)
     {} 
 };
