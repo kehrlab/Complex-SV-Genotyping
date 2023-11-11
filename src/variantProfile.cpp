@@ -1188,6 +1188,9 @@ inline void VariantProfile::addValueToMask(Allele & allele, int sOld, int sNew, 
         return;
     }
 
+    if (sNew < this->sMinMapped || sNew >= this->sMaxMapped)
+	    std::cerr << "Insert size error. Profile boundaries: " << this->sMinMapped << "\t" << this->sMaxMapped << "\tMapped insert size: " << sNew << std::endl;
+
     int gIdx = this->variantGroups[group];
 
     if (allele.getName() == "REF")

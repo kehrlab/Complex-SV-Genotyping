@@ -45,6 +45,26 @@ BamRecord::BamRecord(std::string refName, std::string templateName, int begin, i
     this->deletionSize = -1;
 }
 
+BamRecord::BamRecord(std::string refName, std::string templateName, int begin, int end, int mappingQuality, int seqLength, int clipRight, int clipLeft, bool reverse, bool primary, bool first, bool last, bool deletion, int deletionSize)
+{
+    this->referenceName = refName;
+    this->templateName = templateName;
+    this->beginPos = begin;
+    this->endPos = end;
+    this->alignmentLength = end-begin;
+    this->reverse = reverse;
+    this->mappingQuality = mappingQuality;
+    this->seqLength = seqLength;
+    this->clipLeft = clipLeft;
+    this->clipRight = clipRight;
+    this->primary = primary;
+    this->first = first;
+    this->last = last;
+    this->allProper = true;
+    this->deletion = deletion;
+    this->deletionSize = deletionSize;
+}
+
 BamRecord::BamRecord(bam1_t * record, bam_hdr_t * hdr)
 {
     extractRecordInfo(record, hdr);

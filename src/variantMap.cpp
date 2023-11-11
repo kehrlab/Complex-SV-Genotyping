@@ -1,4 +1,5 @@
 #include "variantMap.hpp"
+#include "genomicRegion.hpp"
 
 VariantMap::VariantMap()
 {
@@ -14,6 +15,46 @@ void VariantMap::calculateMapLength()
         this->regionLengths.push_back(l);
         this->totalLength += l;
     }
+}
+
+void VariantMap::detectSmallDeletions()
+{
+    if (this->regions.size() == 0)
+        return;
+    
+    int delSize = -1;
+    for (int i = 0; i < this->regions.size() - 1; ++i)
+        if (isDeletion(delSize, this->regions[i], this->regions[i+1]))
+            this->deletionIndices[i] = delSize;
+}
+
+bool VariantMap::isDeletion(int & delSize, GenomicRegion & r1, GenomicRegion & r2)
+{
+    int maxDelSize = 50;
+    delSize = -1;
+    
+    if (r1.getReferenceName() != r2.getReferenceName())
+        return false;
+    
+    
+    if (!r1.isReverse() && !r2.isReverse())
+    {
+        if (r2.getRegionStart() - r1.getRegionEnd() <= maxDelSize && r2.getRegionStart() > r1.getRegionEnd())
+        {
+            delSize = r2.getRegionStart() - r1.getRegionEnd();
+            return true;
+        }
+    }
+    else if (r1.isReverse() && r2.isReverse())
+    {
+        if (r1.getRegionStart() - r2.getRegionEnd() <= maxDelSize && r1.getRegionStart() > r2.getRegionEnd())
+        {
+            delSize = r1.getRegionStart() - r2.getRegionEnd();
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 ReadTemplate VariantMap::simulateTemplate(int startIndex, int insertSize, int readLength)
@@ -125,7 +166,7 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
     else
         lastDistFromBegin = lastPosition.getRegionStart() - this->regions[lastIndex].getRegionStart();
     
-    if (firstIndex == lastIndex)
+    if (firstIndex == lastIndex || ((std::abs(firstIndex - lastIndex) == 1) && this->deletionIndices.find(firstIndex) != this->deletionIndices.end()))
     {
         std::string refName = firstPosition.getReferenceName();
         int start, end, clipLeft, clipRight;
@@ -149,10 +190,19 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
             else
                 reverse = true;
         }
-        BamRecord record(refName, "tempTemplate", start, end, 60, endIndex-beginIndex, clipRight, clipLeft, reverse, true, first, !first);
+
+        // consider gapped alignment for small deletions
+        bool deletion = false;
+        int delSize = -1;
+        if (firstIndex != lastIndex) {
+            deletion = true;
+            delSize = this->deletionIndices[firstIndex];
+            this->possibleSplitRead = true;
+        }
+        BamRecord record(refName, "tempTemplate", start, end, 60, endIndex-beginIndex, clipRight, clipLeft, reverse, true, first, !first, deletion, delSize);
         createdRecords.push_back(record);
     } 
-    else if (std::abs(firstIndex - lastIndex) == 1)
+    else if ((std::abs(firstIndex - lastIndex) == 1) && this->deletionIndices.find(firstIndex) != this->deletionIndices.end())
     {
         std::string refNameLeft, refNameRight;
         int startLeft, startRight, endLeft, endRight, clipLeftLeft, clipRightLeft, clipLeftRight, clipRightRight;
@@ -215,89 +265,96 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
         createdRecords.push_back(r1);
         createdRecords.push_back(r2);
     } else {
-        std::vector<int> partLengths;
         // find the region that contains most of the read
 
-        // first region
-        partLengths.push_back(std::abs(firstDistFromEnd));
-        // in between
-        for (int i = firstIndex + 1; i < lastIndex; ++i)
+        // get lengths of read parts
+        struct partInfo
         {
-            partLengths.push_back(this->regionLengths[i]);
-        }
-        // last region
-        partLengths.push_back(std::abs(lastDistFromBegin));
+            int length;
+            int startIndex;
+            int lastIndex;
+        };
+        std::vector<partInfo> parts;
 
+        partInfo temp;
+        temp.length = std::abs(firstDistFromEnd);
+        temp.startIndex = firstIndex;
+        temp.lastIndex = firstIndex;
+
+        for (int i = firstIndex; i < lastIndex; ++i)
+        {
+            if (this->deletionIndices.find(firstIndex) != this->deletionIndices.end())
+            {
+                if (i+1 == lastIndex)
+                    temp.length += std::abs(lastDistFromBegin);
+                else
+                    temp.length += this->regionLengths[i+1];
+                temp.lastIndex = i+1;
+            } else {
+                parts.push_back(temp);
+                temp.startIndex = i+1;
+                temp.lastIndex = i+1;
+                if (i+1 == lastIndex)
+                    temp.length = std::abs(lastDistFromBegin);
+                else
+                    temp.length = this->regionLengths[i+1];
+            }
+        }
+        parts.push_back(temp);
+        
+
+
+        // get index of region where the read starts
         int largestIdx = 0;
-        for (int i = 0; i < partLengths.size(); ++i)
-            if (partLengths[i] > partLengths[largestIdx])
+        for (int i = 0; i < parts.size(); ++i)
+            if (parts[i].length > parts[largestIdx].length)
                 largestIdx = i;
-        int idx = firstIndex + largestIdx; // region index
+
 
         // extract information for largest part
         std::string refName;
         int clipLeft, clipRight, start, end;
         bool reverse;
 
-        if (largestIdx == 0)
+        refName = this->regions[parts[largestIdx].startIndex].getReferenceName();
+        reverse = this->regions[parts[largestIdx].startIndex].isReverse();
+
+        if (parts[largestIdx].startIndex == firstIndex)
         {
-            // right clipping, left ist the new read
-            refName = firstPosition.getReferenceName();
             clipLeft = 0;
-            clipRight = 0;
-            if (! this->regions[idx].isReverse())
-            {
+            if (!reverse)
                 start = firstPosition.getRegionStart();
-                end = this->regions[idx].getRegionEnd();
-                for (int i = 1; i < partLengths.size(); ++i)
-                    clipRight += partLengths[i];
-                reverse = false;
-            } else {
-                start = this->regions[idx].getRegionStart();
+            else
                 end = firstPosition.getRegionStart();
-                reverse = true;
-                for (int i = 1; i < partLengths.size(); ++i)
-                    clipLeft += partLengths[i];
-            }  
-        } else if (largestIdx == partLengths.size() - 1)
+        } 
+        else 
         {
-            refName = lastPosition.getReferenceName();
-            clipRight = 0;
             clipLeft = 0;
-            if (! this->regions[idx].isReverse())
-            {
-                start = this->regions[idx].getRegionStart();
+            for (int i = largestIdx - 1; i >= 0; --i)
+                clipLeft += parts[i].length;
+            if (!reverse)
+                start = this->regions[parts[largestIdx].startIndex].getRegionStart();
+            else
+                end = this->regions[parts[largestIdx].startIndex].getRegionEnd();
+        }
+
+        if (parts[largestIdx].lastIndex == lastIndex)
+        {
+            clipRight = 0;
+            if (!reverse)
                 end = lastPosition.getRegionStart();
-                for (int i = 0; i < partLengths.size() - 1; ++i)
-                    clipLeft += partLengths[i];
-                reverse = false;
-            } else {
+            else
                 start = lastPosition.getRegionStart();
-                end = this->regions[idx].getRegionEnd();
-                reverse = true;
-                for (int i = 0; i < partLengths.size() - 1; ++i)
-                    clipRight += partLengths[i];
-            }
-        } else {
-            refName = this->regions[idx].getReferenceName();
-            start = this->regions[idx].getRegionStart();
-            end = this->regions[idx].getRegionEnd();
-            reverse = this->regions[idx].isReverse();
-            clipLeft = 0;
+        }
+        else 
+        {
             clipRight = 0;
-            for (int i = 0; i < partLengths.size(); ++i)
-            {
-                if (i < largestIdx)
-                    clipLeft += partLengths[i];
-                if (i > largestIdx)
-                    clipRight += partLengths[i];
-            }
-            if (reverse)
-            {
-                int temp = clipRight;
-                clipRight = clipLeft;
-                clipLeft = temp;
-            }
+            for (int i = largestIdx + 1; i < parts.size(); ++i)
+                clipRight += parts[i].length;
+            if (!reverse)
+                end = this->regions[parts[largestIdx].lastIndex].getRegionEnd();
+            else
+                start = this->regions[parts[largestIdx].lastIndex].getRegionStart();
         }
         if (isReverse)
         {
@@ -306,8 +363,20 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
             else
                 reverse = true;
         }
-	this->possibleSplitRead = true;
-        BamRecord record(refName, "tempTemplate", start, end, 60, lastIndex - beginIndex, clipRight, clipLeft, reverse, true, first, !first);
+
+        // consider gaps
+        bool deletion = false;
+        int delSize = -1;
+        if (parts[largestIdx].lastIndex - parts[largestIdx].startIndex > 0)
+        {
+            deletion = true;
+            for (int i = parts[largestIdx].startIndex; i < parts[largestIdx].lastIndex; ++i)
+                if (this->deletionIndices[i] > 0)
+                    delSize = std::max(delSize, this->deletionIndices[i]);
+        }
+
+	    this->possibleSplitRead = true;
+        BamRecord record(refName, "tempTemplate", start, end, 60, lastIndex - beginIndex, clipRight, clipLeft, reverse, true, first, !first, deletion, delSize);
         createdRecords.push_back(record);
     }
     return createdRecords;

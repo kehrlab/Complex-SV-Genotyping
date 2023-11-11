@@ -44,6 +44,7 @@ class BamRecord
     BamRecord(bam1_t *, bam_hdr_t *);
     BamRecord(std::string, std::string, int, int, bool, bool, bool);
     BamRecord(std::string, std::string, int, int, int, int, int, int, bool, bool, bool, bool);
+    BamRecord(std::string, std::string, int, int, int, int, int, int, bool, bool, bool, bool, bool, int);
 
     std::string getReferenceName();
     std::string getTemplateName();

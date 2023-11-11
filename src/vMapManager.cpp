@@ -53,6 +53,7 @@ void VariantMapManager::createBreakpointMaps(std::vector<Breakpoint> breakpoints
     for (VariantMap & m : this->refMaps)
         m.calculateMapLength();
     this->variantMap.calculateMapLength();
+    this->variantMap.detectSmallDeletions();
 }
 
 void VariantMapManager::fillMap(VariantMap & map, std::vector<Junction> & junctions)
