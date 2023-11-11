@@ -622,14 +622,18 @@ void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups
                         this->sMaxMapped = std::max(this->sMaxMapped, sNew);
                     }
                 }
-                // also on previous region
-                if (vRegions.distanceFromLast[regionIdx] > 0)
+
+                // also on previous region(s)
+                int tempIdx = regionIdx;
+                int dTemp = jRegion.junctionIndices[j];
+                while (vRegions.distanceFromLast[tempIdx] > 0)
                 {
-                    JunctionRegion & lastRegion = vRegions.regions[regionIdx - 1];
-                    for (int k = lastRegion.breakpoints.size() - 1; k >= 0; --k)
+                    bool someLeft = true;
+                    JunctionRegion & lastRegion = vRegions.regions[tempIdx - 1];
+                    for (int k = lastRegion.junctionIndices.size() - 1; k >= 0; --k)
                     {
-                        int d = vRegions.distanceFromLast[regionIdx] + jRegion.junctionIndices[j] + 
-                            (lastRegion.length - 1 - lastRegion.breakpointIndices[k]);
+                        int d = vRegions.distanceFromLast[tempIdx] + dTemp + 
+                            (lastRegion.length - 1 - lastRegion.junctionIndices[k]);
                         int remaining = s - (d+2);
 
                         bool fr {true};
@@ -696,8 +700,16 @@ void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups
                             }
                             this->sMinMapped = std::min(this->sMinMapped, sNew);
                             this->sMaxMapped = std::max(this->sMaxMapped, sNew);
+                        } else {
+                            someLeft = false;
+                            break;
                         }
                     }
+                    if (!someLeft)
+                        break;
+                    
+                    dTemp += (vRegions.distanceFromLast[tempIdx] + lastRegion.length - 1);
+                    --tempIdx;
                 }
 
 
@@ -774,15 +786,18 @@ void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups
                         this->sMaxMapped = std::max(this->sMaxMapped, sNew);
                     }
                 }
-                // also on next region
-                if (vRegions.distanceToNext[regionIdx] > 0)
+
+                // also on next region(s)
+                tempIdx = regionIdx;
+                dTemp = (jRegion.length - 1 - jRegion.junctionIndices[j]);
+                while (vRegions.distanceToNext[tempIdx] > 0)
                 {
-                    JunctionRegion & nextRegion = vRegions.regions[regionIdx + 1];
-                    for (int k = 0; k < nextRegion.breakpoints.size(); ++k)
+                    bool someLeft = true;
+                    JunctionRegion & nextRegion = vRegions.regions[tempIdx + 1];
+                    for (int k = 0; k < nextRegion.junctionIndices.size(); ++k)
                     {
-                        int d = vRegions.distanceToNext[regionIdx] + 
-                            (jRegion.length - 1 - jRegion.junctionIndices[j]) + 
-                            nextRegion.breakpointIndices[k];
+                        int d = vRegions.distanceToNext[tempIdx] + dTemp + 
+                            nextRegion.junctionIndices[k];
                         int remaining = s - (d+2);
 
                         bool fr {true};
@@ -849,8 +864,16 @@ void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups
                             }
                             this->sMinMapped = std::min(this->sMinMapped, sNew);
                             this->sMaxMapped = std::max(this->sMaxMapped, sNew);
+                        } else {
+                            someLeft = false;
+                            break;
                         }
                     }
+                    if (!someLeft)
+                        break;
+
+                    dTemp += vRegions.distanceToNext[tempIdx] + nextRegion.length - 1;
+                    ++tempIdx;
                 }
             }
         }
@@ -919,15 +942,24 @@ void VariantProfile::determineSpanningGroups(std::unordered_set<std::string> & g
                     indexGroups.push_back(set);
             }
 
-            // Sometimes it is necessary to consider breakpoints on next region as well
-            if (j == jRegion.breakpoints.size() && vRegions.distanceToNext[v] > 0)
+            // Sometimes it is necessary to consider breakpoints on next region(s) as well
+            if (j != jRegion.breakpoints.size())
+                continue;
+
+            int tempIdx = v;
+            int dTemp = jRegion.length - 1 - jRegion.breakpointIndices[i];
+            while (vRegions.distanceToNext[tempIdx] > 0)
             {
-                JunctionRegion & nextRegion = vRegions.regions[v+1];
+                bool someLeft = true;
+                JunctionRegion & nextRegion = vRegions.regions[tempIdx + 1];
                 for (int j = 0; j < nextRegion.breakpoints.size(); ++j)
                 {
-                    int d = vRegions.distanceToNext[v] + (jRegion.length - 1 + jRegion.breakpointIndices[i]);
-                    if (nextRegion.breakpointIndices[j] + d > this->sMax - 2*this->overlap)
+                    int d = vRegions.distanceToNext[tempIdx] + dTemp + nextRegion.breakpointIndices[j];
+                    if (d > this->sMax - 2*this->overlap)
+                    {
+                        someLeft = false;
                         break;
+                    }
 
                     std::vector<int> secondIndices;
                     secondIndices.push_back(nextRegion.breakpoints[j].getID());
@@ -937,7 +969,7 @@ void VariantProfile::determineSpanningGroups(std::unordered_set<std::string> & g
                     {
                         if (nextRegion.breakpointIndices[k] >= secondReadStart)
                             secondIndices.push_back(nextRegion.breakpoints[k].getID());
-                        else
+                        else 
                             break;
                     }
 
@@ -945,6 +977,10 @@ void VariantProfile::determineSpanningGroups(std::unordered_set<std::string> & g
                     for (auto & set : tempGroups)
                         indexGroups.push_back(set);
                 }
+                if (!someLeft)
+                    break;
+                dTemp += vRegions.distanceToNext[tempIdx] + nextRegion.length - 1;
+                ++tempIdx;
             }
         }
     }
@@ -1057,14 +1093,23 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
             }
 
             // Sometimes it is necessary to consider junctions on next region as well
-            if (j == jRegion.junctions.size() && vRegions.distanceToNext[v] > 0)
+            if (j != jRegion.junctions.size())
+                continue;
+
+            int tempIdx = v;
+            int dTemp = jRegion.length - 1 - jRegion.junctionIndices[i];
+            while (vRegions.distanceToNext[tempIdx] > 0)
             {
+                bool someLeft = true;
                 JunctionRegion & nextRegion = vRegions.regions[v+1];
                 for (int j = 0; j < nextRegion.junctions.size(); ++j)
                 {
-                    int d = vRegions.distanceToNext[v] + (jRegion.length - 1 + jRegion.junctionIndices[i]);
-                    if (nextRegion.junctionIndices[j] + 1 + d > this->sMax - 2*this->overlap)
+                    int d = vRegions.distanceToNext[tempIdx] + dTemp + nextRegion.junctionIndices[j];
+                    if (d > this->sMax - 2*this->overlap)
+                    {
+                        someLeft = false;
                         break;
+                    }
 
                     std::vector<int> secondIndices;
                     secondIndices.push_back(nextRegion.junctions[j].getID());
@@ -1072,7 +1117,7 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
 
                     for (int k = j - 1; k >= 0; --k)
                     {
-                        if (nextRegion.junctionIndices[k] >= secondReadStart)
+                        if (nextRegion.junctionIndices[k] >= secondReadStart) 
                             secondIndices.push_back(nextRegion.junctions[k].getID());
                         else
                             break;
@@ -1082,6 +1127,9 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
                     for (auto & set : tempGroups)
                         indexGroups.push_back(set);
                 }
+
+                dTemp += vRegions.distanceToNext[tempIdx] + nextRegion.length - 1;
+                ++tempIdx;
             }
         }
     }
