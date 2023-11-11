@@ -85,7 +85,7 @@ filePath2.bam
 
 ## profile-variants
 
-The `profile-variants` command is similar to sample-variants, but takes as first input a `json` file of variant descriptions.
+The `profile-variants` command is similar to sample-variants, but takes as first input either a `json` file of variant descriptions or a `txt` file containing one such json file per line.
 Details on that format may be found below. The second and third argument once again denote the target location of the profile list and the target directory of the profiles, respectively.  
 Variant profiles need to be created with library parameters (insert size range and read size) that match the samples to be genotyped.
 These can either be determined from a list of sample profiles (parameter `-S`) or supplied manually (`-sMin`, `-sMax`, `-l`). 

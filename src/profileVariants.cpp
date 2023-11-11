@@ -158,7 +158,7 @@ seqan::ArgumentParser::ParseResult parseVariantProfileArgs(seqan::ArgumentParser
 {
     // arguments
     seqan::addArgument(argParser, seqan::ArgParseArgument(
-        seqan::ArgParseArgument::INPUT_FILE, "VARIANT FILE")
+        seqan::ArgParseArgument::INPUT_FILE, "VARIANT FILE (list)")
     );
     seqan::addArgument(argParser, seqan::ArgParseArgument(
         seqan::ArgParseArgument::OUTPUT_FILE, "OUTPUT FILE")
@@ -212,7 +212,7 @@ variantProfileParams getVariantProfileParameters(const seqan::ArgumentParser &ar
 
     std::string variantFileName;
     seqan::getArgumentValue(variantFileName, argParser, 0);
-    
+
     if (seqan::getArgumentFileExtension(argParser, 0) == "txt")
     {
         std::ifstream stream(variantFileName);
