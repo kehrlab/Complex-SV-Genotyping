@@ -51,7 +51,7 @@ void VariantProfile::determinePossibleGroups()
             this->variantAlleleNames[allele.getName()] = alleleCounter;
             ++alleleCounter;
         }
-    }
+    } 
 }
 
 void VariantProfile::initMasks()
@@ -525,516 +525,118 @@ void VariantProfile::determineVariantGroups(VariantRegions & vRegions)
             this->variantGroups[g] = counter;
             ++counter;
         }
-    }
+    } 
 }
 
 void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups, VariantRegions & vRegions)
 {
     groups.insert("RF");
-    for (int regionIdx = 0; regionIdx < vRegions.regions.size(); ++regionIdx)
+    groups.insert("RR");
+    groups.insert("FF");
+    
+    // go over all combinations of regions
+    for (int r1Idx = 0; r1Idx < vRegions.regions.size(); ++r1Idx)
     {
-        auto & jRegion = vRegions.regions[regionIdx];
-        for (int j = 0; j < jRegion.junctionIndices.size(); ++j)
+        auto & jRegion = vRegions.regions[r1Idx];
+        int d = 0;
+
+        for (int r2Idx = r1Idx; r2Idx >= 0; --r2Idx)
         {
-            // at every junction, try the smallest and largest possible insert size
-            // and the nearest and furthest possible location
-            // a pair may span more than one junction
-            for (auto s : std::vector<int>{std::max(this->sMin, 2), this->sMax})
+            // only consider combination if distance between regions is not larger than max insert size
+            if (r2Idx < r1Idx)
+                d += vRegions.distanceToNext[r2Idx];
+            if (d > this->sMax)
+                break;
+
+            auto & kRegion = vRegions.regions[r2Idx];
+            // all combinations of junctions in the regions
+            for (int j = 0; j < jRegion.junctions.size(); ++j)
             {
-                int beginIndexLeft = jRegion.junctionIndices[j] - (s - 2);
-                int endIndexLeft = jRegion.junctionIndices[j] + 1;
-                int endPosLeft = jRegion.junctions[j].getPositionRight();
-
-                int beginIndexRight = jRegion.junctionIndices[j];
-                int endIndexRight = jRegion.junctionIndices[j] + s - 1;
-                int beginPosRight = jRegion.junctions[j].getPositionLeft();
-
-                // consider junctions to the left
-                for (int k = j; k >= 0; --k)
+                for (int k = kRegion.junctions.size() - 1; k >= 0; --k)
                 {
-                    int remaining = s - (jRegion.junctionIndices[j] - jRegion.junctionIndices[k] + 2);
-                    bool fr {true};
-
-                    if (remaining >= 0)
-                    {   
-                        // chromosomes
-                        std::unordered_set<std::string> chromosomes;
-                        chromosomes.insert(jRegion.junctions[k].getRefNameLeft());
-                        chromosomes.insert(jRegion.junctions[j].getRefNameRight());
-                        if (chromosomes.size() > 1)
-                        {
-                            std::string chromosomeString;
-                            createIndexString(chromosomeString, chromosomes);
-                            groups.insert(chromosomeString);
-                        }
-
-                        // orientation
-                        if (jRegion.junctions[k].getDirectionLeft() < 0 && jRegion.junctions[j].getDirectionRight() < 0 && chromosomes.size() == 1)
-                        {
-                            fr = false;
-                            groups.insert("FF");
-                        }
-                        else if (jRegion.junctions[k].getDirectionLeft() > 0 && jRegion.junctions[j].getDirectionRight() > 0 && chromosomes.size() == 1)
-                        {
-                            fr = false;
-                            groups.insert("RR");
-                        }
-
-                        // the one clipped at the last region
-                        int beginIdx = jRegion.junctionIndices[k] + 1;
-                        int beginPos = jRegion.junctions[k].getPositionRight();
-                        int sNew = endPosLeft - beginPos + 1;
-
-                        if (chromosomes.size() == 1)
-                        {
-                            if (!fr)
-                                sNew = std::abs(sNew);
-                        } 
-                        else
-                        {
-                            sNew = 0;
-                        }
-                        this->sMinMapped = std::min(this->sMinMapped, sNew);
-                        this->sMaxMapped = std::max(this->sMaxMapped, sNew);
-
-                        if (k > 0 && remaining >= (jRegion.junctionIndices[k] - jRegion.junctionIndices[k-1]))
-                            continue;
-                        if (k==0 && vRegions.distanceFromLast[regionIdx] > 0 && remaining >= (vRegions.distanceFromLast[regionIdx] + 2*this->filterMargin))
-                            break;
-                        
-                        // the rest
-                        beginIdx = beginIndexLeft;
-                        beginPos = jRegion.junctions[k].getPositionLeft() +
-                            jRegion.junctions[k].getDirectionLeft() *
-                            remaining;
-                        sNew = endPosLeft - beginPos + 1;
-
-                        if (chromosomes.size() == 1)
-                        {
-                            if (!fr)
-                                sNew = std::abs(sNew);
-                        } 
-                        else
-                        {
-                            sNew = 0;
-                        }
-                        this->sMinMapped = std::min(this->sMinMapped, sNew);
-                        this->sMaxMapped = std::max(this->sMaxMapped, sNew);
-                    }
-                }
-
-                // also on previous region(s)
-                int tempIdx = regionIdx;
-                int dTemp = jRegion.junctionIndices[j];
-                while (vRegions.distanceFromLast[tempIdx] > 0)
-                {
-                    bool someLeft = true;
-                    JunctionRegion & lastRegion = vRegions.regions[tempIdx - 1];
-                    for (int k = lastRegion.junctionIndices.size() - 1; k >= 0; --k)
-                    {
-                        int d = vRegions.distanceFromLast[tempIdx] + dTemp + 
-                            (lastRegion.length - 1 - lastRegion.junctionIndices[k]);
-                        int remaining = s - (d+2);
-
-                        bool fr {true};
-
-                        if (remaining >= 0)
-                        {   
-                            // chromosomes
-                            std::unordered_set<std::string> chromosomes;
-                            chromosomes.insert(lastRegion.junctions[k].getRefNameLeft());
-                            chromosomes.insert(jRegion.junctions[j].getRefNameRight());
-                            if (chromosomes.size() > 1)
-                            {
-                                std::string chromosomeString;
-                                createIndexString(chromosomeString, chromosomes);
-                                groups.insert(chromosomeString);
-                            }
-
-                            // orientation
-                            if (lastRegion.junctions[k].getDirectionLeft() < 0 && jRegion.junctions[j].getDirectionRight() < 0 && chromosomes.size() == 1)
-                            {
-                                fr = false;
-                                groups.insert("FF");
-                            }
-                            else if (lastRegion.junctions[k].getDirectionLeft() > 0 && jRegion.junctions[j].getDirectionRight() > 0 && chromosomes.size() == 1)
-                            {
-                                fr = false;
-                                groups.insert("RR");
-                            }
-
-                            // the one clipped at the last region
-                            int beginIdx = lastRegion.junctionIndices[k] + 1;
-                            int beginPos = lastRegion.junctions[k].getPositionRight();
-                            int sNew = endPosLeft - beginPos + 1;
-
-                            if (chromosomes.size() == 1)
-                            {
-                                if (!fr)
-                                    sNew = std::abs(sNew);
-                            } 
-                            else
-                            {
-                                sNew = 0;
-                            }
-                            this->sMinMapped = std::min(this->sMinMapped, sNew);
-                            this->sMaxMapped = std::max(this->sMaxMapped, sNew);
-
-                            if (k > 0 && remaining >= (lastRegion.junctionIndices[k] - lastRegion.junctionIndices[k-1]))
-                                continue;
-                            
-                            // the rest
-                            beginPos = lastRegion.junctions[k].getPositionLeft() +
-                                lastRegion.junctions[k].getDirectionLeft() *
-                                remaining;
-                            sNew = endPosLeft - beginPos + 1;
-
-                            if (chromosomes.size() == 1)
-                            {
-                                if (!fr)
-                                    sNew = std::abs(sNew);
-                            } 
-                            else
-                            {
-                                sNew = 0;
-                            }
-                            this->sMinMapped = std::min(this->sMinMapped, sNew);
-                            this->sMaxMapped = std::max(this->sMaxMapped, sNew);
-                        } else {
-                            someLeft = false;
-                            break;
-                        }
-                    }
-                    if (!someLeft)
-                        break;
-                    
-                    dTemp += (vRegions.distanceFromLast[tempIdx] + lastRegion.length - 1);
-                    --tempIdx;
-                }
-
-
-                // consider junctions to the right
-                for (int k = j; k < jRegion.junctionIndices.size(); ++k)
-                {
-                    int remaining = s - (jRegion.junctionIndices[k] - jRegion.junctionIndices[j] + 2);
-                    bool fr {true};
-
-                    if (remaining >= 0)
-                    {   
-                        // chromosomes
-                        std::unordered_set<std::string> chromosomes;
-                        chromosomes.insert(jRegion.junctions[j].getRefNameLeft());
-                        chromosomes.insert(jRegion.junctions[k].getRefNameRight());
-                        if (chromosomes.size() > 1)
-                        {
-                            std::string chromosomeString;
-                            createIndexString(chromosomeString, chromosomes);
-                            groups.insert(chromosomeString);
-                        }
-
-                        // orientation
-                        if (jRegion.junctions[j].getDirectionLeft() < 0 && jRegion.junctions[k].getDirectionRight() < 0 && chromosomes.size() == 1)
-                        {
-                            fr = false;
-                            groups.insert("FF");
-                        }
-                        else if (jRegion.junctions[j].getDirectionLeft() > 0 && jRegion.junctions[k].getDirectionRight() > 0 && chromosomes.size() == 1)
-                        {
-                            fr = false;
-                            groups.insert("RR");
-                        }
-
-                        // the one clipped at the last region
-                        int endIdx = jRegion.junctionIndices[k];
-                        int endPos = jRegion.junctions[k].getPositionLeft();
-                        int sNew = endPos - beginPosRight + 1;
-
-                        if (chromosomes.size() == 1)
-                        {
-                            if (!fr)
-                                sNew = std::abs(sNew);
-                        } 
-                        else
-                        {
-                            sNew = 0;
-                        }
-                        this->sMinMapped = std::min(this->sMinMapped, sNew);
-                        this->sMaxMapped = std::max(this->sMaxMapped, sNew);
-
-                        if (k < (jRegion.junctions.size() - 1) && remaining >= (jRegion.junctionIndices[k+1] - jRegion.junctionIndices[k]))
-                            continue;
-                        if (k==(jRegion.junctions.size() - 1) && vRegions.distanceToNext[regionIdx] > 0 && remaining >= (vRegions.distanceToNext[regionIdx] + 2*this->filterMargin))
-                            break;
-                        
-                        // the rest
-                        endIdx = endIndexRight;
-                        endPos = jRegion.junctions[k].getPositionRight() +
-                            jRegion.junctions[k].getDirectionRight() *
-                            remaining;
-                        sNew = endPos - beginPosRight + 1;
-
-                        if (chromosomes.size() == 1)
-                        {
-                            if (!fr)
-                                sNew = std::abs(sNew);
-                        } 
-                        else
-                        {
-                            sNew = 0;
-                        }
-                        this->sMinMapped = std::min(this->sMinMapped, sNew);
-                        this->sMaxMapped = std::max(this->sMaxMapped, sNew);
-                    }
-                }
-
-                // also on next region(s)
-                tempIdx = regionIdx;
-                dTemp = (jRegion.length - 1 - jRegion.junctionIndices[j]);
-                while (vRegions.distanceToNext[tempIdx] > 0)
-                {
-                    bool someLeft = true;
-                    JunctionRegion & nextRegion = vRegions.regions[tempIdx + 1];
-                    for (int k = 0; k < nextRegion.junctionIndices.size(); ++k)
-                    {
-                        int d = vRegions.distanceToNext[tempIdx] + dTemp + 
-                            nextRegion.junctionIndices[k];
-                        int remaining = s - (d+2);
-
-                        bool fr {true};
-
-                        if (remaining >= 0)
-                        {   
-                            // chromosomes
-                            std::unordered_set<std::string> chromosomes;
-                            chromosomes.insert(nextRegion.junctions[k].getRefNameRight());
-                            chromosomes.insert(jRegion.junctions[j].getRefNameLeft());
-                            if (chromosomes.size() > 1)
-                            {
-                                std::string chromosomeString;
-                                createIndexString(chromosomeString, chromosomes);
-                                groups.insert(chromosomeString);
-                            }
-
-                            // orientation
-                            if (nextRegion.junctions[k].getDirectionRight() < 0 && jRegion.junctions[j].getDirectionLeft() < 0 && chromosomes.size() == 1)
-                            {
-                                fr = false;
-                                groups.insert("FF");
-                            }
-                            else if (nextRegion.junctions[k].getDirectionRight() > 0 && jRegion.junctions[j].getDirectionLeft() > 0 && chromosomes.size() == 1)
-                            {
-                                fr = false;
-                                groups.insert("RR");
-                            }
-
-                            // the one clipped at the last region
-                            int endIdx = nextRegion.junctionIndices[k];
-                            int endPos = nextRegion.junctions[k].getPositionLeft();
-                            int sNew = endPos - beginPosRight + 1;
-
-                            if (chromosomes.size() == 1)
-                            {
-                                if (!fr)
-                                    sNew = std::abs(sNew);
-                            } 
-                            else
-                            {
-                                sNew = 0;
-                            }
-                            this->sMinMapped = std::min(this->sMinMapped, sNew);
-                            this->sMaxMapped = std::max(this->sMaxMapped, sNew);
-
-                            if (k < nextRegion.junctions.size() - 1 && remaining >= (nextRegion.junctionIndices[k+1] - nextRegion.junctionIndices[k]))
-                                continue;
-                            
-                            // the rest
-                            endPos = nextRegion.junctions[k].getPositionRight() +
-                                nextRegion.junctions[k].getDirectionRight() *
-                                remaining;
-                            sNew = endPos - beginPosRight + 1;
-
-                            if (chromosomes.size() == 1)
-                            {
-                                if (!fr)
-                                    sNew = std::abs(sNew);
-                            } 
-                            else
-                            {
-                                sNew = 0;
-                            }
-                            this->sMinMapped = std::min(this->sMinMapped, sNew);
-                            this->sMaxMapped = std::max(this->sMaxMapped, sNew);
-                        } else {
-                            someLeft = false;
-                            break;
-                        }
-                    }
-                    if (!someLeft)
-                        break;
-
-                    dTemp += vRegions.distanceToNext[tempIdx] + nextRegion.length - 1;
-                    ++tempIdx;
-                }
-            }
-        }
-    }
-    // add a little buffer at the edges...
-    this->sMinMapped -= 100;
-    this->sMaxMapped += 100;
-}
-
-void VariantProfile::determineSpanningGroups(std::unordered_set<std::string> & groups, VariantRegions & vRegions)
-{
-    std::vector<std::unordered_set<int>> indexGroups;
-    // consider all regions
-    for (int v = 0; v < vRegions.regions.size(); ++v)
-    {
-        JunctionRegion & jRegion = vRegions.regions[v];
-        // consider all breakpoints as possible starting positions for read pairs
-        for (int i = 0; i < jRegion.breakpoints.size(); ++i)
-        {
-            std::vector<int> firstIndices;
-            std::unordered_set<int> tempSet;
-
-            // start first read as close to breakpoint as possible
-            int firstReadEnd {jRegion.breakpointIndices[i] + this->readLength - this->overlap};
-            firstIndices.push_back(jRegion.breakpoints[i].getID());
-            tempSet.insert(jRegion.breakpoints[i].getID());
-            indexGroups.push_back(tempSet);
-            
-
-            // check for other breakpoints that are spanned by the read
-            for (int j = i + 1; j < jRegion.breakpoints.size(); ++j)
-            {
-                if (jRegion.breakpointIndices[j] <= firstReadEnd) 
-                {
-                    firstIndices.push_back(jRegion.breakpoints[j].getID());
-                    tempSet.insert(jRegion.breakpoints[j].getID());
-                    indexGroups.push_back(tempSet);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            // go over possible end positions for the second read pair
-            int j = i + 1;
-            for (; j < jRegion.breakpoints.size(); ++j)
-            {
-                if (jRegion.breakpointIndices[j] - jRegion.breakpointIndices[i] > this->sMax - 2*this->overlap)
-                    break;
-                
-                std::vector<int> secondIndices;
-                secondIndices.push_back(jRegion.breakpoints[j].getID());
-                int secondReadStart {jRegion.breakpointIndices[j] - this->readLength + this->overlap};
-
-                for (int k = j - 1; k > i; --k)
-                {
-                    if (jRegion.breakpointIndices[k] >= secondReadStart)
-                        secondIndices.push_back(jRegion.breakpoints[k].getID());
-                    else 
-                        break;
-                }
-
-                std::vector<std::unordered_set<int>> tempGroups = createIndexCombinations(firstIndices, secondIndices);
-                for (auto & set : tempGroups)
-                    indexGroups.push_back(set);
-            }
-
-            // Sometimes it is necessary to consider breakpoints on next region(s) as well
-            if (j != jRegion.breakpoints.size())
-                continue;
-
-            int tempIdx = v;
-            int dTemp = jRegion.length - 1 - jRegion.breakpointIndices[i];
-            while (vRegions.distanceToNext[tempIdx] > 0)
-            {
-                bool someLeft = true;
-                JunctionRegion & nextRegion = vRegions.regions[tempIdx + 1];
-                for (int j = 0; j < nextRegion.breakpoints.size(); ++j)
-                {
-                    int d = vRegions.distanceToNext[tempIdx] + dTemp + nextRegion.breakpointIndices[j];
-                    if (d > this->sMax - 2*this->overlap)
-                    {
-                        someLeft = false;
-                        break;
-                    }
-
-                    std::vector<int> secondIndices;
-                    secondIndices.push_back(nextRegion.breakpoints[j].getID());
-                    int secondReadStart {nextRegion.breakpointIndices[j] - this->readLength + this->overlap};
-
-                    for (int k = j - 1; k >= 0; --k)
-                    {
-                        if (nextRegion.breakpointIndices[k] >= secondReadStart)
-                            secondIndices.push_back(nextRegion.breakpoints[k].getID());
-                        else 
-                            break;
-                    }
-
-                    std::vector<std::unordered_set<int>> tempGroups = createIndexCombinations(firstIndices, secondIndices);
-                    for (auto & set : tempGroups)
-                        indexGroups.push_back(set);
-                }
-                if (!someLeft)
-                    break;
-                dTemp += vRegions.distanceToNext[tempIdx] + nextRegion.length - 1;
-                ++tempIdx;
-            }
-        }
-    }
-
-    // create final unique group strings from breakpoint indices
-    std::string spanningString;
-    for (int i = 0; i < indexGroups.size(); ++i)
-    {
-        createIndexString(spanningString, indexGroups[i]);
-        spanningString = "spanning_" + spanningString;
-        groups.insert(spanningString);
-    }
-}
-
-std::unordered_map<int, std::unordered_set<int>> VariantProfile::getJunctionAmbiguities(VariantRegions & vRegions)
-{
-    std::unordered_map<int, std::unordered_set<int>> junctionMatches;
-    for (auto & jRegion : vRegions.regions)
-    {
-        for (int i = 0; i < jRegion.junctions.size(); ++i)
-        {
-            Junction & j = jRegion.junctions[i];
-            std::unordered_set<int> indices;
-            
-            for (auto & tempRegion : vRegions.regions)
-            {
-                for (int k = 0; k < tempRegion.junctions.size(); ++k)
-                {
-                    if (j.getID() == tempRegion.junctions[k].getID())
+                    if (r1Idx == r2Idx && k > j)
                         continue;
-                    Junction & j2 = tempRegion.junctions[k];
-                    
-                    if (j.getRefNameLeft() == j2.getRefNameLeft() && std::abs(j.getPositionLeft() - j2.getPositionLeft()) <= 20)
-                        indices.insert(j2.getID());
-                    else if (j.getRefNameLeft() == j2.getRefNameRight() && std::abs(j.getPositionLeft() - j2.getPositionRight()) <= 20)
-                        indices.insert(j2.getID());
-                    else if (j.getRefNameRight() == j2.getRefNameRight() && std::abs(j.getPositionRight() - j2.getPositionRight()) <= 20)
-                        indices.insert(j2.getID());
-                    else if (j.getRefNameRight() == j2.getRefNameLeft() && std::abs(j.getPositionRight() - j2.getPositionLeft()) <= 20)
-                        indices.insert(j2.getID());
+                    // check distance of junctions
+                    if (r1Idx != r2Idx && (kRegion.length - 1 - kRegion.junctionIndices[k]) + d + jRegion.junctionIndices[j] > this->sMax)
+                        break;
+                    if (r1Idx == r2Idx && (jRegion.junctionIndices[j] - kRegion.junctionIndices[k]) > this->sMax)
+                        break;
+
+                    std::vector<Breakpoint> kBps = {kRegion.junctions[k].leftSideToBreakpoint(0), kRegion.junctions[k].rightSideToBreakpoint(1)};
+                    std::vector<Breakpoint> jBps = {jRegion.junctions[j].leftSideToBreakpoint(0), jRegion.junctions[j].rightSideToBreakpoint(1)};
+                    for (auto & kB : kBps)
+                    {
+                        for (auto & jB : jBps)
+                        {
+                            std::unordered_set<std::string> chromosomes;
+                            int s {0};
+
+                            chromosomes.insert(kB.getReferenceName());
+                            chromosomes.insert(jB.getReferenceName());
+                            if (chromosomes.size() > 1)
+                            {
+                                std::string chromosomeString;
+                                createIndexString(chromosomeString, chromosomes);
+                                groups.insert(chromosomeString);
+                            } else {
+                                s = jB.getPosition() - kB.getPosition();
+                            }
+                            this->sMinMapped = std::min(this->sMinMapped, s);
+                            this->sMaxMapped = std::max(this->sMaxMapped, std::abs(s));
+                        }
+                    }
                 }
             }
-            if (indices.size() > 0)
-                junctionMatches[j.getID()] = indices;
         }
     }
+    this->sMinMapped -= this->sMax;
+    this->sMaxMapped += this->sMax;
+}
 
-    return junctionMatches;
+
+bool VariantProfile::isPossible(std::vector<int> positions)
+{
+    std::sort(positions.begin(), positions.end());
+    if (positions[positions.size() - 1] > this->sMax)
+        return false;
+
+    int j = 0;
+    for (; j < positions.size(); ++j)
+        if (positions[j] > this->readLength)
+            break;
+    int k = positions.size() - 1;
+    for (; k >= 0; --k)
+        if (positions[positions.size() - 1] - positions[k] > this->readLength || k <= j + 1)
+            break;
+    
+    return (k <= j + 1);
+}
+
+std::vector<std::vector<int>> VariantProfile::getSubsets(std::vector<int> positions, std::vector<int> ids, int idx)
+{
+    std::vector<std::vector<int>> subsets;
+    if (positions.size() == 0)
+	    return subsets;
+
+    for (int i = idx; i < positions.size(); ++i)
+    {
+        std::vector<int> tempPositions = positions;
+        std::vector<int> tempIDs = ids;
+        tempPositions.erase(tempPositions.begin() + i);
+        tempIDs.erase(tempIDs.begin() + i);
+        std::vector<std::vector<int>> tempSets = getSubsets(tempPositions, tempIDs, i);
+        for (auto & s : tempSets)
+            subsets.push_back(s);
+    }
+
+    if (isPossible(positions))
+        subsets.push_back(ids);
+    return subsets;
 }
 
 void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & groups, VariantRegions & vRegions)
 {
     std::vector<std::unordered_set<int>> indexGroups;
-    std::unordered_map<int, std::unordered_set<int>> junctionMatches = getJunctionAmbiguities(vRegions);
 
     // consider all regions
     for (int v = 0; v < vRegions.regions.size(); ++v)
@@ -1043,93 +645,51 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
         // consider all junctions as possible starting positions for read pairs
         for (int i = 0; i < jRegion.junctions.size(); ++i)
         {
-            std::vector<int> firstIndices;
-            std::unordered_set<int> tempSet;
-
-            // start first read as close to junction as possible
-            int firstReadEnd {jRegion.junctionIndices[i] + this->readLength - this->overlap};
-            firstIndices.push_back(jRegion.junctions[i].getID());
-            tempSet.insert(jRegion.junctions[i].getID());
-            indexGroups.push_back(tempSet);
-
-            // check for other junctions that are spanned by the read
-            for (int j = i + 1; j < jRegion.junctions.size(); ++j)
-            {
-                if (jRegion.junctionIndices[j] + 1 <= firstReadEnd)
-                {
-                    firstIndices.push_back(jRegion.junctions[j].getID());
-                    tempSet.insert(jRegion.junctions[j].getID());
-                    indexGroups.push_back(tempSet);
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            // go over possible end positions for the second read in pair
+            std::vector<int> ids;
+            std::vector<int> positions;
+            bool extend = true;
+            ids.push_back(jRegion.junctions[i].getID());
+            positions.push_back(0);
             int j = i + 1;
-            
-            for (; j < jRegion.junctions.size(); ++j)
+            while (j < jRegion.junctions.size())
             {
-                if (jRegion.junctionIndices[j] + 1 - jRegion.junctionIndices[i] > this->sMax - 2*this->overlap)
+                if (jRegion.junctionIndices[j] - jRegion.junctionIndices[i] > this->sMax)
+                {
+                    extend = false;
                     break;
-                
-                std::vector<int> secondIndices;
-                secondIndices.push_back(jRegion.junctions[j].getID());
-                int secondReadStart {jRegion.junctionIndices[j] - this->readLength + this->overlap};
-
-                for (int k = j - 1; k > i; --k)
-                {
-                    if (jRegion.junctionIndices[k] >= secondReadStart)
-                        secondIndices.push_back(jRegion.junctions[k].getID());
-                    else
-                        break;
                 }
-		
-                std::vector<std::unordered_set<int>> tempGroups = createIndexCombinations(firstIndices, secondIndices, junctionMatches);
-                for (auto & set : tempGroups)
-                    indexGroups.push_back(set);
+                ids.push_back(jRegion.junctions[j].getID());
+                positions.push_back(jRegion.junctionIndices[j] - jRegion.junctionIndices[i]);
+		++j;
             }
+            int d = jRegion.length - 1 - jRegion.junctionIndices[i];
 
-            // Sometimes it is necessary to consider junctions on next region as well
-            if (j != jRegion.junctions.size())
-                continue;
-
-            int tempIdx = v;
-            int dTemp = jRegion.length - 1 - jRegion.junctionIndices[i];
-            while (vRegions.distanceToNext[tempIdx] > 0)
+            int w = v + 1;
+            while (extend && vRegions.distanceToNext[w - 1] >= 0)
             {
-                bool someLeft = true;
-                JunctionRegion & nextRegion = vRegions.regions[v+1];
-                for (int j = 0; j < nextRegion.junctions.size(); ++j)
+                d += vRegions.distanceToNext[w - 1];
+                for (int k = 0; k < vRegions.regions[w].junctionIndices.size(); ++k)
                 {
-                    int d = vRegions.distanceToNext[tempIdx] + dTemp + nextRegion.junctionIndices[j];
-                    if (d > this->sMax - 2*this->overlap)
+                    if (d + vRegions.regions[w].junctionIndices[k] > this->sMax)
                     {
-                        someLeft = false;
+                        extend = false;
                         break;
                     }
-
-                    std::vector<int> secondIndices;
-                    secondIndices.push_back(nextRegion.junctions[j].getID());
-                    int secondReadStart {nextRegion.junctionIndices[j] - this->readLength + this->overlap};
-
-                    for (int k = j - 1; k >= 0; --k)
-                    {
-                        if (nextRegion.junctionIndices[k] >= secondReadStart) 
-                            secondIndices.push_back(nextRegion.junctions[k].getID());
-                        else
-                            break;
-                    }
-		
-                    std::vector<std::unordered_set<int>> tempGroups = createIndexCombinations(firstIndices, secondIndices, junctionMatches);
-                    for (auto & set : tempGroups)
-                        indexGroups.push_back(set);
+                    ids.push_back(vRegions.regions[w].junctions[k].getID());
+                    positions.push_back(d + vRegions.regions[w].junctionIndices[k]);
                 }
-
-                dTemp += vRegions.distanceToNext[tempIdx] + nextRegion.length - 1;
-                ++tempIdx;
+                d += vRegions.regions[w].length - 1;
+                w++;
+            }
+            
+            // collect all possible split read groups
+            std::vector<std::vector<int>> indexSubsets = getSubsets(positions, ids, 0);
+            for (auto & s : indexSubsets)
+            {
+                std::unordered_set<int> tempSet;
+                for (auto & idx : s)
+                    tempSet.insert(idx);
+                indexGroups.push_back(tempSet);
             }
         }
     }
@@ -1144,6 +704,78 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
     }
     groups.insert("split_ambiguous");
 }
+
+
+void VariantProfile::determineSpanningGroups(std::unordered_set<std::string> & groups, VariantRegions & vRegions)
+{
+    std::vector<std::unordered_set<int>> indexGroups;
+
+    // consider all regions
+    for (int v = 0; v < vRegions.regions.size(); ++v)
+    {
+        JunctionRegion & bRegion = vRegions.regions[v];
+        // consider all junctions as possible starting positions for read pairs
+        for (int i = 0; i < bRegion.breakpoints.size(); ++i)
+        {
+            std::vector<int> ids;
+            std::vector<int> positions;
+            bool extend = true;
+            ids.push_back(bRegion.breakpoints[i].getID());
+            positions.push_back(0);
+            int j = i + 1;
+            while (j < bRegion.breakpoints.size())
+            {
+                if (bRegion.breakpointIndices[j] - bRegion.breakpointIndices[i] > this->sMax)
+                {
+                    extend = false;
+                    break;
+                }
+                ids.push_back(bRegion.breakpoints[j].getID());
+                positions.push_back(bRegion.breakpointIndices[j] - bRegion.breakpointIndices[i]);
+		++j;
+            }
+            int d = bRegion.length - 1 - bRegion.breakpointIndices[i];
+
+            int w = v + 1;
+            while (extend && vRegions.distanceToNext[w - 1] >= 0)
+            {
+                d += vRegions.distanceToNext[w - 1];
+                for (int k = 0; k < vRegions.regions[w].breakpointIndices.size(); ++k)
+                {
+                    if (d + vRegions.regions[w].breakpointIndices[k] > this->sMax)
+                    {
+                        extend = false;
+                        break;
+                    }
+                    ids.push_back(vRegions.regions[w].breakpoints[k].getID());
+                    positions.push_back(d + vRegions.regions[w].breakpointIndices[k]);
+                }
+                d += vRegions.regions[w].length - 1;
+                w++;
+            }
+            
+            // collect all possible spanning read groups
+            std::vector<std::vector<int>> indexSubsets = getSubsets(positions, ids, 0);
+            for (auto & s : indexSubsets)
+            {
+                std::unordered_set<int> tempSet;
+                for (auto & idx : s)
+                    tempSet.insert(idx);
+                indexGroups.push_back(tempSet);
+            }
+        }
+    }
+
+    // create final unique group strings from junction indices
+    std::string spanningString;
+    for (int i = 1; i <= indexGroups.size(); ++i)
+    {
+        createIndexString(spanningString, indexGroups[i-1]);
+        spanningString = "spanning_" + spanningString;
+        groups.insert(spanningString);
+    }
+}
+
 
 void VariantProfile::initReferenceMask()
 {
@@ -1491,7 +1123,7 @@ void VariantProfile::writeProfile(std::string filename)
             stream.write(reinterpret_cast<const char *>(this->variantMask[i][s].innerIndexPtr()), sizeof(int)*nnzS)  ;
         }
     }
-    // std::cout << "m, n: " << this->variantMask[0][0].rows() << ", " << this->variantMask[0][0].cols() << std::endl;
+    
     stream.close();
 }
 

@@ -75,7 +75,6 @@ class VariantProfile
     void determinePossibleGroups();
     std::vector<std::unordered_set<int>> createIndexCombinations(std::vector<int> &, std::vector<int> &);
     std::vector<std::unordered_set<int>> createIndexCombinations(std::vector<int> &, std::vector<int> &, std::unordered_map<int, std::unordered_set<int>> &);
-    std::unordered_map<int, std::unordered_set<int>> getJunctionAmbiguities(VariantRegions &);
 
     inline void createIndexString(std::string &, const std::unordered_set<int> &);
     inline void createIndexString(std::string &, const std::unordered_set<std::string> &);
@@ -88,6 +87,8 @@ class VariantProfile
     void findPairAttributes(std::unordered_set<std::string> & groups, VariantRegions & variantRegions);
     void determineSpanningGroups(std::unordered_set<std::string> & groups, VariantRegions & variantRegions);
     void determineSplitGroups(std::unordered_set<std::string> & groups, VariantRegions & variantRegions);
+    bool isPossible(std::vector<int> positions);
+    std::vector<std::vector<int>> getSubsets(std::vector<int>, std::vector<int>, int);
 
     void initMasks();
     void initReferenceMask();
