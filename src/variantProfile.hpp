@@ -73,8 +73,6 @@ class VariantProfile
 
     private:
     void determinePossibleGroups();
-    std::vector<std::unordered_set<int>> createIndexCombinations(std::vector<int> &, std::vector<int> &);
-    std::vector<std::unordered_set<int>> createIndexCombinations(std::vector<int> &, std::vector<int> &, std::unordered_map<int, std::unordered_set<int>> &);
 
     inline void createIndexString(std::string &, const std::unordered_set<int> &);
     inline void createIndexString(std::string &, const std::unordered_set<std::string> &);
