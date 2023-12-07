@@ -57,7 +57,7 @@ class GenotypeDistribution
         std::string group;
         if (chromosomeString != "")
             group = chromosomeString;
-        if (junctionString != "")
+	else if (junctionString != "")
             group = "split_" + junctionString;
         else if (breakpointString != "")
             group = "spanning_" + breakpointString;
