@@ -101,7 +101,7 @@ void ReadTemplate::calculateInsertSize()
         }
         
         if (this->orientation == "FR" || this->orientation == "RF")
-        {
+        {   
             if (this->records[this->primaryFirst].isReverse() && !this->records[this->primaryLast].isReverse())
                 this->insertSize = this->fivePrimeFirst - this->fivePrimeLast + 1;
             else if (!this->records[this->primaryFirst].isReverse() && this->records[this->primaryLast].isReverse())
@@ -214,10 +214,6 @@ void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, JunctionRegi
     std::vector<int> insertSizes;
 
     // determine possible combinations and their orientation and insert size on the variant allele(s)
-    // std::cout << std::endl << "----------------------- New read pair --------------------------------" << std::endl;
-    // rFirst.getAlignmentRegion().print();
-    //rLast.getAlignmentRegion().print();
-    
     for (int i = 0; i < firstRegions.size(); ++i)
     {
         for (int j = 0; j < lastRegions.size(); ++j)
@@ -225,8 +221,8 @@ void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, JunctionRegi
             std::vector<int> indices;
             int s = 0;
             if (firstRegions[i].getRegionStart() <= lastRegions[j].getRegionStart() && !firstRegions[i].isReverse() && lastRegions[j].isReverse())
-		s = lastRegions[j].getRegionEnd() - firstRegions[i].getRegionStart() + 1;
-	    else if (firstRegions[i].getRegionStart() >= lastRegions[j].getRegionStart() && firstRegions[i].isReverse() && !lastRegions[j].isReverse())
+		        s = lastRegions[j].getRegionEnd() - firstRegions[i].getRegionStart() + 1;
+            else if (firstRegions[i].getRegionStart() >= lastRegions[j].getRegionStart() && firstRegions[i].isReverse() && !lastRegions[j].isReverse())
                 s = firstRegions[i].getRegionEnd() - lastRegions[j].getRegionStart() + 1;
 
             for (auto & idx : firstJunctionIndices[i])
@@ -234,13 +230,12 @@ void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, JunctionRegi
             for (auto & idx : lastJunctionIndices[j])
                 indices.push_back(idx);
             
-            
             if (indices.size() > 0)
             {	
                 indexGroups.push_back(indices);
                 insertSizes.push_back(s);
             }
-	}	
+	    }	
     }
     // store all combinations and deal with them when adding to profile
     splitInfo.junctionIndices = indexGroups;

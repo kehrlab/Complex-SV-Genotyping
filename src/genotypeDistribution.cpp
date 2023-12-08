@@ -182,10 +182,13 @@ void GenotypeDistribution::writeDistribution(std::string prefix)
 void GenotypeDistribution::writeDistributionBinned(std::string prefix)
 {
     int binSize = 20;
-    int minIS = this->distributions["RF"].getMinInsertSize();
+    int minIS = 0;
     int maxIS = 0;
     for (auto it : this->distributions)
+    {
         maxIS = std::max(maxIS, it.second.getMaxInsertSize());
+        minIS = std::min(minIS, it.second.getMinInsertSize());
+    }
     std::ofstream f;
     f.open(prefix.append(".txt"));
     if (f.is_open())
