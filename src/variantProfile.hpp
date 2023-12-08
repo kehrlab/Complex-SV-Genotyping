@@ -69,6 +69,7 @@ class VariantProfile
     int getReadLength();
     bool variantStructureIsPresent();
     bool loadVariantStructure(std::string filename, std::string variantName);
+    void createVariantChromosomeStructures();
     std::string getName();
 
     private:

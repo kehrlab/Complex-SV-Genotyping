@@ -54,6 +54,13 @@ void VariantProfile::determinePossibleGroups()
     } 
 }
 
+void VariantProfile::createVariantChromosomeStructures()
+{
+    this->chromosomeStructures.erase(this->chromosomeStructures.begin(), this->chromosomeStructures.end());
+    for (Allele & allele : this->variant.getAlleles())
+        createChromosomeStructures(allele);
+}
+
 void VariantProfile::initMasks()
 {
     initReferenceMask();
@@ -1082,6 +1089,11 @@ void VariantProfile::readProfile(std::string filename)
     {
         this->variant.setFilterMargin(this->filterMargin);
         this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
+    } 
+    else 
+    {
+        std::string error = "Variant file not found in location given in the profile. Abort.\n";
+        throw std::runtime_error(error.c_str());
     }
     //if (this->variant.getName() == "Translocation_0")
     //    std::cout << "Reading...\tsMin: " << this->sMinMapped << "\t" << this->sMaxMapped << std::endl;
@@ -1225,6 +1237,7 @@ bool VariantProfile::loadVariantStructure(std::string filename, std::string vari
         }
 
         this->variant = complexVariant(parser.getVariantNames()[idx], parser.getAlleleNames()[idx], parser.getVariantJunctions()[idx], filename);
+        createVariantChromosomeStructures();
     } 
     catch (std::runtime_error)
     {
