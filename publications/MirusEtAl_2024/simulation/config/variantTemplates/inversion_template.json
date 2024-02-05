@@ -1,0 +1,35 @@
+{
+    "parts" : {
+        "CI1" : {
+            "A" : {
+                "minSize" : 10000,
+                "maxSize" : 10000
+            },
+            "B" : {
+                "minSize" : 50,
+                "maxSize" : 5000
+            },
+            "C" : {
+                "minSize" : 10000,
+                "maxSize" : 10000
+            }
+        }
+    },
+    "structure" : {
+        "CI1" : {
+            "1" : {
+                "part" : "A",
+                "orientation" : "F"
+            },
+            "2" : {
+                "part" : "B",
+                "orientation" : "R"
+            },
+            "3" : {
+                "part" : "C",
+                "orientation" : "F"
+            }
+        }
+    },
+    "name" : "Inversion"
+}

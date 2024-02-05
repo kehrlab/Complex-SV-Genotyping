@@ -1,0 +1,87 @@
+{
+    "edges": [
+        {
+            "from": "source",
+            "to": "ref-chr2:201281786-201281936_1",
+            "name": "source_ref-chr2:201281786-201281936_1"
+        },
+        {
+            "from": "ref-chr2:201281786-201281936_1",
+            "to": "ref-chr2:201281937-201284716_2",
+            "name": "ref-chr2:201281786-201281936_1_ref-chr2:201281937-201284716_2",
+            "sequences": [
+                "REF"
+            ]
+        },
+        {
+            "from": "ref-chr2:201281937-201284716_2",
+            "to": "ref-chr2:201284717-201284867_3",
+            "name": "ref-chr2:201281937-201284716_2_ref-chr2:201284717-201284867_3",
+            "sequences": [
+                "REF"
+            ]
+        },
+        {
+            "from": "ref-chr2:201281786-201281936_1",
+            "to": "ref-chr2:201284717-201284867_3",
+            "name": "ref-chr2:201281786-201281936_1_ref-chr2:201284717-201284867_3",
+            "sequences": [
+                "ALT"
+            ]
+        },
+        {
+            "to": "sink",
+            "from": "ref-chr2:201284717-201284867_3",
+            "name": "ref-chr2:201284717-201284867_3_sink"
+        }
+    ],
+    "model_name": "SVAE",
+    "nodes": [
+        {
+            "name": "source",
+            "sequence": "NNNNNNNNNN"
+        },
+        {
+            "reference": "chr2:201281786-201281936",
+            "name": "ref-chr2:201281786-201281936_1"
+        },
+        {
+            "reference": "chr2:201281937-201284716",
+            "name": "ref-chr2:201281937-201284716_2"
+        },
+        {
+            "reference": "chr2:201284717-201284867",
+            "name": "ref-chr2:201284717-201284867_3"
+        },
+        {
+            "name": "sink",
+            "sequence": "NNNNNNNNNN"
+        }
+    ],
+    "paths": [
+        {
+            "nodes": [
+                "ref-chr2:201281786-201281936_1",
+                "ref-chr2:201281937-201284716_2",
+                "ref-chr2:201284717-201284867_3"
+            ],
+            "path_id": "REF|1",
+            "sequence": "REF"
+        },
+        {
+            "nodes": [
+                "ref-chr2:201281786-201281936_1",
+                "ref-chr2:201284717-201284867_3"
+            ],
+            "path_id": "ALT|1",
+            "sequence": "ALT"
+        }
+    ],
+    "sequencenames": [
+        "ALT",
+        "REF"
+    ],
+    "target_regions": [
+        "chr2:201281786-201284867"
+    ]
+}

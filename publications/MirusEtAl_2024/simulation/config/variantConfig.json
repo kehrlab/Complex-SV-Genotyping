@@ -1,0 +1,46 @@
+{
+    "1" : {
+        "name" : "csvA",
+        "amount" : 100
+    },
+    "2" : {
+        "name" : "csvB",
+        "amount" : 100
+    },
+    "3" : {
+        "name" : "csvC",
+        "amount" : 100
+    },
+    "4" : {
+        "name" : "csvD",
+        "amount" : 100
+    },
+    "5" : {
+        "name" : "csvI",
+        "amount" : 100
+    },
+    "6" : {
+        "name" : "Deletion",
+        "amount" : 100
+    },
+    "7" : {
+        "name" : "Duplication",
+        "amount" : 100
+    },
+    "8" : {
+        "name" : "Inversion",
+        "amount" : 100
+    },
+    "9" : {
+        "name" : "TandemDuplication",
+        "amount" : 100
+    },
+    "10" : {
+        "name" : "Translocation",
+        "amount" : 1
+    },
+    "11" : {
+        "name" : "csvT",
+        "amount" : 1
+    }
+}

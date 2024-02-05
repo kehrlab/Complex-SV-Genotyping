@@ -1,0 +1,115 @@
+
+
+Fraction of variants with AvgMapQ >= 40:
+
+[38;5;246m# A tibble: 1 × 1[39m
+  GoodFraction
+         [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m      0.940[4m9[24m[4m9[24m
+
+
+Precision and Recall after filtering by AvgMapQ:
+[38;5;246m# A tibble: 1 × 4[39m
+  Precision       P_SE  Recall      R_SE
+      [3m[38;5;246m<dbl>[39m[23m      [3m[38;5;246m<dbl>[39m[23m   [3m[38;5;246m<dbl>[39m[23m     [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m   0.983[4m4[24m[4m3[24m 0.000[4m7[24m[4m8[24m[4m6[24m75 0.940[4m9[24m[4m9[24m 0.002[4m4[24m[4m8[24m[4m9[24m1
+
+
+Precision and Recall after filtering by Certainty:
+[38;5;246m# A tibble: 1 × 4[39m
+  Precision       P_SE  Recall      R_SE
+      [3m[38;5;246m<dbl>[39m[23m      [3m[38;5;246m<dbl>[39m[23m   [3m[38;5;246m<dbl>[39m[23m     [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m   0.980[4m2[24m[4m5[24m 0.000[4m9[24m[4m6[24m[4m7[24m73 0.912[4m5[24m[4m2[24m 0.002[4m1[24m[4m5[24m[4m1[24m0
+
+
+Complex and canonic error rate and recall without mapQ filter:
+
+[38;5;246m# A tibble: 2 × 3[39m
+  Complex   MeanAccuracy seAccuracy
+  [3m[38;5;246m<chr>[39m[23m            [3m[38;5;246m<dbl>[39m[23m      [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m Canonical      0.998[4m6[24m[4m0[24m 0.000[4m3[24m[4m3[24m[4m1[24m37
+[38;5;250m2[39m Complex        0.999[4m5[24m[4m0[24m 0.000[4m1[24m[4m5[24m[4m0[24m12
+[38;5;246m# A tibble: 2 × 2[39m
+  Complex    Recall
+  [3m[38;5;246m<chr>[39m[23m       [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m Canonical 0.864[4m3[24m[4m4[24m
+[38;5;250m2[39m Complex   0.910[4m6[24m[4m4[24m
+
+
+Individual error rate after filtering:
+
+[38;5;246m# A tibble: 11 × 3[39m
+   VariantType       MeanAccuracy  seAccuracy
+   [3m[38;5;246m<chr>[39m[23m                    [3m[38;5;246m<dbl>[39m[23m       [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m 1[39m Deletion               0.999[4m7[24m[4m1[24m  0.000[4m2[24m[4m9[24m[4m3[24m34
+[38;5;250m 2[39m Duplication            0.999[4m6[24m[4m9[24m  0.000[4m3[24m[4m1[24m[4m3[24m28
+[38;5;250m 3[39m Inversion              0.999[4m6[24m[4m9[24m  0.000[4m3[24m[4m1[24m[4m3[24m28
+[38;5;250m 4[39m TandemDuplication      0.993[4m7[24m[4m1[24m  0.001[4m5[24m[4m2[24m[4m7[24m3 
+[38;5;250m 5[39m Translocation          1        0         
+[38;5;250m 6[39m csvA                   1        0         
+[38;5;250m 7[39m csvB                   1        0         
+[38;5;250m 8[39m csvC                   1        0         
+[38;5;250m 9[39m csvD                   0.997[4m4[24m[4m6[24m  0.000[4m9[24m[4m6[24m[4m5[24m23
+[38;5;250m10[39m csvI                   0.999[4m7[24m[4m0[24m  0.000[4m2[24m[4m9[24m[4m7[24m62
+[38;5;250m11[39m csvT                   1       [31mNA[39m         
+
+
+Individual error rate without filtering:
+
+[38;5;246m# A tibble: 11 × 3[39m
+   VariantType       MeanAccuracy seAccuracy
+   [3m[38;5;246m<chr>[39m[23m                    [3m[38;5;246m<dbl>[39m[23m      [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m 1[39m Deletion               0.981[4m7[24m[4m1[24m  0.002[4m8[24m[4m0[24m[4m9[24m1
+[38;5;250m 2[39m Duplication            0.97     0.004[4m3[24m[4m6[24m[4m4[24m4
+[38;5;250m 3[39m Inversion              0.978    0.004[4m3[24m[4m6[24m[4m4[24m4
+[38;5;250m 4[39m TandemDuplication      0.916[4m8[24m[4m6[24m  0.006[4m8[24m[4m1[24m[4m5[24m3
+[38;5;250m 5[39m Translocation          1        0        
+[38;5;250m 6[39m csvA                   0.980[4m5[24m[4m7[24m  0.002[4m9[24m[4m5[24m[4m0[24m8
+[38;5;250m 7[39m csvB                   0.967[4m4[24m[4m3[24m  0.006[4m0[24m[4m9[24m[4m0[24m0
+[38;5;250m 8[39m csvC                   0.982[4m8[24m[4m6[24m  0.006[4m4[24m[4m2[24m[4m7[24m0
+[38;5;250m 9[39m csvD                   0.956[4m2[24m[4m9[24m  0.004[4m0[24m[4m8[24m[4m0[24m8
+[38;5;250m10[39m csvI                   0.977[4m7[24m[4m1[24m  0.003[4m6[24m[4m1[24m[4m0[24m3
+[38;5;250m11[39m csvT                   0.742[4m8[24m[4m6[24m  0.071[4m9[24m[4m0[24m[4m3[24m 
+
+
+Overall error rate after filtering:
+
+[38;5;246m# A tibble: 1 × 2[39m
+  MeanAccuracy seAccuracy
+         [3m[38;5;246m<dbl>[39m[23m      [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m      0.999[4m1[24m[4m1[24m 0.000[4m1[24m[4m6[24m[4m3[24m15
+
+
+Overall error rate without filtering:
+
+[38;5;246m# A tibble: 1 × 2[39m
+  MeanAccuracy seAccuracy
+         [3m[38;5;246m<dbl>[39m[23m      [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m      0.967[4m7[24m[4m2[24m  0.001[4m5[24m[4m8[24m[4m8[24m5
+
+
+Overall recall:
+
+[38;5;246m# A tibble: 1 × 2[39m
+   Recall  RecallSE
+    [3m[38;5;246m<dbl>[39m[23m     [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m 0.890[4m0[24m[4m5[24m 0.002[4m9[24m[4m7[24m[4m3[24m0
+
+
+Individual Recall:
+
+[38;5;246m# A tibble: 11 × 3[39m
+[38;5;246m# Groups:   VariantType [11][39m
+   VariantType       MeanRecall  SeRecall
+   [3m[38;5;246m<chr>[39m[23m                  [3m[38;5;246m<dbl>[39m[23m     [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m 1[39m Deletion             0.950[4m2[24m[4m9[24m 0.005[4m2[24m[4m6[24m[4m3[24m1
+[38;5;250m 2[39m Duplication          0.921[4m4[24m[4m3[24m 0.011[4m2[24m[4m1[24m[4m0[24m 
+[38;5;250m 3[39m Inversion            0.946   0.009[4m7[24m[4m9[24m[4m8[24m0
+[38;5;250m 4[39m TandemDuplication    0.638[4m2[24m[4m9[24m 0.015[4m2[24m[4m4[24m[4m7[24m 
+[38;5;250m 5[39m Translocation        1       0        
+[38;5;250m 6[39m csvA                 0.944[4m2[24m[4m9[24m 0.007[4m9[24m[4m8[24m[4m1[24m3
+[38;5;250m 7[39m csvB                 0.931[4m7[24m[4m1[24m 0.005[4m5[24m[4m1[24m[4m0[24m7
+[38;5;250m 8[39m csvC                 0.950[4m8[24m[4m6[24m 0.010[4m5[24m[4m8[24m[4m2[24m 
+[38;5;250m 9[39m csvD                 0.786[4m8[24m[4m6[24m 0.005[4m2[24m[4m7[24m[4m0[24m9
+[38;5;250m10[39m csvI                 0.947[4m1[24m[4m4[24m 0.008[4m4[24m[4m0[24m[4m4[24m7
+[38;5;250m11[39m csvT                 0.142[4m8[24m[4m6[24m 0.142[4m8[24m[4m6[24m  

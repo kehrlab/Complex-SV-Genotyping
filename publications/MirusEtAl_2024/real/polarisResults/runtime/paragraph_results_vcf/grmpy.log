@@ -1,0 +1,320 @@
+[2024-01-17 13:28:28.601] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:28:28.656] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:28:28.707] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:28:28.777] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:28:28.886] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:28:28.974] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:28:29.041] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:28:29.104] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:28:29.200] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:28:29.305] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955394 (1/10)
+[2024-01-17 13:29:01.559] [Genotyping] [15251] [critical] Sample ERR1955394: Alignment 1 / 20 finished
+[2024-01-17 13:29:03.034] [Genotyping] [15259] [critical] Sample ERR1955394: Alignment 5 / 20 finished
+[2024-01-17 13:29:03.082] [Genotyping] [15257] [critical] Sample ERR1955394: Alignment 10 / 20 finished
+[2024-01-17 13:29:03.109] [Genotyping] [15255] [critical] Sample ERR1955394: Alignment 4 / 20 finished
+[2024-01-17 13:29:03.124] [Genotyping] [15256] [critical] Sample ERR1955394: Alignment 2 / 20 finished
+[2024-01-17 13:29:03.126] [Genotyping] [15258] [critical] Sample ERR1955394: Alignment 3 / 20 finished
+[2024-01-17 13:29:03.130] [Genotyping] [15260] [critical] Sample ERR1955394: Alignment 6 / 20 finished
+[2024-01-17 13:29:05.765] [Genotyping] [15253] [critical] Sample ERR1955394: Alignment 7 / 20 finished
+[2024-01-17 13:29:06.352] [Genotyping] [15256] [critical] Sample ERR1955394: Alignment 15 / 20 finished
+[2024-01-17 13:29:06.406] [Genotyping] [15252] [critical] Sample ERR1955394: Alignment 9 / 20 finished
+[2024-01-17 13:29:06.429] [Genotyping] [15251] [critical] Sample ERR1955394: Alignment 11 / 20 finished
+[2024-01-17 13:29:06.438] [Genotyping] [15255] [critical] Sample ERR1955394: Alignment 14 / 20 finished
+[2024-01-17 13:29:06.442] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:06.522] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:11.258] [Genotyping] [15260] [critical] Sample ERR1955394: Alignment 17 / 20 finished
+[2024-01-17 13:29:11.270] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:11.797] [Genotyping] [15255] [critical] Sample ERR1955393: Alignment 2 / 20 finished
+[2024-01-17 13:29:11.804] [Genotyping] [15258] [critical] Sample ERR1955394: Alignment 16 / 20 finished
+[2024-01-17 13:29:11.818] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:12.990] [Genotyping] [15252] [critical] Sample ERR1955394: Alignment 20 / 20 finished
+[2024-01-17 13:29:13.001] [Genotyping] [15253] [critical] Sample ERR1955394: Alignment 18 / 20 finished
+[2024-01-17 13:29:13.003] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:13.028] [Genotyping] [15259] [critical] Sample ERR1955394: Alignment 12 / 20 finished
+[2024-01-17 13:29:13.036] [Genotyping] [15254] [critical] Sample ERR1955394: Alignment 8 / 20 finished
+[2024-01-17 13:29:13.052] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:13.107] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:13.164] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:13.274] [Genotyping] [15260] [critical] Sample ERR1955393: Alignment 3 / 20 finished
+[2024-01-17 13:29:15.544] [Genotyping] [15260] [critical] Sample ERR1955393: Alignment 10 / 20 finished
+[2024-01-17 13:29:15.559] [Genotyping] [15258] [critical] Sample ERR1955393: Alignment 5 / 20 finished
+[2024-01-17 13:29:15.593] [Genotyping] [15251] [critical] Sample ERR1955393: Alignment 1 / 20 finished
+[2024-01-17 13:29:15.598] [Genotyping] [15252] [critical] Sample ERR1955393: Alignment 6 / 20 finished
+[2024-01-17 13:29:17.848] [Genotyping] [15254] [critical] Sample ERR1955393: Alignment 9 / 20 finished
+[2024-01-17 13:29:17.877] [Genotyping] [15258] [critical] Sample ERR1955393: Alignment 12 / 20 finished
+[2024-01-17 13:29:17.895] [Genotyping] [15253] [critical] Sample ERR1955393: Alignment 7 / 20 finished
+[2024-01-17 13:29:19.965] [Genotyping] [15255] [critical] Sample ERR1955393: Alignment 4 / 20 finished
+[2024-01-17 13:29:20.060] [Genotyping] [15257] [critical] Sample ERR1955394: Alignment 13 / 20 finished
+[2024-01-17 13:29:20.103] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:24.521] [Genotyping] [15258] [critical] Sample ERR1955393: Alignment 16 / 20 finished
+[2024-01-17 13:29:25.534] [Genotyping] [15259] [critical] Sample ERR1955393: Alignment 8 / 20 finished
+[2024-01-17 13:29:25.539] [Genotyping] [15252] [critical] Sample ERR1955393: Alignment 14 / 20 finished
+[2024-01-17 13:29:25.546] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:25.571] [Genotyping] [15257] [critical] Sample ERR1955393: Alignment 19 / 20 finished
+[2024-01-17 13:29:25.595] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:25.644] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:25.725] [Genotyping] [15256] [critical] Sample ERR1955394: Alignment 19 / 20 finished
+[2024-01-17 13:29:25.737] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955393 (2/10)
+[2024-01-17 13:29:25.747] [Genotyping] [15255] [critical] Sample ERR1955393: Alignment 18 / 20 finished
+[2024-01-17 13:29:25.786] [Genotyping] [15260] [critical] Sample ERR1955393: Alignment 11 / 20 finished
+[2024-01-17 13:29:25.812] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:25.875] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:25.953] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:28.859] [Genotyping] [15256] [critical] Sample ERR1955395: Alignment 4 / 20 finished
+[2024-01-17 13:29:28.982] [Genotyping] [15255] [critical] Sample ERR1955395: Alignment 5 / 20 finished
+[2024-01-17 13:29:29.056] [Genotyping] [15259] [critical] Sample ERR1955395: Alignment 1 / 20 finished
+[2024-01-17 13:29:29.060] [Genotyping] [15254] [critical] Sample ERR1955393: Alignment 15 / 20 finished
+[2024-01-17 13:29:29.072] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:29.116] [Genotyping] [15257] [critical] Sample ERR1955395: Alignment 3 / 20 finished
+[2024-01-17 13:29:29.169] [Genotyping] [15258] [critical] Sample ERR1955393: Alignment 20 / 20 finished
+[2024-01-17 13:29:29.227] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:32.466] [Genotyping] [15259] [critical] Sample ERR1955395: Alignment 9 / 20 finished
+[2024-01-17 13:29:32.606] [Genotyping] [15260] [critical] Sample ERR1955395: Alignment 6 / 20 finished
+[2024-01-17 13:29:32.650] [Genotyping] [15252] [critical] Sample ERR1955395: Alignment 2 / 20 finished
+[2024-01-17 13:29:32.651] [Genotyping] [15253] [critical] Sample ERR1955393: Alignment 17 / 20 finished
+[2024-01-17 13:29:32.663] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:32.664] [Genotyping] [15256] [critical] Sample ERR1955395: Alignment 7 / 20 finished
+[2024-01-17 13:29:35.667] [Genotyping] [15253] [critical] Sample ERR1955395: Alignment 16 / 20 finished
+[2024-01-17 13:29:35.707] [Genotyping] [15257] [critical] Sample ERR1955395: Alignment 11 / 20 finished
+[2024-01-17 13:29:35.710] [Genotyping] [15254] [critical] Sample ERR1955395: Alignment 10 / 20 finished
+[2024-01-17 13:29:35.721] [Genotyping] [15260] [critical] Sample ERR1955395: Alignment 14 / 20 finished
+[2024-01-17 13:29:35.733] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:38.289] [Genotyping] [15256] [critical] Sample ERR1955395: Alignment 17 / 20 finished
+[2024-01-17 13:29:38.302] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:41.325] [Genotyping] [15258] [critical] Sample ERR1955395: Alignment 12 / 20 finished
+[2024-01-17 13:29:41.348] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:41.401] [Genotyping] [15251] [critical] Sample ERR1955393: Alignment 13 / 20 finished
+[2024-01-17 13:29:41.413] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955395 (3/10)
+[2024-01-17 13:29:41.467] [Genotyping] [15255] [critical] Sample ERR1955395: Alignment 8 / 20 finished
+[2024-01-17 13:29:41.496] [Genotyping] [15254] [critical] Sample ERR1955395: Alignment 20 / 20 finished
+[2024-01-17 13:29:41.497] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:41.506] [Genotyping] [15257] [critical] Sample ERR1955395: Alignment 19 / 20 finished
+[2024-01-17 13:29:41.511] [Genotyping] [15260] [critical] Sample ERR1955417: Alignment 1 / 20 finished
+[2024-01-17 13:29:41.539] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:41.585] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:41.632] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:44.623] [Genotyping] [15255] [critical] Sample ERR1955417: Alignment 5 / 20 finished
+[2024-01-17 13:29:44.733] [Genotyping] [15252] [critical] Sample ERR1955395: Alignment 15 / 20 finished
+[2024-01-17 13:29:44.755] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:44.759] [Genotyping] [15251] [critical] Sample ERR1955417: Alignment 4 / 20 finished
+[2024-01-17 13:29:44.766] [Genotyping] [15256] [critical] Sample ERR1955417: Alignment 2 / 20 finished
+[2024-01-17 13:29:44.779] [Genotyping] [15254] [critical] Sample ERR1955417: Alignment 6 / 20 finished
+[2024-01-17 13:29:44.879] [Genotyping] [15259] [critical] Sample ERR1955395: Alignment 13 / 20 finished
+[2024-01-17 13:29:44.890] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:50.699] [Genotyping] [15258] [critical] Sample ERR1955417: Alignment 3 / 20 finished
+[2024-01-17 13:29:50.704] [Genotyping] [15255] [critical] Sample ERR1955417: Alignment 9 / 20 finished
+[2024-01-17 13:29:50.782] [Genotyping] [15259] [critical] Sample ERR1955417: Alignment 14 / 20 finished
+[2024-01-17 13:29:52.264] [Genotyping] [15256] [critical] Sample ERR1955417: Alignment 12 / 20 finished
+[2024-01-17 13:29:52.318] [Genotyping] [15252] [critical] Sample ERR1955417: Alignment 10 / 20 finished
+[2024-01-17 13:29:52.336] [Genotyping] [15251] [critical] Sample ERR1955417: Alignment 11 / 20 finished
+[2024-01-17 13:29:52.340] [Genotyping] [15253] [critical] Sample ERR1955395: Alignment 18 / 20 finished
+[2024-01-17 13:29:52.351] [Genotyping] [15260] [critical] Sample ERR1955417: Alignment 8 / 20 finished
+[2024-01-17 13:29:52.352] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955417 (4/10)
+[2024-01-17 13:29:52.392] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:29:52.492] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:29:55.005] [Genotyping] [15251] [critical] Sample ERR1955417: Alignment 20 / 20 finished
+[2024-01-17 13:29:55.018] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:29:55.039] [Genotyping] [15257] [critical] Sample ERR1955417: Alignment 7 / 20 finished
+[2024-01-17 13:29:55.049] [Genotyping] [15254] [critical] Sample ERR1955417: Alignment 13 / 20 finished
+[2024-01-17 13:29:55.062] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:29:55.117] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:29:56.495] [Genotyping] [15260] [critical] Sample ERR1955434: Alignment 2 / 20 finished
+[2024-01-17 13:29:56.504] [Genotyping] [15252] [critical] Sample ERR1955417: Alignment 19 / 20 finished
+[2024-01-17 13:29:56.516] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:29:56.523] [Genotyping] [15256] [critical] Sample ERR1955417: Alignment 18 / 20 finished
+[2024-01-17 13:29:56.526] [Genotyping] [15257] [critical] Sample ERR1955434: Alignment 4 / 20 finished
+[2024-01-17 13:29:56.547] [Genotyping] [15258] [critical] Sample ERR1955417: Alignment 15 / 20 finished
+[2024-01-17 13:29:56.562] [Genotyping] [15255] [critical] Sample ERR1955417: Alignment 16 / 20 finished
+[2024-01-17 13:29:56.578] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:29:56.594] [Genotyping] [15253] [critical] Sample ERR1955434: Alignment 1 / 20 finished
+[2024-01-17 13:29:56.614] [Genotyping] [15259] [critical] Sample ERR1955417: Alignment 17 / 20 finished
+[2024-01-17 13:29:56.624] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:29:56.699] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:29:56.748] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955434 (5/10)
+[2024-01-17 13:30:03.611] [Genotyping] [15252] [critical] Sample ERR1955434: Alignment 7 / 20 finished
+[2024-01-17 13:30:03.648] [Genotyping] [15254] [critical] Sample ERR1955434: Alignment 5 / 20 finished
+[2024-01-17 13:30:03.659] [Genotyping] [15260] [critical] Sample ERR1955434: Alignment 6 / 20 finished
+[2024-01-17 13:30:03.713] [Genotyping] [15256] [critical] Sample ERR1955434: Alignment 8 / 20 finished
+[2024-01-17 13:30:06.110] [Genotyping] [15257] [critical] Sample ERR1955434: Alignment 9 / 20 finished
+[2024-01-17 13:30:06.116] [Genotyping] [15251] [critical] Sample ERR1955434: Alignment 3 / 20 finished
+[2024-01-17 13:30:06.156] [Genotyping] [15256] [critical] Sample ERR1955434: Alignment 17 / 20 finished
+[2024-01-17 13:30:07.698] [Genotyping] [15252] [critical] Sample ERR1955434: Alignment 14 / 20 finished
+[2024-01-17 13:30:07.711] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:08.051] [Genotyping] [15251] [critical] Sample ERR1955434: Alignment 19 / 20 finished
+[2024-01-17 13:30:08.064] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:08.091] [Genotyping] [15253] [critical] Sample ERR1955434: Alignment 12 / 20 finished
+[2024-01-17 13:30:08.106] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:09.257] [Genotyping] [15256] [critical] Sample ERR1955434: Alignment 20 / 20 finished
+[2024-01-17 13:30:09.270] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:09.841] [Genotyping] [15258] [critical] Sample ERR1955434: Alignment 10 / 20 finished
+[2024-01-17 13:30:09.853] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:09.922] [Genotyping] [15254] [critical] Sample ERR1955434: Alignment 15 / 20 finished
+[2024-01-17 13:30:09.935] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:09.957] [Genotyping] [15257] [critical] Sample ERR1955434: Alignment 18 / 20 finished
+[2024-01-17 13:30:10.015] [Genotyping] [15259] [critical] Sample ERR1955434: Alignment 13 / 20 finished
+[2024-01-17 13:30:10.017] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:10.071] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:11.887] [Genotyping] [15258] [critical] Sample ERR1955433: Alignment 5 / 20 finished
+[2024-01-17 13:30:11.914] [Genotyping] [15254] [critical] Sample ERR1955433: Alignment 6 / 20 finished
+[2024-01-17 13:30:11.918] [Genotyping] [15253] [critical] Sample ERR1955433: Alignment 3 / 20 finished
+[2024-01-17 13:30:11.939] [Genotyping] [15255] [critical] Sample ERR1955434: Alignment 11 / 20 finished
+[2024-01-17 13:30:11.952] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:13.908] [Genotyping] [15259] [critical] Sample ERR1955433: Alignment 8 / 20 finished
+[2024-01-17 13:30:13.950] [Genotyping] [15254] [critical] Sample ERR1955433: Alignment 10 / 20 finished
+[2024-01-17 13:30:13.992] [Genotyping] [15252] [critical] Sample ERR1955433: Alignment 1 / 20 finished
+[2024-01-17 13:30:13.999] [Genotyping] [15253] [critical] Sample ERR1955433: Alignment 11 / 20 finished
+[2024-01-17 13:30:15.563] [Genotyping] [15256] [critical] Sample ERR1955433: Alignment 4 / 20 finished
+[2024-01-17 13:30:15.614] [Genotyping] [15251] [critical] Sample ERR1955433: Alignment 2 / 20 finished
+[2024-01-17 13:30:15.625] [Genotyping] [15260] [critical] Sample ERR1955434: Alignment 16 / 20 finished
+[2024-01-17 13:30:15.637] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955433 (6/10)
+[2024-01-17 13:30:15.657] [Genotyping] [15255] [critical] Sample ERR1955433: Alignment 12 / 20 finished
+[2024-01-17 13:30:15.673] [Genotyping] [15253] [critical] Sample ERR1955433: Alignment 16 / 20 finished
+[2024-01-17 13:30:15.685] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:18.439] [Genotyping] [15252] [critical] Sample ERR1955433: Alignment 15 / 20 finished
+[2024-01-17 13:30:18.452] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:20.927] [Genotyping] [15256] [critical] Sample ERR1955433: Alignment 17 / 20 finished
+[2024-01-17 13:30:20.939] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:21.007] [Genotyping] [15258] [critical] Sample ERR1955433: Alignment 9 / 20 finished
+[2024-01-17 13:30:21.007] [Genotyping] [15255] [critical] Sample ERR1955433: Alignment 20 / 20 finished
+[2024-01-17 13:30:21.020] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:21.069] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:22.358] [Genotyping] [15251] [critical] Sample ERR1955433: Alignment 18 / 20 finished
+[2024-01-17 13:30:22.371] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:22.396] [Genotyping] [15252] [critical] Sample ERR1955419: Alignment 2 / 20 finished
+[2024-01-17 13:30:22.402] [Genotyping] [15254] [critical] Sample ERR1955433: Alignment 14 / 20 finished
+[2024-01-17 13:30:22.414] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:22.464] [Genotyping] [15260] [critical] Sample ERR1955433: Alignment 19 / 20 finished
+[2024-01-17 13:30:22.477] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:22.627] [Genotyping] [15256] [critical] Sample ERR1955419: Alignment 3 / 20 finished
+[2024-01-17 13:30:25.294] [Genotyping] [15257] [critical] Sample ERR1955433: Alignment 7 / 20 finished
+[2024-01-17 13:30:25.307] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:25.310] [Genotyping] [15255] [critical] Sample ERR1955419: Alignment 5 / 20 finished
+[2024-01-17 13:30:25.320] [Genotyping] [15256] [critical] Sample ERR1955419: Alignment 10 / 20 finished
+[2024-01-17 13:30:25.321] [Genotyping] [15258] [critical] Sample ERR1955419: Alignment 4 / 20 finished
+[2024-01-17 13:30:25.342] [Genotyping] [15260] [critical] Sample ERR1955419: Alignment 9 / 20 finished
+[2024-01-17 13:30:25.348] [Genotyping] [15253] [critical] Sample ERR1955419: Alignment 1 / 20 finished
+[2024-01-17 13:30:25.350] [Genotyping] [15254] [critical] Sample ERR1955419: Alignment 8 / 20 finished
+[2024-01-17 13:30:25.358] [Genotyping] [15252] [critical] Sample ERR1955419: Alignment 7 / 20 finished
+[2024-01-17 13:30:28.571] [Genotyping] [15257] [critical] Sample ERR1955419: Alignment 11 / 20 finished
+[2024-01-17 13:30:28.607] [Genotyping] [15260] [critical] Sample ERR1955419: Alignment 15 / 20 finished
+[2024-01-17 13:30:28.616] [Genotyping] [15255] [critical] Sample ERR1955419: Alignment 12 / 20 finished
+[2024-01-17 13:30:28.629] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:29.977] [Genotyping] [15252] [critical] Sample ERR1955419: Alignment 18 / 20 finished
+[2024-01-17 13:30:29.989] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:32.492] [Genotyping] [15257] [critical] Sample ERR1955419: Alignment 19 / 20 finished
+[2024-01-17 13:30:32.505] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:32.519] [Genotyping] [15251] [critical] Sample ERR1955419: Alignment 6 / 20 finished
+[2024-01-17 13:30:32.551] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:32.616] [Genotyping] [15260] [critical] Sample ERR1955419: Alignment 20 / 20 finished
+[2024-01-17 13:30:32.626] [Genotyping] [15254] [critical] Sample ERR1955419: Alignment 17 / 20 finished
+[2024-01-17 13:30:32.628] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:32.677] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:34.695] [Genotyping] [15257] [critical] Sample ERR1955411: Alignment 3 / 20 finished
+[2024-01-17 13:30:34.712] [Genotyping] [15251] [critical] Sample ERR1955411: Alignment 4 / 20 finished
+[2024-01-17 13:30:34.745] [Genotyping] [15258] [critical] Sample ERR1955419: Alignment 14 / 20 finished
+[2024-01-17 13:30:34.768] [Genotyping] [15253] [critical] Sample ERR1955419: Alignment 16 / 20 finished
+[2024-01-17 13:30:34.783] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:34.794] [Genotyping] [15254] [critical] Sample ERR1955411: Alignment 6 / 20 finished
+[2024-01-17 13:30:34.835] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:37.430] [Genotyping] [15257] [critical] Sample ERR1955411: Alignment 7 / 20 finished
+[2024-01-17 13:30:37.472] [Genotyping] [15252] [critical] Sample ERR1955411: Alignment 2 / 20 finished
+[2024-01-17 13:30:37.562] [Genotyping] [15259] [critical] Sample ERR1955433: Alignment 13 / 20 finished
+[2024-01-17 13:30:37.574] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955419 (7/10)
+[2024-01-17 13:30:37.609] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:38.213] [Genotyping] [15260] [critical] Sample ERR1955411: Alignment 5 / 20 finished
+[2024-01-17 13:30:38.255] [Genotyping] [15256] [critical] Sample ERR1955419: Alignment 13 / 20 finished
+[2024-01-17 13:30:38.268] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955411 (8/10)
+[2024-01-17 13:30:40.125] [Genotyping] [15254] [critical] Sample ERR1955411: Alignment 11 / 20 finished
+[2024-01-17 13:30:40.695] [Genotyping] [15260] [critical] Sample ERR1955411: Alignment 15 / 20 finished
+[2024-01-17 13:30:40.708] [Genotyping] [15257] [critical] Sample ERR1955411: Alignment 12 / 20 finished
+[2024-01-17 13:30:40.713] [Genotyping] [15259] [critical] Sample ERR1955411: Alignment 14 / 20 finished
+[2024-01-17 13:30:40.714] [Genotyping] [15253] [critical] Sample ERR1955411: Alignment 10 / 20 finished
+[2024-01-17 13:30:40.721] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:30:46.061] [Genotyping] [15256] [critical] Sample ERR1955411: Alignment 16 / 20 finished
+[2024-01-17 13:30:46.074] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:30:46.661] [Genotyping] [15258] [critical] Sample ERR1955411: Alignment 9 / 20 finished
+[2024-01-17 13:30:46.674] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:30:46.675] [Genotyping] [15260] [critical] Sample ERR1955411: Alignment 18 / 20 finished
+[2024-01-17 13:30:46.683] [Genotyping] [15255] [critical] Sample ERR1955411: Alignment 1 / 20 finished
+[2024-01-17 13:30:46.698] [Genotyping] [15259] [critical] Sample ERR1955411: Alignment 20 / 20 finished
+[2024-01-17 13:30:46.711] [Genotyping] [15257] [critical] Sample ERR1955411: Alignment 19 / 20 finished
+[2024-01-17 13:30:46.724] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:30:46.778] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:30:46.833] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:30:46.889] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:30:49.749] [Genotyping] [15253] [critical] Sample ERR1955429: Alignment 1 / 20 finished
+[2024-01-17 13:30:49.951] [Genotyping] [15258] [critical] Sample ERR1955429: Alignment 3 / 20 finished
+[2024-01-17 13:30:50.005] [Genotyping] [15252] [critical] Sample ERR1955411: Alignment 13 / 20 finished
+[2024-01-17 13:30:50.018] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:30:51.827] [Genotyping] [15255] [critical] Sample ERR1955429: Alignment 5 / 20 finished
+[2024-01-17 13:30:51.885] [Genotyping] [15259] [critical] Sample ERR1955429: Alignment 6 / 20 finished
+[2024-01-17 13:30:51.905] [Genotyping] [15257] [critical] Sample ERR1955429: Alignment 7 / 20 finished
+[2024-01-17 13:30:51.911] [Genotyping] [15256] [critical] Sample ERR1955429: Alignment 2 / 20 finished
+[2024-01-17 13:30:51.938] [Genotyping] [15252] [critical] Sample ERR1955429: Alignment 10 / 20 finished
+[2024-01-17 13:30:54.308] [Genotyping] [15252] [critical] Sample ERR1955429: Alignment 15 / 20 finished
+[2024-01-17 13:30:54.314] [Genotyping] [15253] [critical] Sample ERR1955429: Alignment 8 / 20 finished
+[2024-01-17 13:30:58.318] [Genotyping] [15252] [critical] Sample ERR1955429: Alignment 16 / 20 finished
+[2024-01-17 13:30:58.341] [Genotyping] [15259] [critical] Sample ERR1955429: Alignment 12 / 20 finished
+[2024-01-17 13:30:58.380] [Genotyping] [15260] [critical] Sample ERR1955429: Alignment 4 / 20 finished
+[2024-01-17 13:31:00.370] [Genotyping] [15258] [critical] Sample ERR1955429: Alignment 9 / 20 finished
+[2024-01-17 13:31:00.383] [Genotyping] [15258] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:00.447] [Genotyping] [15260] [critical] Sample ERR1955429: Alignment 20 / 20 finished
+[2024-01-17 13:31:00.460] [Genotyping] [15260] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:00.480] [Genotyping] [15255] [critical] Sample ERR1955429: Alignment 11 / 20 finished
+[2024-01-17 13:31:00.508] [Genotyping] [15255] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:01.427] [Genotyping] [15252] [critical] Sample ERR1955429: Alignment 18 / 20 finished
+[2024-01-17 13:31:01.440] [Genotyping] [15252] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:01.471] [Genotyping] [15254] [critical] Sample ERR1955411: Alignment 17 / 20 finished
+[2024-01-17 13:31:01.484] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:31:01.524] [Genotyping] [15254] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:03.199] [Genotyping] [15255] [critical] Sample ERR1955428: Alignment 3 / 20 finished
+[2024-01-17 13:31:03.229] [Genotyping] [15259] [critical] Sample ERR1955429: Alignment 19 / 20 finished
+[2024-01-17 13:31:03.241] [Genotyping] [15259] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:03.241] [Genotyping] [15254] [critical] Sample ERR1955428: Alignment 5 / 20 finished
+[2024-01-17 13:31:04.810] [Genotyping] [15260] [critical] Sample ERR1955428: Alignment 2 / 20 finished
+[2024-01-17 13:31:04.851] [Genotyping] [15252] [critical] Sample ERR1955428: Alignment 4 / 20 finished
+[2024-01-17 13:31:04.859] [Genotyping] [15258] [critical] Sample ERR1955428: Alignment 1 / 20 finished
+[2024-01-17 13:31:04.928] [Genotyping] [15257] [critical] Sample ERR1955429: Alignment 13 / 20 finished
+[2024-01-17 13:31:04.942] [Genotyping] [15257] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:08.523] [Genotyping] [15252] [critical] Sample ERR1955428: Alignment 10 / 20 finished
+[2024-01-17 13:31:08.559] [Genotyping] [15255] [critical] Sample ERR1955428: Alignment 6 / 20 finished
+[2024-01-17 13:31:08.568] [Genotyping] [15260] [critical] Sample ERR1955428: Alignment 9 / 20 finished
+[2024-01-17 13:31:08.581] [Genotyping] [15253] [critical] Sample ERR1955429: Alignment 17 / 20 finished
+[2024-01-17 13:31:08.594] [Genotyping] [15253] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:08.613] [Genotyping] [15258] [critical] Sample ERR1955428: Alignment 11 / 20 finished
+[2024-01-17 13:31:08.621] [Genotyping] [15256] [critical] Sample ERR1955429: Alignment 14 / 20 finished
+[2024-01-17 13:31:08.688] [Genotyping] [15256] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:12.288] [Genotyping] [15255] [critical] Sample ERR1955428: Alignment 14 / 20 finished
+[2024-01-17 13:31:14.745] [Genotyping] [15258] [critical] Sample ERR1955428: Alignment 17 / 20 finished
+[2024-01-17 13:31:14.766] [Genotyping] [15253] [critical] Sample ERR1955428: Alignment 16 / 20 finished
+[2024-01-17 13:31:14.800] [Genotyping] [15259] [critical] Sample ERR1955428: Alignment 7 / 20 finished
+[2024-01-17 13:31:15.464] [Genotyping] [15254] [critical] Sample ERR1955428: Alignment 8 / 20 finished
+[2024-01-17 13:31:15.491] [Genotyping] [15256] [critical] Sample ERR1955428: Alignment 18 / 20 finished
+[2024-01-17 13:31:15.497] [Genotyping] [15260] [critical] Sample ERR1955428: Alignment 15 / 20 finished
+[2024-01-17 13:31:15.534] [Genotyping] [15255] [critical] Sample ERR1955428: Alignment 19 / 20 finished
+[2024-01-17 13:31:15.536] [Genotyping] [15257] [critical] Sample ERR1955428: Alignment 12 / 20 finished
+[2024-01-17 13:31:15.997] [Genotyping] [15258] [critical] Sample ERR1955428: Alignment 20 / 20 finished
+[2024-01-17 13:31:16.837] [Genotyping] [15251] [critical] Sample ERR1955411: Alignment 8 / 20 finished
+[2024-01-17 13:31:16.850] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955429 (9/10)
+[2024-01-17 13:31:16.885] [Genotyping] [15251] [critical] Starting alignment for sample ERR1955428 (10/10)
+[2024-01-17 13:31:16.929] [Genotyping] [15252] [critical] Sample ERR1955428: Alignment 13 / 20 finished
+[2024-01-17 13:31:16.947] [Genotyping] [15252] [critical] Genotyping finished for graph 2 / 20
+[2024-01-17 13:31:16.951] [Genotyping] [15251] [critical] Genotyping finished for graph 1 / 20
+[2024-01-17 13:31:16.954] [Genotyping] [15259] [critical] Genotyping finished for graph 8 / 20
+[2024-01-17 13:31:16.955] [Genotyping] [15254] [critical] Genotyping finished for graph 9 / 20
+[2024-01-17 13:31:16.955] [Genotyping] [15255] [critical] Genotyping finished for graph 5 / 20
+[2024-01-17 13:31:16.955] [Genotyping] [15260] [critical] Genotyping finished for graph 6 / 20
+[2024-01-17 13:31:16.955] [Genotyping] [15257] [critical] Genotyping finished for graph 4 / 20
+[2024-01-17 13:31:16.955] [Genotyping] [15258] [critical] Genotyping finished for graph 3 / 20
+[2024-01-17 13:31:16.955] [Genotyping] [15253] [critical] Genotyping finished for graph 10 / 20
+[2024-01-17 13:31:16.955] [Genotyping] [15256] [critical] Genotyping finished for graph 7 / 20
+[2024-01-17 13:31:16.955] [Genotyping] [15252] [critical] Genotyping finished for graph 11 / 20
+[2024-01-17 13:31:16.963] [Genotyping] [15251] [critical] Genotyping finished for graph 12 / 20
+[2024-01-17 13:31:16.974] [Genotyping] [15259] [critical] Genotyping finished for graph 13 / 20
+[2024-01-17 13:31:16.986] [Genotyping] [15254] [critical] Genotyping finished for graph 14 / 20
+[2024-01-17 13:31:16.996] [Genotyping] [15255] [critical] Genotyping finished for graph 15 / 20
+[2024-01-17 13:31:17.009] [Genotyping] [15260] [critical] Genotyping finished for graph 16 / 20
+[2024-01-17 13:31:17.021] [Genotyping] [15257] [critical] Genotyping finished for graph 17 / 20
+[2024-01-17 13:31:17.031] [Genotyping] [15258] [critical] Genotyping finished for graph 18 / 20
+[2024-01-17 13:31:17.043] [Genotyping] [15253] [critical] Genotyping finished for graph 19 / 20
+[2024-01-17 13:31:17.055] [Genotyping] [15256] [critical] Genotyping finished for graph 20 / 20

@@ -1,0 +1,100 @@
+{
+    "edges": [
+        {
+            "from": "source",
+            "to": "ref-chr5:28932394-28932544_1",
+            "name": "source_ref-chr5:28932394-28932544_1"
+        },
+        {
+            "from": "ref-chr5:28932394-28932544_1",
+            "to": "ref-chr5:28932545-28932748_3",
+            "name": "ref-chr5:28932394-28932544_1_ref-chr5:28932545-28932748_3",
+            "sequences": [
+                "REF"
+            ]
+        },
+        {
+            "from": "ref-chr5:28932545-28932748_3",
+            "to": "ref-chr5:28932749-28932899_4",
+            "name": "ref-chr5:28932545-28932748_3_ref-chr5:28932749-28932899_4",
+            "sequences": [
+                "REF"
+            ]
+        },
+        {
+            "from": "ref-chr5:28932394-28932544_1",
+            "to": "var-chr5:28934952-28934770_2",
+            "name": "ref-chr5:28932394-28932544_1_var-chr5:28934952-28934770_2",
+            "sequences": [
+                "ALT"
+            ]
+        },
+        {
+            "from": "var-chr5:28934952-28934770_2",
+            "to": "ref-chr5:28932749-28932899_4",
+            "name": "var-chr5:28934952-28934770_2_ref-chr5:28932749-28932899_4",
+            "sequences": [
+                "ALT"
+            ]
+        },
+        {
+            "to": "sink",
+            "from": "ref-chr5:28932749-28932899_4",
+            "name": "ref-chr5:28932749-28932899_4_sink"
+        }
+    ],
+    "model_name": "svVariant_4",
+    "nodes": [
+        {
+            "name": "source",
+            "sequence": "NNNNNNNNNN"
+        },
+        {
+            "reference": "chr5:28932394-28932544",
+            "name": "ref-chr5:28932394-28932544_1"
+        },
+        {
+            "name": "var-chr5:28934952-28934770_2",
+            "sequence": "ATAAAAAGTACTTTTATGGTCACATTTCTAAATATTTTTATTAAATATGTAATAGTTTCATTAATACTTTAACATAAAATTTTTTAAAGTATGTCTTTGTAGTTTGACAGAAACTGTACAATTTCTATCTAAAACTATGATGTGAATTTACATTTCCAACATAAATATTTCTTCACATACTCA"
+        },
+        {
+            "reference": "chr5:28932545-28932748",
+            "name": "ref-chr5:28932545-28932748_3"
+        },
+        {
+            "reference": "chr5:28932749-28932899",
+            "name": "ref-chr5:28932749-28932899_4"
+        },
+        {
+            "name": "sink",
+            "sequence": "NNNNNNNNNN"
+        }
+    ],
+    "paths": [
+        {
+            "nodes": [
+                "ref-chr5:28932394-28932544_1",
+                "ref-chr5:28932545-28932748_3",
+                "ref-chr5:28932749-28932899_4"
+            ],
+            "path_id": "REF|1",
+            "sequence": "REF"
+        },
+        {
+            "nodes": [
+                "ref-chr5:28932394-28932544_1",
+                "var-chr5:28934952-28934770_2",
+                "ref-chr5:28932749-28932899_4"
+            ],
+            "path_id": "ALT|1",
+            "sequence": "ALT"
+        }
+    ],
+    "sequencenames": [
+        "ALT",
+        "REF"
+    ],
+    "target_regions": [
+        "chr5:28932394-28932899"
+    ]
+}

@@ -1,0 +1,3 @@
+kmer_bloom	46517
+clustering	48823
+genotyping	66304

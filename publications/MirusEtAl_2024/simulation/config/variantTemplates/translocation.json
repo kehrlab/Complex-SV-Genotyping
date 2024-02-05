@@ -1,0 +1,47 @@
+{
+    "name" : "Translocation",
+    "parts" : {
+        "CI1" : {
+            "A" : {
+                "minSize" : 1000,
+                "maxSize" : 1000
+            },
+            "B" : {
+                "minSize" : 1000,
+                "maxSize" : 1000
+            }
+        },
+        "CI2" : {
+            "C" : {
+                "minSize" : 1000,
+                "maxSize" : 1000
+            },
+            "D" : {
+                "minSize" : 1000,
+                "maxSize" : 1000
+            }
+        }
+    },
+    "structure" : {
+        "CI1" : {
+            "1" : {
+                "part" : "A",
+                "orientation" : "F"
+            },
+            "2" : {
+                "part" : "D",
+                "orientation" : "F"
+            }
+        },
+        "CI2" : {
+            "1" : {
+                "part" : "C",
+                "orientation" : "F"
+            },
+            "2" : {
+                "part" : "B",
+                "orientation" : "F"
+            }
+        }
+    }
+}

@@ -1,0 +1,43 @@
+{
+    "parts" : {
+        "CI1" : {
+            "A" : {
+                "minSize" : 10000,
+                "maxSize" : 10000
+            },
+            "B" : {
+                "minSize" : 50,
+                "maxSize" : 5000
+            },
+            "C" : {
+                "minSize" : 50,
+                "maxSize" : 5000
+            },
+            "D" : {
+                "minSize" : 10000,
+                "maxSize" : 10000
+            }
+        }
+    },
+    "structure" : {
+        "CI1" : {
+            "1" : {
+                "part" : "B",
+                "orientation" : "F"
+            },
+            "2" : {
+                "part" : "C",
+                "orientation" : "F"
+            },
+            "3" : {
+                "part" : "B",
+                "orientation" : "F"
+            },
+            "4" : {
+                "part" : "D",
+                "orientation" : "F"
+            }
+        }
+    },
+    "name" : "Duplication"
+}

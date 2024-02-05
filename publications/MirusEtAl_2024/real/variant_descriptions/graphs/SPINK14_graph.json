@@ -1,0 +1,100 @@
+{
+    "edges": [
+        {
+            "from": "source",
+            "to": "ref-chr5:148173326-148173476_1",
+            "name": "source_ref-chr5:148173326-148173476_1"
+        },
+        {
+            "from": "ref-chr5:148173326-148173476_1",
+            "to": "ref-chr5:148173477-148175215_3",
+            "name": "ref-chr5:148173326-148173476_1_ref-chr5:148173477-148175215_3",
+            "sequences": [
+                "REF"
+            ]
+        },
+        {
+            "from": "ref-chr5:148173477-148175215_3",
+            "to": "ref-chr5:148175216-148175366_4",
+            "name": "ref-chr5:148173477-148175215_3_ref-chr5:148175216-148175366_4",
+            "sequences": [
+                "REF"
+            ]
+        },
+        {
+            "from": "ref-chr5:148173326-148173476_1",
+            "to": "var-chr5:148175043-148174677_2",
+            "name": "ref-chr5:148173326-148173476_1_var-chr5:148175043-148174677_2",
+            "sequences": [
+                "ALT"
+            ]
+        },
+        {
+            "from": "var-chr5:148175043-148174677_2",
+            "to": "ref-chr5:148175216-148175366_4",
+            "name": "var-chr5:148175043-148174677_2_ref-chr5:148175216-148175366_4",
+            "sequences": [
+                "ALT"
+            ]
+        },
+        {
+            "to": "sink",
+            "from": "ref-chr5:148175216-148175366_4",
+            "name": "ref-chr5:148175216-148175366_4_sink"
+        }
+    ],
+    "model_name": "SPINK14",
+    "nodes": [
+        {
+            "name": "source",
+            "sequence": "NNNNNNNNNN"
+        },
+        {
+            "reference": "chr5:148173326-148173476",
+            "name": "ref-chr5:148173326-148173476_1"
+        },
+        {
+            "name": "var-chr5:148175043-148174677_2",
+            "sequence": "CTCACACTTTGGCTGAATTACTTATTAGTGGGGATGACCTGAGCTTTGCACATTCCTGTCATTGCTCCTTGCACAAAATTTACAAAATGATTGGGCTAAGAGCTCCAATCTGATGCCATGGGGAAAATTTTTCTCTCTGTGAAATGCACTCACTCATATAGGAATCAAAGCTGAAAGCATTGCGTTATAAGATTTCAGTATCTAATCACTGATTTATGTCACATAAATCCAAAAATCTAAACACTGTCTCAGCTAGAAGATCCAAACTTTGCAATTACATCATCATTGTAGTTCAGAGTTTCAAACACATAAGGGGGTGAAGATATTTAAGAGAAAGCAAAACTACAATTTTTCTTAAAATAAAAAA"
+        },
+        {
+            "reference": "chr5:148173477-148175215",
+            "name": "ref-chr5:148173477-148175215_3"
+        },
+        {
+            "reference": "chr5:148175216-148175366",
+            "name": "ref-chr5:148175216-148175366_4"
+        },
+        {
+            "name": "sink",
+            "sequence": "NNNNNNNNNN"
+        }
+    ],
+    "paths": [
+        {
+            "nodes": [
+                "ref-chr5:148173326-148173476_1",
+                "ref-chr5:148173477-148175215_3",
+                "ref-chr5:148175216-148175366_4"
+            ],
+            "path_id": "REF|1",
+            "sequence": "REF"
+        },
+        {
+            "nodes": [
+                "ref-chr5:148173326-148173476_1",
+                "var-chr5:148175043-148174677_2",
+                "ref-chr5:148175216-148175366_4"
+            ],
+            "path_id": "ALT|1",
+            "sequence": "ALT"
+        }
+    ],
+    "sequencenames": [
+        "ALT",
+        "REF"
+    ],
+    "target_regions": [
+        "chr5:148173326-148175366"
+    ]
+}

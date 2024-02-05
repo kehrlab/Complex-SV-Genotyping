@@ -1,0 +1,75 @@
+{
+    "name" : "csvT",
+    "parts" : {
+        "CI1" : {
+            "A" : {
+                "minSize" : 1000,
+                "maxSize" : 1000
+            },
+            "B" : {
+                "minSize" : 50,
+                "maxSize" : 500
+            },
+            "C" : {
+                "minSize" : 50,
+                "maxSize" : 300
+            },
+            "D" : {
+                "minSize" : 1000,
+                "maxSize" : 1000
+            }
+        },
+        "CI2" : {
+            "E" : {
+                "minSize" : 1000,
+                "maxSize" : 1000
+            },
+            "F" : {
+                "minSize" : 50,
+                "maxSize" : 1000
+            },
+            "G" : {
+                "minSize" : 50,
+                "maxSize" : 800
+            },
+            "H" : {
+                "minSize" : 1000,
+                "maxSize" : 1000
+            }
+        }
+    },
+    "structure" : {
+        "CI1" : {
+            "1" : {
+                "part" : "E",
+                "orientation" : "F"
+            },
+            "2" : {
+                "part" : "F",
+                "orientation" : "R"
+            },
+            "3" : {
+                "part" : "D",
+                "orientation" : "F"
+            }
+        },
+        "CI2" : {
+            "1" : {
+                "part" : "B",
+                "orientation" : "F"
+            },
+            "2" : {
+                "part" : "C",
+                "orientation" : "F"
+            },
+            "3" : {
+                "part" : "B",
+                "orientation" : "F"
+            },
+            "4" : {
+                "part" : "H",
+                "orientation" : "F"
+            }
+        }
+    }
+}

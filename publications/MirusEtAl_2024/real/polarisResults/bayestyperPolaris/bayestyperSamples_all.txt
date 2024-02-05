@@ -1,0 +1,13 @@
+ERR1955394	M	results/bayestyperPolaris/bloom/ERR1955394_kmc
+ERR1955393	M	results/bayestyperPolaris/bloom/ERR1955393_kmc
+ERR1955395	M	results/bayestyperPolaris/bloom/ERR1955395_kmc
+ERR1955417	F	results/bayestyperPolaris/bloom/ERR1955417_kmc
+ERR1955434	F	results/bayestyperPolaris/bloom/ERR1955434_kmc
+ERR1955433	M	results/bayestyperPolaris/bloom/ERR1955433_kmc
+ERR1955419	F	results/bayestyperPolaris/bloom/ERR1955419_kmc
+ERR1955411	M	results/bayestyperPolaris/bloom/ERR1955411_kmc
+ERR1955429	M	results/bayestyperPolaris/bloom/ERR1955429_kmc
+ERR1955428	M	results/bayestyperPolaris/bloom/ERR1955428_kmc
+ERR1955426	M	results/bayestyperPolaris/bloom/ERR1955426_kmc
+ERR1955435	F	results/bayestyperPolaris/bloom/ERR1955435_kmc
+ERR1955410	F	results/bayestyperPolaris/bloom/ERR1955410_kmc

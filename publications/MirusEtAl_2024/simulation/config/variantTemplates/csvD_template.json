@@ -1,0 +1,51 @@
+{
+    "name" : "csvD",
+    "parts" : {
+        "CI1" : {
+            "A" : {
+                "minSize" : 10000,
+                "maxSize" : 10000
+            },
+            "B" : {
+                "minSize" : 50,
+                "maxSize" : 2000
+            },
+            "C" : {
+                "minSize" : 50,
+                "maxSize" : 2000
+            },
+            "D" : {
+                "minSize" : 50,
+                "maxSize" : 2000
+            },
+            "E" : {
+                "minSize" : 10000,
+                "maxSize" : 10000
+            }
+        }
+    },
+    "structure" : {
+        "CI1" : {
+            "1" : {
+                "part" : "B",
+                "orientation" : "F"
+            },
+            "2" : {
+                "part" : "D",
+                "orientation" : "R" 
+            },
+            "3" : {
+                "part" : "C",
+                "orientation" : "R"
+            },
+            "4" : {
+                "part" : "B",
+                "orientation" : "R"
+            },
+            "5" : {
+                "part" : "D",
+                "orientation" : "F"
+            }
+        }
+    }
+}
