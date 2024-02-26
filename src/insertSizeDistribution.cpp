@@ -53,7 +53,7 @@ InsertSizeDistribution operator+(InsertSizeDistribution lhs, InsertSizeDistribut
 
 InsertSizeDistribution & InsertSizeDistribution::operator*=(float & factor)
 {
-    for (unsigned i = 0; i < this->distribution.size(); ++i)
+    for (uint32_t i = 0; i < this->distribution.size(); ++i)
         this->distribution[i] *= factor;
     return *this;
 }
@@ -78,10 +78,8 @@ void InsertSizeDistribution::addInsertSizeProbability(int insertSize, float p)
     } else if (this->minInsertSize > insertSize)
     {
         std::vector<float> tempDistribution(this->maxInsertSize - insertSize + 101, 0);
-        for (unsigned i = 0; i < this->distribution.size(); ++i)
-        {
-            tempDistribution[this->minInsertSize-(insertSize-100) +i] = this->distribution[i];
-        }
+        for (uint32_t i = 0; i < this->distribution.size(); ++i)
+            tempDistribution[this->minInsertSize - (insertSize-100) + i] = this->distribution[i];
         tempDistribution[100] = p;
 
         this->minInsertSize = insertSize - 100;
@@ -89,10 +87,10 @@ void InsertSizeDistribution::addInsertSizeProbability(int insertSize, float p)
     } else if (this->maxInsertSize < insertSize)
     {
         std::vector<float> tempDistribution(insertSize + 101 - this->minInsertSize, 0);
-        for (unsigned i = 0; i < this->distribution.size(); ++i)
-        {
+        
+        for (uint32_t i = 0; i < this->distribution.size(); ++i)
             tempDistribution[i] = this->distribution[i];
-        }
+        
         tempDistribution[insertSize - this->minInsertSize] = p;
 
         this->maxInsertSize = insertSize + 100;
@@ -158,7 +156,7 @@ void InsertSizeDistribution::scaleDistribution()
     float distributionSum = 0;
     for (auto it : this->distribution)
         distributionSum += it;
-    for (int i = 0; i < this->distribution.size(); ++i)
+    for (uint32_t i = 0; i < this->distribution.size(); ++i)
         this->distribution[i] /= distributionSum;
     findMinProbability();
 }
@@ -173,11 +171,11 @@ void InsertSizeDistribution::smoothDistribution(int kernelSize)
         kernel[i+(kernelSize-1)/2] = 1 / std::sqrt(2 * M_PI) * std::exp(- (i*i)/((kernelSize-1)));
     }
 
-    for (unsigned i = 0; i < this->distribution.size(); ++i)
+    for (int i = 0; i < (int) this->distribution.size(); ++i)
     {
         for (int j = 0; j < kernelSize; ++j)
         {
-            if (i+j-(kernelSize-1)/2 < 0 || i+j-(kernelSize-1)/2 >= this->distribution.size())
+            if (i+j-(kernelSize-1)/2 < 0 || i+j-(kernelSize-1)/2 >= (int) this->distribution.size())
                 continue; 
             smoothed_values[i] += kernel[j] * this->distribution[i+j-(kernelSize-1)/2];
         }
@@ -200,7 +198,7 @@ void InsertSizeDistribution::writeDistribution(std::string filename)
         if (f.is_open())
         {
             for (int i = this->minInsertSize; i <= maxInsertSize; ++i)
-                f << i << "\t" << this->distribution[i-this->minInsertSize] << std::endl;
+                f << i << "\t" << this->distribution[i - this->minInsertSize] << std::endl;
         }
         f.close();
     }

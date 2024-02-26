@@ -105,16 +105,16 @@ VariantRegions VariantProfile::createVariantRegions(Allele & allele)
         std::vector<int> localIndices;
         std::vector<char> type;
 
-        for (int i = 0; i < jRegion.breakpointIndices.size(); ++i) 
+        for (uint32_t i = 0; i < jRegion.breakpointIndices.size(); ++i) 
         {
             indices.push_back(jRegion.breakpointIndices[i]);
-            localIndices.push_back(i);
+            localIndices.push_back((int) i);
             type.push_back('B');
         }
-        for (int i = 0; i < jRegion.junctionIndices.size(); ++i)
+        for (uint32_t i = 0; i < jRegion.junctionIndices.size(); ++i)
         {
             indices.push_back(jRegion.junctionIndices[i]);
-            localIndices.push_back(i);
+            localIndices.push_back((int) i);
             type.push_back('J');
         }
         std::vector<int> helper(indices.size());
@@ -129,7 +129,7 @@ VariantRegions VariantProfile::createVariantRegions(Allele & allele)
         int regionIdx = 0;
         std::vector<std::vector<int>> grouping {std::vector<int> {0}};
         std::vector<int> regionDistances;
-        for (int i = 1; i < indices.size(); ++i)
+        for (uint32_t i = 1; i < indices.size(); ++i)
         {
             int d = indices[i] - indices[i-1];
             if (type[i-1] == 'J')
@@ -138,7 +138,7 @@ VariantRegions VariantProfile::createVariantRegions(Allele & allele)
             if (d > (2*this->filterMargin))
             {
                 ++regionIdx;
-                grouping.push_back(std::vector<int>{i});
+                grouping.push_back(std::vector<int>{(int) i});
                 regionDistances.push_back(d - (2*this->filterMargin));
             } else {
                 grouping[regionIdx].push_back(i);
@@ -151,7 +151,7 @@ VariantRegions VariantProfile::createVariantRegions(Allele & allele)
         {
             JunctionRegion newRegion;
             int minIdx {300000000}, maxIdx {0};
-            char minType {' '}, maxType{' '};
+            char maxType{' '};
             for (auto & p : grouping[g])
             {
                 int idx = indices[p];
@@ -161,7 +161,6 @@ VariantRegions VariantProfile::createVariantRegions(Allele & allele)
 
                 if (idx < minIdx)
                 {
-                    minType = t;
                     minIdx = idx;
                 }
                 if (idx > maxIdx)
@@ -230,13 +229,13 @@ void VariantProfile::createChromosomeStructures(Allele & allele)
         std::vector<int> bpIndices;
         std::vector<int> njIndices;
         int regionLength = 0;
-        for (int i = 0; i < breakpoints.size(); ++i)
+        for (uint32_t i = 0; i < breakpoints.size(); ++i)
             if (breakpoints[i].getReferenceName() == chr)
-                bpIndices.push_back(i);
-        for (int i = 0; i < junctions.size(); ++i)
+                bpIndices.push_back((int) i);
+        for (uint32_t i = 0; i < junctions.size(); ++i)
             if (junctions[i].getVariantRefName() == chr)
-                njIndices.push_back(i);
-        std::sort(bpIndices.begin(), bpIndices.end(), [&](const int & i, const int & j)
+                njIndices.push_back((int) i);
+        std::sort(bpIndices.begin(), bpIndices.end(), [&](const uint32_t & i, const uint32_t & j)
         {
             return breakpoints[i].getPosition() < breakpoints[j].getPosition();
         });
@@ -259,7 +258,7 @@ void VariantProfile::createChromosomeStructures(Allele & allele)
             chrStructure.length = regionLength + 1;
             chrStructure.junctions.push_back(junctions[njIndices[0]]);
             // middle
-            for (int j = 0; j < njIndices.size() - 1; ++j)
+            for (uint32_t j = 0; j + 1 < njIndices.size(); ++j)
             {
                 if (junctions[njIndices[j]].getRefNameRight() != junctions[njIndices[j + 1]].getRefNameLeft())
                     throw std::runtime_error("ERROR: RefNames of adjacent junctions do not match!");
@@ -326,7 +325,7 @@ void VariantProfile::insertBreakpoint(Breakpoint & bp, JunctionRegion & jRegion)
 {
     // find fitting regions
     int currentIdx = 0;
-    for (int j = 0; j < jRegion.regions.size(); ++j)
+    for (uint32_t j = 0; j < jRegion.regions.size(); ++j)
     {
         // adjust region to not include breakpoint locations
         GenomicRegion tempRegion {
@@ -443,7 +442,7 @@ void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups
     groups.insert("FF");
     
     // go over all combinations of regions
-    for (int r1Idx = 0; r1Idx < vRegions.regions.size(); ++r1Idx)
+    for (int r1Idx = 0; r1Idx < (int) vRegions.regions.size(); ++r1Idx)
     {
         auto & jRegion = vRegions.regions[r1Idx];
         int d = 0;
@@ -458,9 +457,9 @@ void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups
 
             auto & kRegion = vRegions.regions[r2Idx];
             // all combinations of junctions in the regions
-            for (int j = 0; j < jRegion.junctions.size(); ++j)
+            for (int j = 0; j < (int) jRegion.junctions.size(); ++j)
             {
-                for (int k = kRegion.junctions.size() - 1; k >= 0; --k)
+                for (int k = (int) kRegion.junctions.size() - 1; k >= 0; --k)
                 {
                     if (r1Idx == r2Idx && k > j)
                         continue;
@@ -504,29 +503,32 @@ void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups
 
 bool VariantProfile::isPossible(std::vector<int> positions)
 {
+    if (positions.size() == 0)
+        return false;
+
     std::sort(positions.begin(), positions.end());
     if (positions[positions.size() - 1] > this->sMax)
         return false;
 
-    int j = 0;
+    uint32_t j = 0;
     for (; j < positions.size(); ++j)
         if (positions[j] > this->readLength)
             break;
-    int k = positions.size() - 1;
+    int k = (int) positions.size() - 1;
     for (; k >= 0; --k)
-        if (positions[positions.size() - 1] - positions[k] > this->readLength || k <= j + 1)
+        if (positions[positions.size() - 1] - positions[k] > this->readLength || k <= (int) j + 1)
             break;
     
-    return (k <= j + 1);
+    return (k <= (int) j + 1);
 }
 
-std::vector<std::vector<int>> VariantProfile::getSubsets(std::vector<int> positions, std::vector<int> ids, int idx)
+std::vector<std::vector<int>> VariantProfile::getSubsets(std::vector<int> positions, std::vector<int> ids, uint32_t idx)
 {
     std::vector<std::vector<int>> subsets;
     if (positions.size() == 0)
 	    return subsets;
 
-    for (int i = idx; i < positions.size(); ++i)
+    for (uint32_t i = idx; i < positions.size(); ++i)
     {
         std::vector<int> tempPositions = positions;
         std::vector<int> tempIDs = ids;
@@ -547,18 +549,18 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
     std::vector<std::unordered_set<int>> indexGroups;
 
     // consider all regions
-    for (int v = 0; v < vRegions.regions.size(); ++v)
+    for (uint32_t v = 0; v < vRegions.regions.size(); ++v)
     {
         JunctionRegion & jRegion = vRegions.regions[v];
         // consider all junctions as possible starting positions for read pairs
-        for (int i = 0; i < jRegion.junctions.size(); ++i)
+        for (uint32_t i = 0; i < jRegion.junctions.size(); ++i)
         {
             std::vector<int> ids;
             std::vector<int> positions;
             bool extend = true;
             ids.push_back(jRegion.junctions[i].getID());
             positions.push_back(0);
-            int j = i + 1;
+            uint32_t j = i + 1;
             while (j < jRegion.junctions.size())
             {
                 if (jRegion.junctionIndices[j] - jRegion.junctionIndices[i] > this->sMax)
@@ -568,15 +570,15 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
                 }
                 ids.push_back(jRegion.junctions[j].getID());
                 positions.push_back(jRegion.junctionIndices[j] - jRegion.junctionIndices[i]);
-		++j;
+		        ++j;
             }
             int d = jRegion.length - 1 - jRegion.junctionIndices[i];
 
-            int w = v + 1;
+            uint32_t w = v + 1;
             while (extend && vRegions.distanceToNext[w - 1] >= 0)
             {
                 d += vRegions.distanceToNext[w - 1];
-                for (int k = 0; k < vRegions.regions[w].junctionIndices.size(); ++k)
+                for (uint32_t k = 0; k < vRegions.regions[w].junctionIndices.size(); ++k)
                 {
                     if (d + vRegions.regions[w].junctionIndices[k] > this->sMax)
                     {
@@ -587,7 +589,7 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
                     positions.push_back(d + vRegions.regions[w].junctionIndices[k]);
                 }
                 d += vRegions.regions[w].length - 1;
-                w++;
+                ++w;
             }
             
             // collect all possible split read groups
@@ -604,7 +606,7 @@ void VariantProfile::determineSplitGroups(std::unordered_set<std::string> & grou
 
     // create final unique group strings from junction indices
     std::string splitString;
-    for (int i = 1; i <= indexGroups.size(); ++i)
+    for (uint32_t i = 1; i <= indexGroups.size(); ++i)
     {
         createIndexString(splitString, indexGroups[i-1]);
         splitString = "split_" + splitString;
@@ -619,18 +621,18 @@ void VariantProfile::determineSpanningGroups(std::unordered_set<std::string> & g
     std::vector<std::unordered_set<int>> indexGroups;
 
     // consider all regions
-    for (int v = 0; v < vRegions.regions.size(); ++v)
+    for (uint32_t v = 0; v < vRegions.regions.size(); ++v)
     {
         JunctionRegion & bRegion = vRegions.regions[v];
         // consider all junctions as possible starting positions for read pairs
-        for (int i = 0; i < bRegion.breakpoints.size(); ++i)
+        for (uint32_t i = 0; i < bRegion.breakpoints.size(); ++i)
         {
             std::vector<int> ids;
             std::vector<int> positions;
             bool extend = true;
             ids.push_back(bRegion.breakpoints[i].getID());
             positions.push_back(0);
-            int j = i + 1;
+            uint32_t j = i + 1;
             while (j < bRegion.breakpoints.size())
             {
                 if (bRegion.breakpointIndices[j] - bRegion.breakpointIndices[i] > this->sMax)
@@ -640,7 +642,7 @@ void VariantProfile::determineSpanningGroups(std::unordered_set<std::string> & g
                 }
                 ids.push_back(bRegion.breakpoints[j].getID());
                 positions.push_back(bRegion.breakpointIndices[j] - bRegion.breakpointIndices[i]);
-		++j;
+		        ++j;
             }
             int d = bRegion.length - 1 - bRegion.breakpointIndices[i];
 
@@ -648,7 +650,7 @@ void VariantProfile::determineSpanningGroups(std::unordered_set<std::string> & g
             while (extend && vRegions.distanceToNext[w - 1] >= 0)
             {
                 d += vRegions.distanceToNext[w - 1];
-                for (int k = 0; k < vRegions.regions[w].breakpointIndices.size(); ++k)
+                for (uint32_t k = 0; k < vRegions.regions[w].breakpointIndices.size(); ++k)
                 {
                     if (d + vRegions.regions[w].breakpointIndices[k] > this->sMax)
                     {
@@ -676,7 +678,7 @@ void VariantProfile::determineSpanningGroups(std::unordered_set<std::string> & g
 
     // create final unique group strings from junction indices
     std::string spanningString;
-    for (int i = 1; i <= indexGroups.size(); ++i)
+    for (uint32_t i = 1; i <= indexGroups.size(); ++i)
     {
         createIndexString(spanningString, indexGroups[i-1]);
         spanningString = "spanning_" + spanningString;
@@ -692,7 +694,7 @@ void VariantProfile::initReferenceMask()
 
 void VariantProfile::initVariantMask()
 {
-    for (int i = 0; i < this->variant.getAlleles().size() - 1; ++i)
+    for (uint32_t i = 0; i + 1 < this->variant.getAlleles().size(); ++i)
     {
         this->variantMask.push_back(
             std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor>>(
@@ -713,13 +715,13 @@ void VariantProfile::calculateAlleleMasks()
             VariantMapManager & chrMaps = allele.getChromosomeMap(cName);
             std::vector<VariantMap> maps = chrMaps.getMaps();
 
-            for (int j = 0; j < maps.size(); ++j)
+            for (uint32_t j = 0; j < maps.size(); ++j)
             {
                 VariantMap & map = maps[j];
                 
                 int mapLength = map.totalLength;
                 
-                for (unsigned i = 0; i < mapLength; ++i)
+                for (int i = 0; i < mapLength; ++i)
                 {
                     for (int s = this->sMax; s >= this->sMin; --s)
                     {
@@ -753,15 +755,20 @@ inline void VariantProfile::addSimulatedTemplateToMask(int & status, VariantMap 
 
     std::string orientation = sT.getOrientation();
     int insertSize = sT.getInsertSize();
-    bool split = sT.containsSplitRead();
-    bool spanning = sT.containsSpanningRead();
-    bool interChromosome = sT.alignsAcrossChromosomes();
     std::string junctionString = sT.getJunctionString();
     std::string breakpointString = sT.getBreakpointString();
     std::string chrString = sT.getChromosomeString();
     
     status = 1;
-    addValueToMask(allele, s, insertSize, orientation, junctionString, breakpointString, chrString);
+    addValueToMask(
+        allele, 
+        s, 
+        insertSize, 
+        orientation, 
+        junctionString, 
+        breakpointString, 
+        chrString
+        );
     return;
 }
 
@@ -819,7 +826,7 @@ void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::stri
     for (int s = this->sMin; s <= this->sMax; ++s)
     {
         float p = libraryDistribution.getProbability(s);
-        for (int v = 0; v < alleleNames.size(); ++v)
+        for (uint32_t v = 0; v < alleleNames.size(); ++v)
         {
             if (alleleNames[v] == "REF")
                 variantAlleleDists[0].row(s - this->sMinMapped) = this->referenceMask.row(s-this->sMinMapped) * p;
@@ -836,10 +843,10 @@ void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::stri
     std::vector<std::string> gtNames;
 
     Eigen::SparseMatrix<float, Eigen::RowMajor> temp(variantAlleleDists[0].rows(), variantAlleleDists[0].cols());
-    for (int i = 0; i < variantAlleleDists.size(); ++i)
+    for (uint32_t i = 0; i < variantAlleleDists.size(); ++i)
     {
         temp = 2 * variantAlleleDists[i] * majorFactor;
-        for (int j = 0; j < variantAlleleDists.size(); ++j)
+        for (uint32_t j = 0; j < variantAlleleDists.size(); ++j)
         {
             if (j == i)
                 continue;
@@ -848,10 +855,10 @@ void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::stri
         variantGtDists.push_back(temp);
         gtNames.push_back(alleleNames[i] + "/" + alleleNames[i]);
 
-        for (int j = i + 1; j < variantAlleleDists.size(); ++j)
+        for (uint32_t j = i + 1; j < variantAlleleDists.size(); ++j)
         {
             temp  = (variantAlleleDists[i] + variantAlleleDists[j]) * majorFactor;
-            for (int k = 0; k < variantAlleleDists.size(); ++k)
+            for (uint32_t k = 0; k < variantAlleleDists.size(); ++k)
             {
                 if (k == i || k == j)
                     continue;
@@ -873,13 +880,13 @@ void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::stri
 
     // create GenotypeDistributions and map
     float minProb = 1;
-    for (int i = 0; i < variantGtDists.size(); ++i) 
+    for (uint32_t i = 0; i < variantGtDists.size(); ++i) 
     {
         distributions[gtNames[i]] = GenotypeDistribution(variantGtDists[i], this->variantGroups, this->sMinMapped, this->sMaxMapped);
         if (distributions[gtNames[i]].getMinProbability() > 0)
             minProb = std::min(minProb, distributions[gtNames[i]].getMinProbability());
     }
-    for (int i = 0; i < variantGtDists.size(); ++i)
+    for (uint32_t i = 0; i < variantGtDists.size(); ++i)
         distributions[gtNames[i]].setMinProbability(minProb);
     
     return;
@@ -1008,9 +1015,9 @@ void VariantProfile::writeProfile(std::string filename)
     }
 
     // write variant matrices
-    for (int i = 0; i < this->variantMask.size(); ++i)
+    for (uint32_t i = 0; i < this->variantMask.size(); ++i)
     {
-        for (int s = 0; s < this->variantMask[i].size(); ++s)
+        for (uint32_t s = 0; s < this->variantMask[i].size(); ++s)
         {
             this->variantMask[i][s].makeCompressed();
 
@@ -1222,7 +1229,7 @@ bool VariantProfile::loadVariantStructure(std::string filename, std::string vari
     try {
         variantParser parser(filename);
         int idx = -1;
-        for (int i = 0; i < parser.getVariantNames().size(); ++i)
+        for (uint32_t i = 0; i < parser.getVariantNames().size(); ++i)
         {
             if (parser.getVariantNames()[i] == variantName)
             {
@@ -1239,7 +1246,7 @@ bool VariantProfile::loadVariantStructure(std::string filename, std::string vari
         this->variant = complexVariant(parser.getVariantNames()[idx], parser.getAlleleNames()[idx], parser.getVariantJunctions()[idx], filename);
         createVariantChromosomeStructures();
     } 
-    catch (std::runtime_error)
+    catch (std::runtime_error const& err)
     {
         std::cerr << "Could not read variant file (" << filename << ")" << std::endl;
         return false;

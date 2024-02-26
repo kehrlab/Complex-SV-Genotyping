@@ -18,8 +18,8 @@ class RegionSampler
     std::vector<std::string> commonContigs;
     std::vector<int> minContigLengths;
 
-    int intervalSizes;
-    int totalIntervalLength;
+    uint32_t intervalSizes;
+    uint32_t totalIntervalLength;
     bool gcBias;
 
     void determineCommonContigs();

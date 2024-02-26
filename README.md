@@ -20,6 +20,7 @@ cd Complex-SV-Genotyping
 - zlib
 - openmp
 - eigen
+- nlohmann/json (included)
 
 All requirements can be easily installed using conda:
 ```

@@ -32,15 +32,17 @@ class VariantProfile
     Eigen::SparseMatrix<float, Eigen::RowMajor> referenceMask;
     std::vector<std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor>>> variantMask;
        
+    int filterMargin;
+    int overlap;
+    int readLength;
+
     int sMin;
     int sMax;
 
     int sMinMapped;
     int sMaxMapped;
 
-    int filterMargin;
-    int overlap;
-    int readLength;
+    
 
     ReadPairFilter filter;
     
@@ -87,7 +89,7 @@ class VariantProfile
     void determineSpanningGroups(std::unordered_set<std::string> & groups, VariantRegions & variantRegions);
     void determineSplitGroups(std::unordered_set<std::string> & groups, VariantRegions & variantRegions);
     bool isPossible(std::vector<int> positions);
-    std::vector<std::vector<int>> getSubsets(std::vector<int>, std::vector<int>, int);
+    std::vector<std::vector<int>> getSubsets(std::vector<int>, std::vector<int>, uint32_t);
 
     void initMasks();
     void initReferenceMask();

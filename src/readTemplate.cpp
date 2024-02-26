@@ -31,12 +31,12 @@ void ReadTemplate::determineInformativeRecords()
 {
     this->primaryFirst = -1;
     this->primaryLast = -1;
-    for (int i = 0; i < this->records.size(); ++i)
+    for (uint32_t i = 0; i < this->records.size(); ++i)
     {
         if (records[i].isFirst())
-            this->firstIndices.push_back(i);
+            this->firstIndices.push_back((int) i);
         else if (records[i].isLast())
-            this->lastIndices.push_back(i);
+            this->lastIndices.push_back((int) i);
     }
 
     for (auto index : this->firstIndices)
@@ -214,9 +214,9 @@ void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, JunctionRegi
     std::vector<int> insertSizes;
 
     // determine possible combinations and their orientation and insert size on the variant allele(s)
-    for (int i = 0; i < firstRegions.size(); ++i)
+    for (uint32_t i = 0; i < firstRegions.size(); ++i)
     {
-        for (int j = 0; j < lastRegions.size(); ++j)
+        for (uint32_t j = 0; j < lastRegions.size(); ++j)
         {
             std::vector<int> indices;
             int s = 0;
@@ -248,7 +248,7 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
     int overlap = 20;
     int smallMargin = 10;
     GenomicRegion recordRegion {record.getAlignmentRegion()};
-    for (int i = 0; i < jRegion.regions.size(); ++i)
+    for (uint32_t i = 0; i < jRegion.regions.size(); ++i)
     {
         GenomicRegion & r{jRegion.regions[i]};
         if (!r.overlaps(recordRegion))
@@ -288,7 +288,7 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
             } 
         }
 
-        if (i < jRegion.regions.size()-1)
+        if (i + 1 < jRegion.regions.size())
         {
             if (!r.isReverse())
             {
@@ -324,13 +324,13 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
 }
 
 
-bool ReadTemplate::alignsWithinExpectedDistance(std::vector<Junction> & junctions, int index, BamRecord & clippedRecord, BamRecord & secondRecord)
+bool ReadTemplate::alignsWithinExpectedDistance(std::vector<Junction> & junctions, uint32_t index, BamRecord & clippedRecord, BamRecord & secondRecord)
 {
     int expectedDistance = 1500;
     int remainingDistance = expectedDistance;
 
     // left 
-    for (int i = index; i > 0; --i)
+    for (int i = (int) index; i > 0; --i)
     {
         GenomicRegion junctionRegion(
             junctions[i].getRefNameLeft(),
@@ -355,7 +355,7 @@ bool ReadTemplate::alignsWithinExpectedDistance(std::vector<Junction> & junction
 
     // right
     remainingDistance = expectedDistance;
-    for (int i = index; i < junctions.size() - 1; ++i)
+    for (uint32_t i = index; i + 1 < junctions.size(); ++i)
     {
         GenomicRegion junctionRegion(
             junctions[i].getRefNameRight(),
@@ -402,7 +402,7 @@ bool ReadTemplate::alignsWithinRegion(int & remainingDistance, GenomicRegion & j
 void ReadTemplate::findSplitsBasedOnGaps(std::vector<Junction> & junctions)
 {
     //for (auto & junction : junctions) {
-    for (int i = 0; i < junctions.size(); ++i) {
+    for (uint32_t i = 0; i < junctions.size(); ++i) {
         auto & junction = junctions[i];
         if (junction.getRefNameLeft() != junction.getRefNameRight())
             continue;

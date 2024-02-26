@@ -373,7 +373,7 @@ std::unordered_map<std::string, int> BamFileHandler::getContigLengths()
 {
     std::unordered_map<std::string, int> contigLengths;
 
-    for (int i = 0; i < this->contigInfo.cNames.size(); ++i)
+    for (uint32_t i = 0; i < this->contigInfo.cNames.size(); ++i)
     {
         std::string rName = this->contigInfo.cNames[i];
         int64_t rLen = this->contigInfo.cLengths[i];

@@ -45,7 +45,7 @@ int profileVariants(int argc, const char **argv)
         std::vector<std::string> variantNames = vParser.getVariantNames();
         std::vector<std::vector<std::string>> alleleNames = vParser.getAlleleNames();
 
-        for (int i = 0; i < variantNames.size(); ++i)
+        for (uint32_t i = 0; i < variantNames.size(); ++i)
         {
             variants.push_back(complexVariant(variantNames[i], alleleNames[i], allVariantJunctions[i], filename));
             variants[i].setFilterMargin(params.margin);
@@ -123,7 +123,7 @@ int profileVariants(int argc, const char **argv)
     int overlap = 20;
 
     #pragma omp parallel for num_threads(params.nThreads)
-    for (int i = 0; i < variants.size(); ++i) 
+    for (uint32_t i = 0; i < variants.size(); ++i) 
     {
         VariantProfile profile(
             variants[i], params.margin, overlap, 
@@ -292,7 +292,7 @@ std::unordered_map<std::string, int> mergeContigLengths(
         {
             int l = sizes[0];
             bool allMatch {true};
-            for (int i = 1; i < sizes.size(); ++i)
+            for (uint32_t i = 1; i < sizes.size(); ++i)
             {
                 if (sizes[i] != l)
                 {
@@ -307,7 +307,7 @@ std::unordered_map<std::string, int> mergeContigLengths(
         }
     }
     std::unordered_map<std::string, int> contigLengths;
-    for (int i = 0; i < cN.size(); ++i)
+    for (uint32_t i = 0; i < cN.size(); ++i)
         contigLengths[cN[i]] = cLengths[i];
     return contigLengths;
 }

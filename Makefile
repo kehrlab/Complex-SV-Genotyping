@@ -1,8 +1,8 @@
 CXX=g++
 CC=g++
 
-#INCLUDE_PATH=/home/tim/.conda/envs/genotyping/include
-#LIB_PATH=/home/tim/.conda/envs/genotyping/lib
+#INCLUDE_PATH=/home/tim/.conda/envs/ggtyper/include
+#LIB_PATH=/home/tim/.conda/envs/ggtyper/lib
 JSON_PATH=./include
 
 BINARY := ggtyper
@@ -11,7 +11,7 @@ DATE := on $(shell git log --pretty=format:"%cd" --date=iso | cut -f 1,2 -d " " 
 VERSION := 0.0.1-$(shell git log --pretty=format:"%h" --date=iso | head -n 1)
 
 override CXXFLAGS += -DDATE=\""$(DATE)"\" -DVERSION=\""$(VERSION)"\"
-override CXXFLAGS += -I $(JSON_PATH) -DSEQAN_HAS_ZLIB -lz -lhts -DSEQAN_DISABLE_VERSION_CHECK -DEIGEN_DONT_PARALLELIZE -std=c++17 -Wall -O2 -fopenmp -lpthread -g -Wno-deprecated-declarations
+override CXXFLAGS += -I $(JSON_PATH) -DSEQAN_HAS_ZLIB -lz -lhts -DSEQAN_DISABLE_VERSION_CHECK -DEIGEN_DONT_PARALLELIZE -std=c++17 -Wall -O2 -fopenmp -lpthread -g 
 
 ifdef INCLUDE_PATH
 	override CXXFLAGS+=-I $(INCLUDE_PATH)

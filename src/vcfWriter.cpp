@@ -35,7 +35,7 @@ void VcfWriter::initHeader()
 void VcfWriter::addVariantRecords(std::vector<GenotypeResult> & variantResults, complexVariant & cSV)
 {
     if (this->sampleNames.size() == 0)
-        for (int i = 0; i < variantResults.size(); ++i)
+        for (uint32_t i = 0; i < variantResults.size(); ++i)
             this->sampleNames.push_back(variantResults[i].getSampleName());
     for (auto & contig : cSV.getContigNames())
         this->contigNames.insert(contig);
@@ -91,7 +91,7 @@ void VcfWriter::addVariantRecords(std::vector<GenotypeResult> & variantResults, 
     }
 
     // infer allele counts
-    for (int j = 0; j < variantRecords.size(); ++j)
+    for (uint32_t j = 0; j < variantRecords.size(); ++j)
         for (auto result : variantResults)
             variantRecords[j].extractGenotype(result);
 

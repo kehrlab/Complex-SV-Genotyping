@@ -23,7 +23,7 @@ void VariantMap::detectSmallDeletions()
         return;
     
     int delSize = -1;
-    for (int i = 0; i < this->regions.size() - 1; ++i)
+    for (uint32_t i = 0; i + 1 < this->regions.size(); ++i)
         if (isDeletion(delSize, this->regions[i], this->regions[i+1]))
             this->deletionIndices[i] = delSize;
 }
@@ -93,7 +93,7 @@ ReadTemplate VariantMap::simulateTemplate(int startIndex, int insertSize, int re
     return sT;
 }
 
-void VariantMap::getGCContentVector(std::vector<float> & gcVector, unsigned begin, int minInsertSize, int maxInsertSize)
+void VariantMap::getGCContentVector(std::vector<float> & gcVector, uint32_t begin, int minInsertSize, int maxInsertSize)
 {
     seqan::Dna5String bg = "G";
     seqan::Dna5String bc = "C";
@@ -116,7 +116,7 @@ void VariantMap::getGCContentVector(std::vector<float> & gcVector, unsigned begi
     } else {
         base = getBaseAtIndex(begin - 1);
         total = minInsertSize + 1;
-        for (int i = 0; i < gcVector.size() - 1; ++i)
+        for (uint32_t i = 0; i + 1 < gcVector.size(); ++i)
         {
             ++total;
             temp = gcVector[i + 1] * total;
@@ -140,7 +140,10 @@ seqan::Dna5String VariantMap::getBaseAtIndex(int index)
     int regionIndex = getRegionIndex(index);
     if (regionIndex == -1)
         return seqan::Dna5String("N");
-    int relativePosition = index - this->regionIndices[regionIndex];
+    if (index < this->regionIndices[regionIndex])
+        return ("N");
+    
+    uint32_t relativePosition = index - this->regionIndices[regionIndex];
     if (relativePosition < seqan::length(this->regions[regionIndex].getSequence()))
         return this->regions[regionIndex].getSequence()[relativePosition];
     return seqan::Dna5String("N");
@@ -305,16 +308,16 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
 
 
         // get index of region where the read starts
-        int largestIdx = 0;
-        for (int i = 0; i < parts.size(); ++i)
+        uint32_t largestIdx = 0;
+        for (uint32_t i = 0; i < parts.size(); ++i)
             if (parts[i].length > parts[largestIdx].length)
                 largestIdx = i;
 
 
         // extract information for largest part
-        std::string refName;
-        int clipLeft, clipRight, start, end;
-        bool reverse;
+        std::string refName {""};
+        int clipLeft {0}, clipRight {0}, start{-1}, end{-1};
+        bool reverse {false};
 
         refName = this->regions[parts[largestIdx].startIndex].getReferenceName();
         reverse = this->regions[parts[largestIdx].startIndex].isReverse();
@@ -330,7 +333,7 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
         else 
         {
             clipLeft = 0;
-            for (int i = largestIdx - 1; i >= 0; --i)
+            for (int i = (int) largestIdx - 1; i >= 0; --i)
                 clipLeft += parts[i].length;
             if (!reverse)
                 start = this->regions[parts[largestIdx].startIndex].getRegionStart();
@@ -349,7 +352,7 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
         else 
         {
             clipRight = 0;
-            for (int i = largestIdx + 1; i < parts.size(); ++i)
+            for (uint32_t i = largestIdx + 1; i < parts.size(); ++i)
                 clipRight += parts[i].length;
             if (!reverse)
                 end = this->regions[parts[largestIdx].lastIndex].getRegionEnd();
@@ -386,7 +389,7 @@ GenomicRegion VariantMap::getPositionOnReference(int index)
 {
     GenomicRegion r;
     int position = 0;
-    for (unsigned i = 0; i < this->regions.size() - 1; ++i)
+    for (uint32_t i = 0; i + 1 < this->regions.size(); ++i)
     {
         if (index < this->regionIndices[i] || index >= this->regionIndices[i+1])
             continue;
@@ -403,8 +406,9 @@ GenomicRegion VariantMap::getPositionOnReference(int index)
         r.setReferenceName(this->regions[i].getReferenceName());
         return r;
     }
-    int rIdx = this->regionIndices.size() - 1;
-    if (index >= this->regionIndices[rIdx] && index < this->totalLength)
+    int rIdx = ((int) this->regionIndices.size()) - 1;
+
+    if (index >= this->regionIndices[rIdx] && index < (int) this->totalLength)
     {
         int remainder = index - this->regionIndices[rIdx];
         if (! this->regions[rIdx].isReverse())
@@ -421,10 +425,10 @@ GenomicRegion VariantMap::getPositionOnReference(int index)
 int VariantMap::getRegionIndex(int position)
 {   
     int idx = -1;
-    for (unsigned i = 0; i < this->regions.size() - 1; ++i)
+    for (uint32_t i = 0; i + 1 < this->regions.size(); ++i)
         if (position >= this->regionIndices[i] && position < this->regionIndices[i+1])
             return i;
-    if (position >= this->regionIndices[this->regionIndices.size() - 1] && position < this->totalLength)
+    if (position >= this->regionIndices[this->regionIndices.size() - 1] && position < (int) this->totalLength)
         idx = this->regionIndices.size() - 1;
     return idx;
 }

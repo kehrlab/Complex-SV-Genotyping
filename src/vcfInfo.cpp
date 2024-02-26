@@ -85,7 +85,7 @@ void VcfInfo::createAltString()
         return;
     
     this->alt = "";
-    for (int i = 0; i < this->altAlleles.size() - 1; ++i)
+    for (uint32_t i = 0; i + 1 < this->altAlleles.size(); ++i)
         this->alt = this->alt + this->altAlleles[i] + ",";
     this->alt = this->alt + this->altAlleles[this->altAlleles.size() - 1];
 }
@@ -136,13 +136,13 @@ void VcfInfo::mergeWith(VcfInfo recordInfo)
     std::vector<std::vector<int>> genotypes = recordInfo.getGenotypes();
     std::vector<std::vector<float>> gtQs = recordInfo.getGtQualities();
 
-    for (int i = 0; i < altStrings.size(); ++i)
+    for (uint32_t i = 0; i < altStrings.size(); ++i)
     {
         this->altAlleles.push_back(altStrings[i]);
         this->events.push_back(events[i]);
         this->mateids.push_back(mateIDs[i]);
         
-        for (int j = 0; j < genotypes.size(); ++j)
+        for (uint32_t j = 0; j < genotypes.size(); ++j)
         {
             this->genotypes[j].push_back(genotypes[j][i]);
             this->gtQualities[j].push_back(gtQs[j][i]);
@@ -152,7 +152,7 @@ void VcfInfo::mergeWith(VcfInfo recordInfo)
 
 void VcfInfo::updateMateID(std::string oldID, std::string newID)
 {
-    for (int i = 0; i < this->mateids.size(); ++i)
+    for (uint32_t i = 0; i < this->mateids.size(); ++i)
         if (this->mateids[i] == oldID)
             this->mateids[i] = newID;
 }
@@ -230,7 +230,7 @@ seqan::VcfRecord VcfInfo::getVcfRecord()
     record.format = this->format.c_str();
     record.id = this->id.c_str();
 
-    for (int i = 0; i < this->genotype.size(); ++i) 
+    for (uint32_t i = 0; i < this->genotype.size(); ++i) 
         appendValue(record.genotypeInfos, (this->genotype[i] + ":" + std::to_string(this->genotypeQuality[i])).c_str());
     record.info = this->info.c_str();
 
@@ -240,17 +240,17 @@ seqan::VcfRecord VcfInfo::getVcfRecord()
 void VcfInfo::createInfoString()
 {
     this->info = "SVTYPE=" + this->svtype + ";EVENT=";
-    for (int i = 0; i < this->events.size(); ++i)
+    for (uint32_t i = 0; i < this->events.size(); ++i)
     {
         this->info = this->info + this->events[i];
-        if (i < this->events.size() - 1)
+        if (i + 1 < this->events.size())
             this->info = this->info + ",";
     }
     this->info = this->info + ";MATEID=";
-    for (int i = 0; i < this->mateids.size(); ++i)
+    for (uint32_t i = 0; i < this->mateids.size(); ++i)
     {
         this->info = this->info + this->mateids[i];
-        if (i < this->mateids.size() - 1)
+        if (i + 1 < this->mateids.size())
             this->info = this->info + ",";
     }
 }
@@ -260,23 +260,23 @@ void VcfInfo::inferGenotypeFromAlleleCounts()
     std::vector<std::vector<int>> alleleIndices;
     std::vector<int> alleleCounts;
 
-    for (int j = 0; j < this->genotypes.size(); ++j)
+    for (uint32_t j = 0; j < this->genotypes.size(); ++j)
     {
         std::vector<int> sampleAlleleIndices;
-        for (int i = 0; i < this->genotypes[j].size(); ++i) {
+        for (uint32_t i = 0; i < this->genotypes[j].size(); ++i) {
             int alleleCount = this->genotypes[j][i];
             alleleCounts.push_back(alleleCount);
             if (alleleCount > 0) {
-                sampleAlleleIndices.push_back(i);
+                sampleAlleleIndices.push_back((int) i);
             }
         }
         alleleIndices.push_back(sampleAlleleIndices);
     }
     
-    for (int j = 0; j < alleleIndices.size(); ++j)
+    for (uint32_t j = 0; j < alleleIndices.size(); ++j)
     {
         float minQuality = this->gtQualities[j][0];
-        for (int i = 1; i < this->gtQualities[j].size(); ++i)
+        for (uint32_t i = 1; i < this->gtQualities[j].size(); ++i)
             minQuality = std::min(minQuality, this->gtQualities[j][i]);
         if (alleleIndices[j].size() == 0)
         {

@@ -94,21 +94,21 @@ void BamRecord::extractRecordInfo(bam1_t * record, bam_hdr_t * hdr)
 
     // extract CIGAR operations and lenghts
     uint32_t * cigarString = bam_get_cigar(record);
-    int cigar_len = record->core.n_cigar;
+    uint32_t cigar_len = record->core.n_cigar;
 
     this->clipLeft = 0;
     this->clipRight = 0;
     this->deletion = false;
     this->deletionSize = 0;
     
-    for (int i = 0; i < cigar_len; ++i)
+    for (uint32_t i = 0; i < cigar_len; ++i)
     {
         int oplen = bam_cigar_oplen(cigarString[i]);
         if (((cigarString[i] & 15) == BAM_CSOFT_CLIP) || ((cigarString[i] & 15) == BAM_CHARD_CLIP))
         {
             if (i == 0)
                 this->clipLeft = oplen;
-            if (i == (cigar_len - 1))
+            if (i + 1 == cigar_len)
                 this->clipRight = oplen;
             continue;
         }

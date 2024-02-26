@@ -18,14 +18,14 @@ class VariantMap
     std::vector<int> regionIndices;
     std::unordered_map<int, int> deletionIndices;
     
-    unsigned totalLength;
+    uint32_t totalLength;
     bool possibleSplitRead;
 
     void calculateMapLength();
     void detectSmallDeletions();
     
     ReadTemplate simulateTemplate(int, int, int);
-    void getGCContentVector(std::vector<float> &, unsigned, int, int);
+    void getGCContentVector(std::vector<float> &, uint32_t, int, int);
 
     private:
     bool isDeletion(int &, GenomicRegion &, GenomicRegion &);

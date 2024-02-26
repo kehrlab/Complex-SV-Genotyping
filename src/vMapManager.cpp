@@ -114,12 +114,12 @@ void VariantMapManager::fillPositionsLeft(VariantMap & map, std::vector<Junction
 
 void VariantMapManager::fillPositionsBetweenAllJunctions(VariantMap & map, std::vector<Junction> & junctions)
 {
-    for (unsigned i = 0; i < junctions.size() - 1; ++i)
+    for (uint32_t i = 0; i + 1 < junctions.size(); ++i)
         fillPositionsBetweenJunctions(
             map, 
             junctions[i], 
             junctions[i+1], 
-            i+1
+            (int) i+1
         );
 }
 
@@ -234,7 +234,7 @@ void VariantMapManager::createReferenceRegions()
     int firstPosition = (this->variantMap.regions[0].isReverse() ? this->variantMap.regions[0].getRegionEnd() : this->variantMap.regions[0].getRegionStart());
     int leftRegionEnd = firstPosition + dLeft; //* (this->filterMargin * 10 + 1);
 
-    int lastIdx = this->variantMap.regions.size() - 1;
+    int lastIdx = (int) this->variantMap.regions.size() - 1;
     std::string rRight = this->variantMap.regions[lastIdx].getReferenceName();
     int dRight = this->variantMap.regions[lastIdx].isReverse() ? -1 : 1;
     int lastPosition = this->variantMap.regions[lastIdx].isReverse() ? this->variantMap.regions[lastIdx].getRegionStart() : this->variantMap.regions[lastIdx].getRegionEnd();

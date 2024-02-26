@@ -22,7 +22,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
     this->numReadPairs = 0;
 
     this->distribution.resize(this->sMax - this->sMin + 1);
-    for (int i = 0; i < this->distribution.size(); ++i)
+    for (uint32_t i = 0; i < this->distribution.size(); ++i)
         this->distribution[i] = std::vector<float>(100, 0);
     for (auto it : positions)
     {
@@ -49,10 +49,10 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
     this->sMax = 1000;
     this->gcCorrection = true;
     this->distribution.resize(this->sMax - this->sMin + 1);
-    for (int i = 0; i < this->distribution.size(); ++i)
+    for (uint32_t i = 0; i < this->distribution.size(); ++i)
         this->distribution[i] = std::vector<float>(100, 0);
     this->uniformDistribution.resize(this->sMax - this->sMin + 1);
-    for (int i = 0; i < this->uniformDistribution.size(); ++i)
+    for (uint32_t i = 0; i < this->uniformDistribution.size(); ++i)
         this->uniformDistribution[i] = std::vector<float>(100, 0);
 
     seqan::Dna5String gString = 'G';
@@ -106,7 +106,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
         if (templatePositions.find(region.getReferenceName()) != templatePositions.end())
             positions = templatePositions[region.getReferenceName()];
         
-        for (int i = 0; i < seqan::length(seq); ++i)
+        for (uint32_t i = 0; i < seqan::length(seq); ++i)
         {
             if (i == 0)
             {
@@ -125,7 +125,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
             } else {
                 total = 1;
                 base = seq[i - 1];
-                for (int j = 0; j < gcContents.size() - 1; ++j)
+                for (uint32_t j = 0; j < gcContents.size() - 1; ++j)
                 {
                     if ((i + j) >= (seqan::length(seq) - 1))
                         break;
@@ -148,7 +148,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
                 }
             }
 
-            for (int j = 0; j < gcContents.size(); ++j)
+            for (uint32_t j = 0; j < gcContents.size(); ++j)
             {
                 if ((i+j) >= seqan::length(seq))
                     break;
@@ -157,7 +157,7 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
             if (positions.find(region.getRegionStart() + i) != positions.end())
             {
                 for (int s : positions[region.getRegionStart() + i])	
-			        this->distribution[s- this->sMin][calculateGCIndex(gcContents[s - this->sMin])] += 1;
+			        this->distribution[s - this->sMin][calculateGCIndex(gcContents[s - this->sMin])] += 1;
             }
         }
         gcContents.erase(gcContents.begin(), gcContents.end());
@@ -190,21 +190,21 @@ void LibraryDistribution::smoothDistribution(std::vector<std::vector<float>> & d
     
     // smooth first in s-direction
     std::vector<float> smoothed_values;
-    for (int y = 0; y < distribution[0].size(); ++y)
+    for (uint32_t y = 0; y < distribution[0].size(); ++y)
     {
         smoothed_values.resize(distribution.size());
-        for (int x = 0; x < distribution.size(); ++x)
+        for (int x = 0; x < (int) distribution.size(); ++x)
         {
             float smoothed = 0;
-            for (int i = 0; i < kernel.size(); ++i) 
+            for (int i = 0; i < (int) kernel.size(); ++i) 
             {
-                if (x+i-(kernelSize-1)/2 < 0 || x+i-(kernelSize-1)/2 >= distribution.size())
+                if (x + i - (kernelSize - 1)/2 < 0 || x + i - (kernelSize - 1)/2 >= (int) distribution.size())
                     continue;
                 smoothed += kernel[i] * distribution[x+i-(kernelSize-1)/2][y];
             }
             smoothed_values[x] = smoothed;
         }
-        for (int x = 0; x < distribution.size(); ++x)
+        for (uint32_t x = 0; x < distribution.size(); ++x)
             distribution[x][y] = smoothed_values[x];
     }
 
@@ -212,21 +212,21 @@ void LibraryDistribution::smoothDistribution(std::vector<std::vector<float>> & d
         return;
 
     // smooth in gc-direction
-    for (int x = 0; x < distribution.size(); ++x)
+    for (uint32_t x = 0; x < distribution.size(); ++x)
     {
         smoothed_values.resize(distribution[0].size());
-        for (int y = 0; y < distribution[x].size(); ++y)
+        for (int y = 0; y < (int) distribution[x].size(); ++y)
         {
             float smoothed = 0;
-            for (int i = 0; i < kernel.size(); ++i) 
+            for (int i = 0; i < (int) kernel.size(); ++i) 
             {
-                if (y+i-(kernelSize-1)/2 < 0 || y+i-(kernelSize-1)/2 >= distribution[x].size())
+                if (y+i-(kernelSize-1)/2 < 0 || y+i-(kernelSize-1)/2 >= (int) distribution[x].size())
                     continue;
                 smoothed += kernel[i] * distribution[x][y+i-(kernelSize-1)/2];
             }
             smoothed_values[y] = smoothed;
         }
-	for (int y = 0; y < distribution[x].size(); ++y)
+	    for (uint32_t y = 0; y < distribution[x].size(); ++y)
         	distribution[x][y] = smoothed_values[y];
     }
 }
@@ -234,11 +234,11 @@ void LibraryDistribution::smoothDistribution(std::vector<std::vector<float>> & d
 void LibraryDistribution::scaleDistribution(std::vector<std::vector<float>> & distribution)
 {
     double pTotal = 0.0;
-    for (int x = 0; x < distribution.size(); ++x)
-        for (int y = 0; y < distribution[x].size(); ++y)
+    for (uint32_t x = 0; x < distribution.size(); ++x)
+        for (uint32_t y = 0; y < distribution[x].size(); ++y)
             pTotal += distribution[x][y];
-    for (int x = 0; x < distribution.size(); ++x)
-        for (int y = 0; y < distribution[x].size(); ++y)
+    for (uint32_t x = 0; x < distribution.size(); ++x)
+        for (uint32_t y = 0; y < distribution[x].size(); ++y)
             distribution[x][y] = (float) (distribution[x][y] / pTotal);
 }
 
@@ -248,19 +248,19 @@ void LibraryDistribution::createMarginalDistributions()
     this->gcDistribution.resize(this->distribution[0].size());
 
     // insert size distribution
-    for (int i = 0; i < this->distribution.size(); ++i)
+    for (uint32_t i = 0; i < this->distribution.size(); ++i)
     {
         this->insertDistribution[i] = 0.0;
-        for (int j = 0; j < this->distribution[i].size(); ++j)
+        for (uint32_t j = 0; j < this->distribution[i].size(); ++j)
             this->insertDistribution[i] += this->distribution[i][j];
     }
     calculateInsertStats();
 
     // gc distribution
-    for (int i = 0; i < this->distribution[0].size(); ++i)
+    for (uint32_t i = 0; i < this->distribution[0].size(); ++i)
     {
         this->gcDistribution[i] = 0.0;
-        for (int j = 0; j < this->distribution.size(); ++j)
+        for (uint32_t j = 0; j < this->distribution.size(); ++j)
             this->gcDistribution[i] += this->distribution[j][i];
     }
 }
@@ -268,24 +268,24 @@ void LibraryDistribution::createMarginalDistributions()
 void LibraryDistribution::calculateCorrectionFactors()
 {
     this->correctionFactors.resize(this->sMax - this->sMin + 1);
-    for (int i = 0; i < this->correctionFactors.size(); ++i)
+    for (uint32_t i = 0; i < this->correctionFactors.size(); ++i)
 	    this->correctionFactors[i] = std::vector<float>(100, 0);
     
-    for (int s = 0; s < this->distribution.size(); ++s)
+    for (uint32_t s = 0; s < this->distribution.size(); ++s)
     {
         float pMargin = 0;
-        for (int j = 0; j < this->distribution[s].size(); ++j)
+        for (uint32_t j = 0; j < this->distribution[s].size(); ++j)
             pMargin += this->uniformDistribution[s][j];
         
         // calculate
         if (this->insertDistribution[s] == 0)
             continue;	
-            float marginalFactor = pMargin / this->insertDistribution[s];
-            for (int j = 0; j < this->correctionFactors[s].size(); ++j)
+        float marginalFactor = pMargin / this->insertDistribution[s];
+        for (uint32_t j = 0; j < this->correctionFactors[s].size(); ++j)
         {
             if (this->uniformDistribution[s][j] == 0)
                 continue;
-                this->correctionFactors[s][j] = (this->distribution[s][j] / this->uniformDistribution[s][j]) * marginalFactor;
+            this->correctionFactors[s][j] = (this->distribution[s][j] / this->uniformDistribution[s][j]) * marginalFactor;
         }
     }
 }
@@ -321,10 +321,10 @@ void LibraryDistribution::writeDistribution(std::string filename)
 	    } else {
 		    f << "InsertSize\tProbability" << std::endl;
 	    }
-        for (int s = 0; s < this->insertDistribution.size(); ++s) {
+        for (int s = 0; s < (int) this->insertDistribution.size(); ++s) {
             if (this->gcCorrection) {
 		        f << s + this->sMin << "\t" << 0.01 << "\t" << this->distribution[s][0] << "\t" << this->correctionFactors[s][0] << std::endl;
-                for (int j = 1; j < this->distribution[s].size(); ++j)
+                for (uint32_t j = 1; j < this->distribution[s].size(); ++j)
                     f << s + this->sMin << "\t" << (j+1) * 0.01 << "\t" << this->distribution[s][j] << "\t" << this->correctionFactors[s][j] << std::endl;
             } else {
 		        f << s << "\t" << this->insertDistribution[s] << std::endl;

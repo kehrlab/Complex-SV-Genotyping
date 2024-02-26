@@ -264,7 +264,7 @@ void Sample::readSampleProfile(std::string profilePath)
 
     // insert size values
     std::vector<float> distribution(this->sampleDistribution.getMaxInsert() - this->sampleDistribution.getMinInsert() + 1);
-    for (int i = 0; i < distribution.size(); ++i)
+    for (uint32_t i = 0; i < distribution.size(); ++i)
         stream.read(reinterpret_cast<char *>(&distribution[i]), sizeof(float));
     this->sampleDistribution.getInsertDistribution() = distribution;
 

@@ -92,7 +92,7 @@ int genotype(int argc, const char **argv)
     // genotyping
     int block {0};
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    while (block * params.nThreads < variantFiles.size())
+    while (block * params.nThreads < (int) variantFiles.size())
     {
         // load variant profiles (currently all) and check parameters
         std::vector<VariantProfile> variantProfiles;
@@ -109,10 +109,10 @@ int genotype(int argc, const char **argv)
 
         // genotype current variants
         #pragma omp parallel for schedule(dynamic) collapse(2) num_threads(params.nThreads)
-        for (int i = 0; i < variantProfiles.size(); ++i)
+        for (uint32_t i = 0; i < variantProfiles.size(); ++i)
         {
             // in all samples
-            for (int j = 0; j < sampleProfiles.size(); ++j)
+            for (uint32_t j = 0; j < sampleProfiles.size(); ++j)
             {
                 Sample s(sampleProfiles[j]);
 
@@ -185,7 +185,7 @@ int genotype(int argc, const char **argv)
 
         // add VCF records
         if (params.vcfFile != "")
-            for (int i = 0; i < variantProfiles.size(); ++i)
+            for (uint32_t i = 0; i < variantProfiles.size(); ++i)
                 vcfFile.addVariantRecords(tempResults[i], variantProfiles[i].getVariant());
 
 
@@ -232,7 +232,7 @@ int genotype(int argc, const char **argv)
 inline void loadVariantProfiles(std::vector<VariantProfile> & variantProfiles, genotypeParameters & params, std::vector<std::string> & profilePaths, int block)
 {   
     int beginIdx = block * params.nThreads;
-    int endIdx = std::min(((block + 1) * params.nThreads - 1), (int) profilePaths.size() - 1);
+    int endIdx = std::min(((block + 1) * params.nThreads - 1), ((int) profilePaths.size()) - 1);
     std::vector<VariantProfile>().swap(variantProfiles);
 
     for (int i = beginIdx; i <= endIdx; ++i)
@@ -398,8 +398,6 @@ inline void calculateGenotypeLikelihoods(
 
 inline void adjustLikelihoods(ReadTemplate & readTemplate, std::vector<std::string> & genotypeNames, std::vector<GenotypeDistribution> & genotypeDistributions, GenotypeResult & result)
 {
-    float minValue = std::numeric_limits<float>::min();
-
     if (!readTemplate.isProperPair())
        return;
 
@@ -432,8 +430,8 @@ inline void adjustLikelihoods(ReadTemplate & readTemplate, std::vector<std::stri
 void calculateDifficulty(float & difficulty, std::vector<std::string> & genotypeNames, std::vector<GenotypeDistribution> & genotypeDistributions)
 {
     float minKLD = 1000;
-    for (int i = 0; i < genotypeDistributions.size(); ++i)
-        for (int j = 0; j < genotypeDistributions.size(); ++j)
+    for (uint32_t i = 0; i < genotypeDistributions.size(); ++i)
+        for (uint32_t j = 0; j < genotypeDistributions.size(); ++j)
             if (j != i)
                 minKLD = std::min(minKLD, genotypeDistributions[i].calculateKLD(genotypeDistributions[j]));
     difficulty = 1000 / minKLD;
@@ -449,7 +447,7 @@ void writeInsertSizeDistributions(complexVariant & variant, GenotypeResult & res
     std::string directory = result.getFilename() + "_distributions/";
     try {
         std::filesystem::create_directory(directory);
-    } catch (std::filesystem::filesystem_error)
+    } catch (std::filesystem::filesystem_error const& err)
     {
         std::cerr << "Could not create variant distribution directory" << std::endl;
         return;
@@ -458,14 +456,14 @@ void writeInsertSizeDistributions(complexVariant & variant, GenotypeResult & res
     directory += (variantName + "/");
     try {
         std::filesystem::create_directory(directory);
-    }catch (std::filesystem::filesystem_error)
+    }catch (std::filesystem::filesystem_error const& err)
     {
         std::cerr << "Could not create variant distribution directory" << std::endl;
         return;
     }
 
     // write theoretical distributions
-    for (int i = 0; i < genotypeNames.size(); ++i)
+    for (uint32_t i = 0; i < genotypeNames.size(); ++i)
     {
         std::string prefix = directory + "numericalDistribution";
         

@@ -11,7 +11,7 @@ complexVariant::complexVariant(std::string variantName, std::vector<std::string>
     this->variantFileName = "";
     this->filterMargin = 500;
 
-    for (int i = 0; i < variantJunctions.size(); ++i)
+    for (uint32_t i = 0; i < variantJunctions.size(); ++i)
         this->variantAlleles.push_back(Allele(variantJunctions[i], alleleNames[i]));
     this->nAlleles = alleleNames.size();
 
@@ -28,7 +28,7 @@ complexVariant::complexVariant(std::string variantName, std::vector<std::string>
     this->variantFileName = variantFileName;
     this->filterMargin = 500;
 
-    for (int i = 0; i < variantJunctions.size(); ++i)
+    for (uint32_t i = 0; i < variantJunctions.size(); ++i)
         this->variantAlleles.push_back(Allele(variantJunctions[i], alleleNames[i]));
     this->nAlleles = alleleNames.size();
 
@@ -176,10 +176,13 @@ void complexVariant::calculateVariantRegions()
         for (Breakpoint & bp : this->allBreakpoints)
             if (bp.getReferenceName() == cName)
                 chrBreakpoints.push_back(bp);
+        
+        if (chrBreakpoints.size() == 0)
+            continue;
 
         this->variantRegions.push_back(GenomicRegion(cName, 0, chrBreakpoints[0].getPosition() - 1));
-        for (int i = 1; i < chrBreakpoints.size(); ++i)
-            this->variantRegions.push_back(GenomicRegion(cName, chrBreakpoints[i-1].getPosition(), chrBreakpoints[i].getPosition() - 1));
+        for (uint32_t i = 0; i + 1 < chrBreakpoints.size(); ++i)
+            this->variantRegions.push_back(GenomicRegion(cName, chrBreakpoints[i].getPosition(), chrBreakpoints[i+1].getPosition() - 1));
         this->variantRegions.push_back(GenomicRegion(cName, chrBreakpoints[chrBreakpoints.size() - 1].getPosition(), chrBreakpoints[chrBreakpoints.size() - 1].getPosition() + 100000));
     }
 }

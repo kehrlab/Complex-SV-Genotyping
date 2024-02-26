@@ -36,18 +36,18 @@ void Allele::convertJunctionsToBreakpoints()
 
 void Allele::splitAllJunctionsToBreakpoints()
 {
-    unsigned id = 1;
+    uint32_t id = 1;
     for (auto junction : this->novelJunctions)
     {
         if (junction.hasValidLeftSide())
         {
-            Breakpoint leftBp = junction.leftSideToBreakpoint(id);
+            Breakpoint leftBp = junction.leftSideToBreakpoint((int) id);
             this->referenceBreakpoints.push_back(leftBp);
             ++id;
         }
         if (junction.hasValidRightSide())
         {
-            Breakpoint rightBp = junction.rightSideToBreakpoint(id);
+            Breakpoint rightBp = junction.rightSideToBreakpoint((int) id);
             this->referenceBreakpoints.push_back(rightBp);
             ++id;
         }  
@@ -152,7 +152,7 @@ void Allele::print()
     std::cout << "----------------------" << std::endl;
     std::cout << "   Chromosome Maps:   " << std::endl;
     std::cout << "----------------------" << std::endl;
-    for (unsigned i = 0; i < this->chromosomeMaps.size(); ++i)
+    for (uint32_t i = 0; i < this->chromosomeMaps.size(); ++i)
     {
         std::cout << this->chromosomeNames[i] << std::endl;
         this->chromosomeMaps[i].print();
@@ -195,10 +195,10 @@ void Allele::createAlleleSequences(SeqFileHandler & seqFileHandler)
     if (!seqFileHandler.isOpen())
         return;
     
-    for (unsigned i = 0; i < this->chromosomeMaps.size(); ++i)
+    for (uint32_t i = 0; i < this->chromosomeMaps.size(); ++i)
     {
         seqan::String<seqan::Dna5String> chrSequences = chromosomeMaps[i].getChromosomeSequences(seqFileHandler);
-        for (unsigned j = 0; j < seqan::length(chrSequences); ++j)
+        for (uint32_t j = 0; j < seqan::length(chrSequences); ++j)
         {
             seqan::CharString id = (chromosomeNames[i] + "_" + std::to_string(j)).c_str();
             seqan::appendValue(this->chromosomeSequences, chrSequences[j]);
@@ -235,7 +235,7 @@ std::vector<std::string> & Allele::getChromosomeNames()
 
 VariantMapManager & Allele::getChromosomeMap(std::string cName)
 {
-    for (unsigned i = 0; i < this->chromosomeNames.size(); ++i)
+    for (uint32_t i = 0; i < this->chromosomeNames.size(); ++i)
         if (this->chromosomeNames[i] == cName)
             return this->chromosomeMaps[i];
 
@@ -266,16 +266,20 @@ std::unordered_map<std::string, JunctionRegion> Allele::getChromosomeStructures(
         std::vector<int> bpIndices;
         std::vector<int> njIndices;
         int regionLength = 0;
-        for (int i = 0; i < breakpoints.size(); ++i)
+        for (uint32_t i = 0; i < breakpoints.size(); ++i)
             if (breakpoints[i].getReferenceName() == chr)
                 bpIndices.push_back(i);
-        for (int i = 0; i < this->novelJunctions.size(); ++i)
+        for (uint32_t i = 0; i < this->novelJunctions.size(); ++i)
             if (this->novelJunctions[i].getVariantRefName() == chr)
                 njIndices.push_back(i);
-        std::sort(bpIndices.begin(), bpIndices.end(), [&](const int & i, const int & j)
-        {
-            return breakpoints[i].getPosition() < breakpoints[j].getPosition();
-        });
+        std::sort(
+            bpIndices.begin(), 
+            bpIndices.end(), 
+            [&](const int & i, const int & j)
+            {
+                return breakpoints[i].getPosition() < breakpoints[j].getPosition();
+            }
+        );
 
         if (njIndices.size() > 0)
         {
@@ -295,7 +299,7 @@ std::unordered_map<std::string, JunctionRegion> Allele::getChromosomeStructures(
             chrStructure.length = regionLength + 1;
             chrStructure.junctions.push_back(this->novelJunctions[njIndices[0]]);
             // middle
-            for (int j = 0; j < njIndices.size() - 1; ++j)
+            for (uint32_t j = 0; j + 1 < njIndices.size(); ++j)
             {
                 if (this->novelJunctions[njIndices[j]].getRefNameRight() != this->novelJunctions[njIndices[j + 1]].getRefNameLeft())
                     throw std::runtime_error("ERROR: RefNames of adjacent junctions do not match!");
@@ -363,7 +367,7 @@ void Allele::insertBreakpoint(Breakpoint & bp, JunctionRegion & jRegion)
 {
     // find fitting regions
     int currentIdx = 0;
-    for (int j = 0; j < jRegion.regions.size(); ++j)
+    for (uint32_t j = 0; j < jRegion.regions.size(); ++j)
     {
         // adjust region to not include breakpoint locations
         GenomicRegion tempRegion {

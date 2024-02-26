@@ -145,7 +145,7 @@ void GenotypeResult::setFilename(std::string filename)
 void GenotypeResult::addTemplateProbabilities(std::vector<std::string> genotypeNames, std::vector<float> probabilities, float weight)
 {
     this->templateWeights.push_back(weight);
-    for (int i = 0; i < genotypeNames.size(); ++i)
+    for (uint32_t i = 0; i < genotypeNames.size(); ++i)
         addProbability(genotypeNames[i], probabilities[i]);
     return;
 }
@@ -153,11 +153,11 @@ void GenotypeResult::addTemplateProbabilities(std::vector<std::string> genotypeN
 void GenotypeResult::addProbability(std::string genotypeName, float probability)
 {
     int gtIdx = -1;
-    for (int i = 0; i < this->genotypeNames.size(); ++i)
+    for (uint32_t i = 0; i < this->genotypeNames.size(); ++i)
     {
         if (this->genotypeNames[i] == genotypeName)
         {
-            gtIdx = i;
+            gtIdx = (int) i;
             break;
         }
     }
@@ -170,10 +170,10 @@ void GenotypeResult::addProbability(std::string genotypeName, float probability)
 
 void GenotypeResult::calculateLikelihoods()
 {
-    for (int i = 0; i < this->genotypeNames.size(); ++i)
+    for (uint32_t i = 0; i < this->genotypeNames.size(); ++i)
     {
         float L = 0;
-        for (int j = 0; j < this->templateProbabilities[i].size(); ++j)
+        for (uint32_t j = 0; j < this->templateProbabilities[i].size(); ++j)
             L += this->templateProbabilities[i][j];
         L += -10 * std::log10(this->genotypePriors[this->genotypeNames[i]]);
         this->genotypeLikelihoods.push_back(L);
@@ -186,10 +186,9 @@ void GenotypeResult::bootstrapLikelihoods()
     std::mt19937 gen(rd());
 
 
-    int n = this->templateProbabilities[0].size();
-    int sampleSize = n;
-    int nSamples = 10000;
-    int idx = -1;
+    uint32_t n = this->templateProbabilities[0].size();
+    uint32_t sampleSize = n;
+    uint32_t nSamples = 10000;
 
     if (!this->useQualities)
         for (float & w : this->templateWeights)
@@ -198,24 +197,24 @@ void GenotypeResult::bootstrapLikelihoods()
     std::discrete_distribution<> distrib(this->templateWeights.begin(), this->templateWeights.end());
 
     // init likelihood vector
-    for (int i = 0; i < this->genotypeNames.size(); ++i)
+    for (uint32_t i = 0; i < this->genotypeNames.size(); ++i)
     {
         std::vector<float> temp;
         this->bootstrappedLikelihoods.push_back(temp);   
     }
     
     float L = 0.0;
-    for (unsigned j = 0; j < nSamples; ++j)
+    for (uint32_t j = 0; j < nSamples; ++j)
     {
         // create bootstrap sample
         std::vector<int> indices(sampleSize, 0);
-        for (unsigned k = 0; k < sampleSize; ++k)
+        for (uint32_t k = 0; k < sampleSize; ++k)
             indices[k] = distrib(gen);
 
-        for (int i = 0; i < this->genotypeNames.size(); ++i)
+        for (uint32_t i = 0; i < this->genotypeNames.size(); ++i)
         {
             L = 0.0;
-            for (unsigned k = 0; k < sampleSize; ++k) 
+            for (uint32_t k = 0; k < sampleSize; ++k) 
                 L += this->templateProbabilities[i][indices[k]];
             this->bootstrappedLikelihoods[i].push_back(L);
         }
@@ -226,7 +225,7 @@ void GenotypeResult::bootstrapQuality(int minIdx, int secondIdx)
 {
     int nSameCall = 0;
     float q = 0;
-    for (int i = 0; i < this->bootstrappedLikelihoods[0].size(); ++i)
+    for (uint32_t i = 0; i < this->bootstrappedLikelihoods[0].size(); ++i)
     {
         // get min and second index within bootstrap sample
         q = this->bootstrappedLikelihoods[secondIdx][i] - this->bootstrappedLikelihoods[minIdx][i];
@@ -234,7 +233,7 @@ void GenotypeResult::bootstrapQuality(int minIdx, int secondIdx)
         
         // check wheter the calls are actually the same
         std::vector<float> likelihoods;
-        for (int j = 0; j < this->bootstrappedLikelihoods.size(); ++j)
+        for (uint32_t j = 0; j < this->bootstrappedLikelihoods.size(); ++j)
             likelihoods.push_back(this->bootstrappedLikelihoods[j][i]);
         std::vector<float> tempLikelihoods = likelihoods;
         std::sort(tempLikelihoods.begin(), tempLikelihoods.end());
@@ -264,16 +263,16 @@ void GenotypeResult::writeBootstrapData(std::string prefix)
             f << gt << "\t";
         f << "Quality" << std::endl;
 
-        for (int i = 0; i < this->bootstrappedLikelihoods[0].size(); ++i)
+        for (uint32_t i = 0; i < this->bootstrappedLikelihoods[0].size(); ++i)
         {
             std::vector<float> v;
             float minL = this->bootstrappedLikelihoods[0][i];
-            for (int j = 0; j < this->bootstrappedLikelihoods.size(); ++j) {
+            for (uint32_t j = 0; j < this->bootstrappedLikelihoods.size(); ++j) {
                 float L = this->bootstrappedLikelihoods[j][i];
                 v.push_back(L);
                 minL =  std::min(minL, L);
             }
-            for (int j = 0; j < v.size(); ++j)
+            for (uint32_t j = 0; j < v.size(); ++j)
                 f << (v[j] - minL) << "\t";
             f << this->bootstrappedQualities[i] << std::endl;
         }
@@ -303,11 +302,11 @@ float GenotypeResult::sd(std::vector<float> v, float m)
 float GenotypeResult::getLikelihood(std::string genotype)
 {
     int index = -1;
-    for (int i = 0; i < this->genotypeNames.size(); ++i)
+    for (uint32_t i = 0; i < this->genotypeNames.size(); ++i)
     {
         if (this->genotypeNames[i] == genotype)
         {
-            index = i;
+            index = (int) i;
             break;
         }
     }
@@ -319,10 +318,10 @@ float GenotypeResult::getLikelihood(std::string genotype)
 void GenotypeResult::printAllLikelihoods()
 {
     std::cout << std::endl;
-    for (int i = 0; i < this->genotypeNames.size(); ++i)
+    for (uint32_t i = 0; i < this->genotypeNames.size(); ++i)
         std::cout << this->genotypeNames[i] << "\t";
     std::cout << std::endl;
-    for (int i = 0; i < this->genotypeLikelihoods.size(); ++i)
+    for (uint32_t i = 0; i < this->genotypeLikelihoods.size(); ++i)
         std::cout << this->genotypeLikelihoods[i] << "\t";
     std::cout << std::endl << std::endl;
 }

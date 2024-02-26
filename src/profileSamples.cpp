@@ -44,7 +44,7 @@ int profileSamples(int argc, const char ** argv)
     std::vector<int> readLengths(params.sampleFiles.size());
     std::vector<int> readGroups(params.sampleFiles.size());
     bool rgError {false};
-    for (int i = 0; i < params.sampleFiles.size(); ++i)
+    for (uint32_t i = 0; i < params.sampleFiles.size(); ++i)
     {
         BamFileHandler tempFile(params.sampleFiles[i]);
         readGroups[i] = tempFile.getRGNumber();
@@ -84,7 +84,7 @@ int profileSamples(int argc, const char ** argv)
     std::cout << date << "Creating sample profiles..." << std::endl;
 
     #pragma omp parallel for num_threads(params.nThreads)
-    for (int i = 0; i < params.sampleFiles.size(); ++i)
+    for (uint32_t i = 0; i < params.sampleFiles.size(); ++i)
     {
         Sample s(params.sampleFiles[i], regions);
         profilePaths[i] = params.outDir + "/" + s.getSampleName() + ".profile";

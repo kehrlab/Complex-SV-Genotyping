@@ -52,7 +52,7 @@ seqan::Dna5String SeqFileHandler::getBaseAtPosition(std::string rName, int posit
         return sequence;
 
     if (this->sequencesInMemory && this->chromosomeSequences.find(rName) != this->chromosomeSequences.end()) {
-        if (position < seqan::length(this->chromosomeSequences[rName][position]))
+        if (position < (int) seqan::length(this->chromosomeSequences[rName][position]))
             sequence = this->chromosomeSequences[rName][position];
     }
     else
@@ -71,7 +71,7 @@ seqan::Dna5String SeqFileHandler::getRegionSequence(std::string rName, int begin
     if (this->sequencesInMemory && this->chromosomeSequences.find(rName) != this->chromosomeSequences.end())
     {
         for (int i = begin; i <= end; ++i)
-            if (i < seqan::length(this->chromosomeSequences[rName]))
+            if (i < (int) seqan::length(this->chromosomeSequences[rName]))
                 seqan::append(sequence, this->chromosomeSequences[rName][i]);
             else
                 break;
@@ -170,7 +170,7 @@ std::unordered_map<std::string, int> SeqFileHandler::getSequenceLengths()
 {
     std::unordered_map<std::string, int> seqLens;
     if (isOpen())
-        for (unsigned i = 0; i < seqan::numSeqs(this->faiIndex); ++i)
+        for (uint64_t i = 0; i < seqan::numSeqs(this->faiIndex); ++i)
             seqLens[std::string(seqan::toCString(seqan::sequenceName(this->faiIndex, i)))] = seqan::sequenceLength(this->faiIndex, i);
     return seqLens;
 }

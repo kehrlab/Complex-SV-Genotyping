@@ -198,7 +198,6 @@ void GenotypeDistribution::writeDistributionBinned(std::string prefix)
             distProbs[it.first] = 0.0;
 
         int j = 0;
-        int iS = minIS;
         for (int i = minIS; i < maxIS; ++i)
         {
 		
@@ -209,7 +208,6 @@ void GenotypeDistribution::writeDistributionBinned(std::string prefix)
                     f << i << "\t" << it.second << "\t" << it.first << std::endl;
                     distProbs[it.first] = 0.0;
                 }
-                iS = i;
             }
             for (auto it : this->distributions)
                 distProbs[it.first] += it.second.getInsertSizeProbability(i);
