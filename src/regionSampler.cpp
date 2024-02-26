@@ -76,7 +76,7 @@ std::vector<GenomicRegion> RegionSampler::createGenomicRegions()
 {
     std::vector<GenomicRegion> regions;
     for (unsigned j = 0; j < this->commonContigs.size(); ++j)
-        regions.push_back(GenomicRegion(this->commonContigs[j], 0, this->minContigLengths[j]));
+        regions.push_back(GenomicRegion(this->commonContigs[j], 0, this->minContigLengths[j]));    
     return regions;
 }
 
@@ -91,11 +91,14 @@ void RegionSampler::subsampleRegions(std::vector<GenomicRegion> wholeGenomeRegio
     while (currentSize < this->totalIntervalLength)
     {
         ++j;
+	
         GenomicRegion r = wholeGenomeRegions[regionDistrib(gen)];
-	if (r.getReferenceName() == "chrM" || r.getReferenceName() == "M")
+	if (r.getReferenceName() == "chrM" || r.getReferenceName() == "M" || r.getReferenceName() == "MT")
 		continue;
+	if (r.getRegionEnd() - r.getRegionStart() <= this->intervalSizes)
+		continue;
+	
         std::uniform_int_distribution<> distrib(0, r.getRegionEnd() - r.getRegionStart() - this->intervalSizes);
-	    int startPos = distrib(gen);
         int start = r.getRegionStart() + distrib(gen);	
         GenomicRegion sampledRegion(r.getReferenceName(), start, start + this->intervalSizes);
 
