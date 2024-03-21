@@ -1,9 +1,8 @@
-# Tim Mirus
-
 library(tidyverse)
 library(gridExtra)
 library(Cairo)
 source("../scripts/R-scripts/theme.R")
+source("scripts/id_assignment.R")
 
 ########################################################################
 # Decode plot with Transmission Rate, MIER and Chi^2-Value per Variant #
@@ -60,12 +59,13 @@ p <- decode_stats %>%
 	  strip.position = "left",
 	  labeller = label_parsed
 	  ) +
-	geom_bar(stat = "identity", position = "dodge2", width = 0.5) +
-	scale_x_discrete(limits = variants) +
-	custom_theme +
+	geom_bar(stat = "identity", position = "dodge2", width = 0.8) +
+	scale_x_discrete(limits = variants, labels = ids[variants]) +
+	custom_theme_large +
 	theme(
 	      axis.title.x = element_blank(), 
 	      axis.title.y = element_blank(),
+	      #axis.text.x = element_text(angle = 30, hjust = 0.95, vjust = 0.95),
 	      legend.title = element_blank(),
 	      legend.position = "top",
 	      legend.spacing.x = unit(1, "lines"),
@@ -75,7 +75,7 @@ p <- decode_stats %>%
 	) +
 	geom_hline(data = line_data, aes(yintercept = y), linetype = "dashed") +
 	scale_fill_custom_d("lit_colours")
-CairoPDF("plots/decode_stats.pdf", width = 21, height = 6, version = "1.5")
+CairoPDF("plots/decode_stats.pdf", width = 22, height = 10, version = "1.5")
 plot(p)
 dev.off()
 
@@ -143,15 +143,13 @@ for (v in variants) {
 	  axis.title = element_text(size = 14),
 	  axis.text = element_text(size = 12)
 	  ) +
-    ggtitle(v) +
+    ggtitle(ids[v]) +
     scale_fill_custom_d("lit_colours")
   plots[[v]] <- p_hwe
 }
 
-
 CairoPDF("plots/polaris_hwe.pdf", width = 21, height = 30, version = "1.5")
 grid.arrange(grobs = plots, nrow = 7, ncol = 3)
-#plot(p_hwe_1)
 dev.off()
 
 
@@ -181,12 +179,42 @@ for (v in variants) {
     geom_bar(stat = "identity", position = "dodge", width = 0.5) +
     custom_theme +
     theme(legend.position = "None", plot.title = element_text(size = 18), strip.text.x = element_text(size = 16)) +
-    ggtitle(v) +
+    ggtitle(ids[v]) +
     scale_fill_custom_d("lit_colours")
   plots[[v]] <- p_hwe_gg
 }
 CairoPDF("plots/ggtyper_hwe.pdf", width = 20, height = 30, version = "1.5")
 grid.arrange(grobs = plots, nrow = 7, ncol = 3)
+dev.off()
+
+###############################################################################
+# Observed and expected genotype counts for GGTyper (Decode and Polaris(EUR)) #
+###############################################################################
+
+hwe_polaris_eur <- read_tsv("polarisResults/hwe_counts_eur.tsv") %>%
+  filter(Algorithm == "GGTyper") %>%
+  mutate(Data = "Polaris EUR") %>%
+  group_by(Variant, Type) %>%
+  mutate(Fraction = Count / sum(Count))
+hwe_eur <- bind_rows(
+  hwe_polaris_eur,
+  hwe_decode
+)
+plots <- list()
+for (v in variants) {
+  p_hwe <- hwe_eur %>%
+    filter(Variant == v) %>%
+    ggplot(aes(x = Genotype, y = Fraction, group = Type, fill = Type)) +
+    facet_grid(cols = vars(Data)) +
+    geom_bar(stat = "identity", position = "dodge", width = 0.5) +
+    custom_theme +
+    theme(legend.position = "None") +
+    ggtitle(ids[v]) +
+    scale_fill_custom_d("lit_colours")
+  plots[[v]] <- p_hwe
+}
+pdf("plots/ggtyper_hwe_eur.pdf", width = 30, height = 20)
+grid.arrange(grobs = plots, nrow = 4, ncol = 5)
 dev.off()
 
 ################################################################################
@@ -230,9 +258,9 @@ p_ssq1 <- hwe_fraction %>%
   mutate(Type = "SSQ") %>%
   ggplot(aes(x = Variant, y = Value, group = Population, fill = Population)) +
   facet_wrap(~Type, strip.position = "left", ncol = 1, labeller = label_parsed) +
-  geom_bar(stat = "identity", position = "dodge2", width = 0.5) +
-  scale_x_discrete(limits = variant_order) +
-  custom_theme +
+  geom_bar(stat = "identity", position = "dodge2", width = 0.8) +
+  scale_x_discrete(limits = variant_order, labels = ids[variant_order]) +
+  custom_theme_large +
   theme(
     axis.title.x = element_blank(), 
     axis.title.y = element_blank(),
@@ -245,6 +273,6 @@ p_ssq1 <- hwe_fraction %>%
     ) +
     scale_fill_manual(values = c("#0059ec", "#fcab79", "#6a00e5"))
 
-CairoPDF("plots/ssq_decode_pop.pdf", width = 21, height = 3.5, version = "1.5")
+CairoPDF("plots/ssq_decode_pop.pdf", width = 22, height = 4.5, version = "1.5")
 plot(p_ssq1)
 dev.off()

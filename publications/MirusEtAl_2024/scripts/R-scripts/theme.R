@@ -1,7 +1,3 @@
-# Tim Mirus
-
-# specifications of base colours and ggplot theme used for plots
-
 library(ggplot2)
 
 custom_colours <- list(
@@ -53,12 +49,12 @@ custom_theme_large <- theme_bw() +
 	theme(
   		#plot.title = element_blank(),
   		plot.subtitle = element_blank(),
-  		axis.title = element_text(size = 30),
-  		axis.text = element_text(size = 26),
-  		legend.title = element_text(size = 30),
-  		legend.text = element_text(size = 26),
-		strip.text.x = element_text(size = 30),
-		strip.text.y = element_text(size = 30, margin = margin(0.2, 0.2, 0.2, 0.2, "cm")),
+  		axis.title = element_text(size = 36),
+  		axis.text = element_text(size = 32),
+  		legend.title = element_text(size = 36),
+  		legend.text = element_text(size = 32),
+		strip.text.x = element_text(size = 32),
+		strip.text.y = element_text(size = 32, margin = margin(0.2, 0.2, 0.2, 0.2, "cm")),
 		panel.grid = element_blank(),
 		strip.background = element_rect(fill = "white", colour = "grey")
 	)
