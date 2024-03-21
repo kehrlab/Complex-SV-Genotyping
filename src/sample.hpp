@@ -30,7 +30,7 @@ class Sample
     SeqFileHandler referenceFile;
 
     std::vector<GenomicRegion> sampledRegions;
-    std::unordered_map<std::string, int> chromosomeLengths;
+    ContigInfo contigInfo;
 
     // results
     LibraryDistribution sampleDistribution;
@@ -53,7 +53,7 @@ class Sample
     LibraryDistribution & getLibraryDistribution();
     void closeBamFile();
     int getFilterMargin();
-    ContigInfo getContigInfo();
+    const ContigInfo & getContigInfo();
     std::unordered_map<std::string, int> getContigLengths();
     std::string getFileName();
     int getMaxReadLength();

@@ -1,5 +1,6 @@
 #include "genotypeDistribution.hpp"
 #include "insertSizeDistribution.hpp"
+#include <cstdint>
 
 GenotypeDistribution::GenotypeDistribution()
 {
@@ -7,34 +8,22 @@ GenotypeDistribution::GenotypeDistribution()
     this->minProbability = 0.0;
 }
 
-GenotypeDistribution::GenotypeDistribution(const Eigen::SparseMatrix<float> & dist, std::unordered_map<std::string, int> & groupIndices, int sMin, int sMax)
+GenotypeDistribution::GenotypeDistribution(const Eigen::SparseMatrix<float, Eigen::RowMajor> & dist, std::unordered_map<std::string, int> & groupIndices, int64_t sMin, int64_t sMax)
 {
     this->normalizationFactor = 1;
     this->minProbability = 0.0;
 
     for (auto & g : groupIndices)
     {
-        int nonZero = 0;
-        std::vector<float> temp(dist.rows(), 0);
-        for (int i = 0; i < dist.rows(); ++i)
-        {
-            float p = dist.coeff(i, g.second);
-            if (p > 0)
-            {
-                ++nonZero;
-                temp[i] = p;
-            }
-        }
-
-        if (nonZero == 1 && temp[0 - sMin] > 0)
-            this->interChromosomeCounts[g.first] = temp[0 - sMin];
-        else
-            this->distributions[g.first] = InsertSizeDistribution(sMin, sMax, temp);
+        if (dist.row(g.second).nonZeros() == 0)
+            continue;
+        this->distributions[g.first] = InsertSizeDistribution(sMin, sMax, dist.row(g.second));
+        this->distributions[g.first].smoothDistribution(5);
     }
-    
+        
+    scaleDistribution();
     for (auto & dist : this->distributions)
         this->distributionProbabilities[dist.first] = dist.second.getIntegral();
-    this->distributionProbabilities["interchromosome"] = getTotalInterChromosomeProbability();
     
     calculateMinProbability();
 }
@@ -48,14 +37,6 @@ GenotypeDistribution & GenotypeDistribution::operator+=(GenotypeDistribution & r
             this->distributions[it.first] += it.second;
     }
 
-    std::unordered_map<std::string, float> rhs_probs = rhs.getInterChromosomeProbabilites();
-    for (auto it : rhs_probs)
-    {
-        if (this->interChromosomeCounts.find(it.first) == this->interChromosomeCounts.end())
-            this->interChromosomeCounts[it.first] = 0.0;
-        this->interChromosomeCounts[it.first] += it.second;
-    }
-
     scaleDistribution();
     return *this;
 }
@@ -64,8 +45,6 @@ GenotypeDistribution & GenotypeDistribution::operator*=(float & factor)
 {
     for (auto it : this->distributions)
         this->distributions[it.first] *= factor;
-    for (auto it : this->interChromosomeCounts)
-        this->interChromosomeCounts[it.first] *= factor;
     return *this;
 }
 
@@ -87,16 +66,11 @@ GenotypeDistribution operator*(float factor, GenotypeDistribution rhs)
     return rhs;
 }
 
-void GenotypeDistribution::addInsertSizeProbability(int insertSize, std::string orientation, std::string junctionString, std::string breakpointString, std::string chromosomeString, float probability)
-{
-    if (chromosomeString != "")
-    {
-        addInterChromosomeProbability(chromosomeString, probability);
-        return;
-    }
 
+void GenotypeDistribution::addInsertSizeProbability(int64_t insertSize, std::string orientation, std::string junctionString, std::string breakpointString, std::string bridgeString, float probability)
+{
     std::string group = GenotypeDistribution::determineGroup(
-        orientation, junctionString, breakpointString, chromosomeString
+        orientation, junctionString, breakpointString, bridgeString
         );
 
     if (group == "")
@@ -111,13 +85,6 @@ void GenotypeDistribution::addInsertSizeProbability(int insertSize, std::string 
     return;
 }
 
-float GenotypeDistribution::getTotalInterChromosomeProbability()
-{
-    float total = 0.0;
-    for (auto it : this->interChromosomeCounts)
-        total += it.second;
-    return total;
-}
 
 void GenotypeDistribution::calculateNormalizationFactor()
 {
@@ -128,7 +95,6 @@ void GenotypeDistribution::calculateNormalizationFactor()
         this->distributionProbabilities[it.first] = temp;
         dSum += temp;
     }
-    dSum += getTotalInterChromosomeProbability();
     this->normalizationFactor = 1 / dSum;
 
     for (auto it : this->distributionProbabilities)
@@ -142,13 +108,11 @@ float GenotypeDistribution::getNormalizationFactor()
     return this->normalizationFactor;
 }
 
-float GenotypeDistribution::getProbability(int insertSize, std::string orientation, std::string junctionString, std::string breakpointString, std::string chromosomeString, bool & outlier)
+float GenotypeDistribution::getProbability(int64_t insertSize, std::string orientation, std::string junctionString, std::string breakpointString, std::string bridgeString, bool & outlier)
 {
-    if (chromosomeString != "")
-        return getInterChromosomeProbability(chromosomeString);
 
     std::string group = GenotypeDistribution::determineGroup(
-        orientation, junctionString, breakpointString, chromosomeString
+        orientation, junctionString, breakpointString, bridgeString
         );
 
     if (this->distributions.find(group) != this->distributions.end())
@@ -164,17 +128,35 @@ std::unordered_map<std::string, InsertSizeDistribution> & GenotypeDistribution::
     return this->distributions;
 }
 
+
 void GenotypeDistribution::writeDistribution(std::string prefix)
 {
     std::ofstream f;
+    int64_t bounds = 20000;
     f.open(prefix.append(".txt"));
     if (f.is_open())
     {
-        for (auto it : this->distributions)
-            for (int i = it.second.getMinInsertSize(); i <= it.second.getMaxInsertSize(); ++i)
-                f << i << "\t" << it.second.getInsertSizeProbability(i) << "\t" << it.first << std::endl;
-        for (auto it : this->interChromosomeCounts)
-            f << 0 << "\t" << it.second << "\t" << it.first << std::endl;
+        for (auto & it : this->distributions) {
+            float oob_low = 0;
+            float oob_high = 0;
+
+            for (Eigen::SparseVector<float>::InnerIterator it1(it.second.getDistributionVector(), 0); it1; ++it1)
+            {
+                float p = it1.value();
+                int64_t idx = it1.row();
+                if (idx + it.second.getMinInsertSize() < -bounds)
+                    oob_low += p;
+                else if (idx + it.second.getMinInsertSize() > bounds)
+                    oob_high += p;
+                else
+                    f << idx + it.second.getMinInsertSize() << "\t" << p << "\t" << it.first << std::endl; 
+            }
+
+            if (oob_low > 0)
+                f << 0 << "\t" << oob_low << "\t" << it.first << "_oob_low" << std::endl;
+            if (oob_high > 0)
+                f << 0 << "\t" << oob_high << "\t" << it.first << "_oob_high" << std::endl;
+        }
     }
     f.close();
 }
@@ -182,8 +164,9 @@ void GenotypeDistribution::writeDistribution(std::string prefix)
 void GenotypeDistribution::writeDistributionBinned(std::string prefix)
 {
     int binSize = 20;
-    int minIS = 0;
-    int maxIS = 0;
+    int64_t minIS = 0;
+    int64_t maxIS = 0;
+    int bounds = 20000;
     for (auto it : this->distributions)
     {
         maxIS = std::max(maxIS, it.second.getMaxInsertSize());
@@ -193,27 +176,54 @@ void GenotypeDistribution::writeDistributionBinned(std::string prefix)
     f.open(prefix.append(".txt"));
     if (f.is_open())
     {
-        std::unordered_map<std::string, float> distProbs;
-        for (auto it : this->distributions)
-            distProbs[it.first] = 0.0;
+        // for each distribution: 
+        for (auto & it : this->distributions) {
+            float oob_low = 0;
+            float oob_high = 0;
 
-        int j = 0;
-        for (int i = minIS; i < maxIS; ++i)
-        {
-		
-            ++j;
-            if (j % binSize == 0)
-            {
-                for (auto it : distProbs) {
-                    f << i << "\t" << it.second << "\t" << it.first << std::endl;
-                    distProbs[it.first] = 0.0;
-                }
+            //  create a binned vector of probabilities
+            Eigen::SparseVector<float> binnedDist;
+
+            int64_t npBins = maxIS / binSize;
+            if (maxIS % binSize)
+                npBins++;
+            int64_t nnBins = 0;
+            if (minIS < 0) {
+                nnBins = (-minIS) / binSize;
+                if (minIS % binSize)
+                    nnBins++;
             }
-            for (auto it : this->distributions)
-                distProbs[it.first] += it.second.getInsertSizeProbability(i);
+            binnedDist.resize(nnBins + npBins);
+            binnedDist.reserve(it.second.getDistributionVector().nonZeros() / binSize + 1);
+
+            for (Eigen::SparseVector<float>::InnerIterator it1(it.second.getDistributionVector(), 0); it1; ++it1)
+            {
+                float p = it1.value();
+                int64_t idx = it1.row();
+                int64_t newIdx = idx / binSize;
+                binnedDist.coeffRef(newIdx) += p;
+            }
+
+            //  write as above
+            for (Eigen::SparseVector<float>::InnerIterator it1(binnedDist, 0); it1; ++it1)
+            {
+                float p = it1.value();
+                int64_t idx = it1.row();
+                int64_t sBin = (idx - nnBins) * binSize;
+
+                if (sBin < -bounds)
+                    oob_low += p;
+                else if (sBin > bounds)
+                    oob_high += p;
+                else
+                    f << sBin << "\t" << p << "\t" << it.first << std::endl; 
+            }
+
+            if (oob_low > 0)
+                f << 0 << "\t" << oob_low << "\t" << it.first << "_oob_low" << std::endl;
+            if (oob_high > 0)
+                f << 0 << "\t" << oob_high << "\t" << it.first << "_oob_high" << std::endl;
         }
-        for (auto it : this->interChromosomeCounts)
-            f << 0 << "\t" << it.second << "\t" << it.first << std::endl;
     }
     f.close();
 }
@@ -223,8 +233,6 @@ void GenotypeDistribution::scaleDistribution()
     calculateNormalizationFactor();
     for (auto it : this->distributions)
         this->distributions[it.first] *= this->normalizationFactor;
-    for (auto it : this->interChromosomeCounts)
-	    this->interChromosomeCounts[it.first] = this->interChromosomeCounts[it.first] * this->normalizationFactor;
     this->normalizationFactor = 1.0;
     calculateMinProbability();
 }
@@ -238,46 +246,20 @@ void GenotypeDistribution::smoothDistribution()
     }
 }
 
-int GenotypeDistribution::getMinInsertSize()
+int64_t GenotypeDistribution::getMinInsertSize()
 {
-	int minIS = 0;
+	int64_t minIS = 0;
 	for (auto it : this->distributions)
 		minIS = std::min(minIS, it.second.getMinInsertSize());
 	return minIS;
 }
 
-int GenotypeDistribution::getMaxInsertSize()
+int64_t GenotypeDistribution::getMaxInsertSize()
 {
-	int maxIS = 0;
+	int64_t maxIS = 0;
 	for (auto it : this->distributions)
 		maxIS = std::max(maxIS, it.second.getMaxInsertSize());
 	return maxIS;
-}
-
-void GenotypeDistribution::addInterChromosomeProbability(std::string identifier, float probability)
-{
-    auto it = this->interChromosomeCounts.find(identifier);
-    if (it == interChromosomeCounts.end())
-        this->interChromosomeCounts[identifier] = 0.0;
-    this->interChromosomeCounts[identifier] += probability;
-}
-
-float GenotypeDistribution::getInterChromosomeProbability(std::string identifier)
-{
-    auto it = this->interChromosomeCounts.find(identifier);
-    if (it != this->interChromosomeCounts.end()) 
-    {
-        return this->interChromosomeCounts[identifier];
-    } else
-    {
-        std::cerr << "Did not find inter-chromosome group " << identifier << std::endl;
-        return this->minProbability;
-    }
-}
-
-std::unordered_map<std::string, float> GenotypeDistribution::getInterChromosomeProbabilites()
-{
-    return this->interChromosomeCounts;
 }
 
 void GenotypeDistribution::calculateMinProbability()
@@ -305,27 +287,21 @@ void GenotypeDistribution::setMinProbability(float minProbability)
 float GenotypeDistribution::calculateKLD(GenotypeDistribution & other)
 {
     float kld = 0.0;
-    // problem: values with p = 0 do not count -> REF/REF likely
+
     for (auto it : this->distributions)
     {
-        int min = it.second.getMinInsertSize();
-        int max = it.second.getMaxInsertSize();
-        for (int x = min; x <= max; ++x) {
-            if (it.second.getInsertSizeProbability(x) <= this->minProbability)
+        for (Eigen::SparseVector<float>::InnerIterator it1(it.second.getDistributionVector(), 0); it1; ++it1)
+        {
+            if (it1.value() <= this->minProbability)
                 continue;
-            float x1 = it.second.getInsertSizeProbability(x);
+            
+            float x1 = it1.value();
             float x2 = std::log10(x1);
-            float x3 = std::log10(std::max(other.getDistributions()[it.first].getInsertSizeProbability(x), this->minProbability));
+            float x3 = std::log10(std::max(this->minProbability, other.getDistributions()[it.first].getInsertSizeProbability(it1.row() + it.second.getMinInsertSize())));
             kld += x1 * (x2 - x3);
         }
     }
-    for (auto it : this->interChromosomeCounts)
-    {
-        float x1 = it.second;
-        float x2 = std::log10(x1);
-        float x3 = std::log10(other.getInterChromosomeProbability(it.first));
-        kld += x1 * (x2-x3);
-    }
+
     kld *= 10; //phred scaling
     return kld;
 }

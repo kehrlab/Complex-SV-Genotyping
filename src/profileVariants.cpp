@@ -1,4 +1,5 @@
 #include "profileVariants.hpp"
+#include "custom_types.hpp"
 #include "seqan/arg_parse/argument_parser.h"
 
 #ifndef DATE
@@ -62,48 +63,43 @@ int profileVariants(int argc, const char **argv)
     float insertMean = 0;
     std::vector<std::unordered_map<std::string, int>> contigInfos;
 
-    if (params.sampleProfileFile != "")
+    std::ifstream stream(params.sampleProfileFile);
+    if (stream.is_open())
     {
-        std::ifstream stream(params.sampleProfileFile);
-        if (stream.is_open())
+        std::string filename;
+        int counter = 0;
+        while (stream.peek() != EOF)
         {
-            std::string filename;
-            int counter = 0;
-            while (stream.peek() != EOF)
-            {
-                ++counter;
-                std::getline(stream, filename);
-                Sample s(filename);
-                
-                sMin = std::min(sMin, s.getLibraryDistribution().getMinInsert());
-                sMax = std::max(sMax, s.getLibraryDistribution().getMaxInsert());
-                insertMean += s.getLibraryDistribution().getInsertMean();
-                contigInfos.push_back(s.getContigLengths());
+            ++counter;
+            std::getline(stream, filename);
+            Sample s(filename);
+            
+            sMin = std::min(sMin, s.getLibraryDistribution().getMinInsert());
+            sMax = std::max(sMax, s.getLibraryDistribution().getMaxInsert());
+            insertMean += s.getLibraryDistribution().getInsertMean();
+            contigInfos.push_back(s.getContigLengths());
 
-                if (readLength < 0)
-                    readLength = s.getMaxReadLength();
-                else if (readLength != s.getMaxReadLength())
-		{
-		    readLengthError = true;
-		    std::cerr << "Read Length error in sample " << s.getSampleName() << ": " << s.getMaxReadLength() << std::endl;
-		}
-                s.close();
+            if (readLength < 0)
+                readLength = s.getMaxReadLength();
+            else if (readLength != s.getMaxReadLength())
+            {
+                readLengthError = true;
+                std::cerr << "Read Length error in sample " << s.getSampleName() << ": " << s.getMaxReadLength() << std::endl;
             }
-            if (counter > 0)
-                insertMean /= counter;
-            stream.close();
-        } else
-        {
-            std::cerr << "Could not open sample profile list " << params.sampleProfileFile << "." << std::endl;
+            s.close();
         }
-    } else {
-        sMin = params.sMin;
-        sMax = params.sMax;
-        readLength = params.readLength;
+        if (counter > 0)
+            insertMean /= counter;
+        stream.close();
+    } else
+    {
+        std::cerr << "Could not open sample profile list " << params.sampleProfileFile << "." << std::endl;
+        throw std::runtime_error("Aborted. Calculation of variant profiles requires access to sample profiles.");
     }
+
     if (readLengthError) {
-	std::cerr << "Consensus read length: " << readLength << std::endl;
-	throw std::runtime_error("Read lengths of sample profiles do not match. Cannot create common variant profiles.");
+	    std::cerr << "Consensus read length: " << readLength << std::endl;
+	    throw std::runtime_error("Read lengths of sample profiles do not match. Cannot create common variant profiles.");
     }
 
 
@@ -119,7 +115,7 @@ int profileVariants(int argc, const char **argv)
     std::cout << date << "Calculating variant profiles..." << std::endl;
 
     std::vector<std::string> profilePaths(variants.size());
-    std::unordered_map<std::string, int> contigLengths = mergeContigLengths(contigInfos);
+    ContigInfo cInfo = mergeContigLengths(contigInfos);
     int overlap = 20;
 
     #pragma omp parallel for num_threads(params.nThreads)
@@ -127,7 +123,7 @@ int profileVariants(int argc, const char **argv)
     {
         VariantProfile profile(
             variants[i], params.margin, overlap, 
-            readLength, sMin, sMax, contigLengths
+            readLength, sMin, sMax, cInfo
             );
         profile.calculateAlleleMasks();
         profilePaths[i] = params.outDir + "/" + variants[i].getName() + ".profile";
@@ -135,15 +131,15 @@ int profileVariants(int argc, const char **argv)
     }
 
     // write profile paths to file
-    std::ofstream stream(params.outFile);
-    if (!stream.is_open())
+    std::ofstream outStream(params.outFile);
+    if (!outStream.is_open())
     {
         std::string msg = "Error: Could not open file " + params.outFile + " for writing.";
         throw std::runtime_error(msg.c_str());
     }
     for (auto & f : profilePaths)
-        stream << f << std::endl;
-    stream.close();
+        outStream << f << std::endl;
+    outStream.close();
 
     now = time(0);
     date = std::string(ctime(&now));
@@ -166,29 +162,15 @@ seqan::ArgumentParser::ParseResult parseVariantProfileArgs(seqan::ArgumentParser
     seqan::addArgument(argParser, seqan::ArgParseArgument(
         seqan::ArgParseArgument::OUTPUT_DIRECTORY, "OUTPUT DIR")
     );
+    seqan::addArgument(argParser, seqan::ArgParseArgument(
+        seqan::ArgParseArgument::INPUT_FILE, "SAMPLE_PROFILES")
+    );
 
     seqan::setValidValues(argParser, 0, "JSON json txt");
     seqan::setValidValues(argParser, 1, "txt");
+    seqan::setValidValues(argParser, 3, "txt");
 
     // options
-    seqan::addOption(argParser, seqan::ArgParseOption(
-        "S", "samples", 
-        "List of sample profiles. Can be used to determine sMin, sMax and readLength. Otherwise these must be supplied manually.",
-        seqan::ArgParseOption::ArgumentType::INPUT_FILE, "PROFILES"));
-    seqan::setValidValues(argParser, "samples", "txt");
-
-    seqan::addOption(argParser, seqan::ArgParseOption(
-        "sMin", "min-insert-size", "Minimum insert size considered in profile creation. Default: 1.",
-        seqan::ArgParseOption::ArgumentType::INTEGER, "SMIN"
-    ));
-    seqan::addOption(argParser, seqan::ArgParseOption(
-        "sMax", "max-insert-size", "Maximum insert size considered in profile creation. Default: 1000.",
-        seqan::ArgParseOption::ArgumentType::INTEGER, "SMAX"
-    ));
-    seqan::addOption(argParser, seqan::ArgParseOption(
-        "l", "read-length", "Read length used to calculate profiles. Must match the samples that the profiles are genotyped later. Default: 100.",
-        seqan::ArgParseOption::ArgumentType::INTEGER, "READLENGTH"
-    ));
     seqan::addOption(argParser, seqan::ArgParseOption(
         "m", "filter-margin", "Margin placed around reference breakpoints to obtain regions of interest. Default: 500.",
         seqan::ArgParseOption::ArgumentType::INTEGER, "MARGIN"
@@ -198,8 +180,9 @@ seqan::ArgumentParser::ParseResult parseVariantProfileArgs(seqan::ArgumentParser
         seqan::ArgParseOption::ArgumentType::INTEGER, "THREADS"
     ));
 
+    // description
     seqan::addDescription(argParser, "Create profiles of given variants and write them to disk.");
-    seqan::addUsageLine(argParser, "VARIANT_FILE OUTPUT_FILE OUTPUT_DIRECTORY [\033[4mOPTIONS\033[0m].");
+    seqan::addUsageLine(argParser, "VARIANT_FILE OUTPUT_FILE OUTPUT_DIRECTORY SAMPLE_PROFILES [\033[4mOPTIONS\033[0m].");
     seqan::setDate(argParser, DATE);
     seqan::setVersion(argParser, VERSION);
     
@@ -235,9 +218,9 @@ variantProfileParams getVariantProfileParameters(const seqan::ArgumentParser &ar
         params.variantFileNames.push_back(variantFileName);
     } 
 
-
     seqan::getArgumentValue(params.outFile, argParser, 1);
     seqan::getArgumentValue(params.outDir, argParser, 2);
+    seqan::getArgumentValue(params.sampleProfileFile, argParser, 3);
 
     if (!std::filesystem::exists(params.outDir))
     {
@@ -246,36 +229,19 @@ variantProfileParams getVariantProfileParameters(const seqan::ArgumentParser &ar
         std::exit(1);
     }
 
-    if (! (seqan::isSet(argParser, "samples") || 
-          (seqan::isSet(argParser, "min-insert-size") && 
-           seqan::isSet(argParser, "max-insert-size") && 
-           seqan::isSet(argParser, "read-length"))
-          )
-        )
-    {
-        throw std::runtime_error("Error in input parameters: Need to specify either '--samples' or '--min-insert-size', '--max-insert-size' and '--read-length'.");
-    }
-
-    seqan::getOptionValue(params.sampleProfileFile, argParser, "samples");
-    seqan::getOptionValue(params.sMin, argParser, "min-insert-size");
-    seqan::getOptionValue(params.sMax, argParser, "max-insert-size");
-    seqan::getOptionValue(params.readLength, argParser, "read-length");
     seqan::getOptionValue(params.margin, argParser, "filter-margin");
     seqan::getOptionValue(params.nThreads, argParser, "threads");
     return params;
 }
 
-std::unordered_map<std::string, int> mergeContigLengths(
-    const std::vector<std::unordered_map<std::string, int>> & contigInfos
-    )
+ContigInfo mergeContigLengths(const std::vector<std::unordered_map<std::string, int>> & contigInfos)
 {
     std::unordered_set<std::string> cNames;
     for (auto & s : contigInfos)
         for (auto & chr : s)
             cNames.insert(chr.first);
 
-    std::vector<std::string> cN;
-    std::vector<int> cLengths;
+    ContigInfo cInfo;
 
     for (auto & chr : cNames)
     {
@@ -302,12 +268,11 @@ std::unordered_map<std::string, int> mergeContigLengths(
             }
             if (!allMatch)
                 break;
-            cN.push_back(chr);
-            cLengths.push_back(l);
+            cInfo.cNames.push_back(chr);
+            cInfo.cLengths.push_back(l);
         }
     }
-    std::unordered_map<std::string, int> contigLengths;
-    for (uint32_t i = 0; i < cN.size(); ++i)
-        contigLengths[cN[i]] = cLengths[i];
-    return contigLengths;
+    cInfo.sortNames();
+    cInfo.calculateGlobalContigPositions();
+    return cInfo;
 }

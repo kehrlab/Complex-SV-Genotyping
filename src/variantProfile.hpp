@@ -23,11 +23,13 @@ class VariantProfile
     complexVariant variant;
     std::string name;
     bool variantPresent;
+
     // ProgramOptions options;
     std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> chromosomeStructures;
 
     std::unordered_map<std::string, int> variantAlleleNames;
     std::unordered_map<std::string, int> variantGroups;
+    std::unordered_map<std::string, bool> groupOccurs;
 
     Eigen::SparseMatrix<float, Eigen::RowMajor> referenceMask;
     std::vector<std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor>>> variantMask;
@@ -39,8 +41,10 @@ class VariantProfile
     int sMin;
     int sMax;
 
-    int sMinMapped;
-    int sMaxMapped;
+    ContigInfo cInfo;
+
+    int64_t sMinMapped;
+    int64_t sMaxMapped;
 
     
 
@@ -50,7 +54,7 @@ class VariantProfile
     public:
     VariantProfile();
     VariantProfile(std::string);
-    VariantProfile(complexVariant, int, int, int, int, int, const std::unordered_map<std::string, int> &);
+    VariantProfile(complexVariant, int, int, int, int, int, const ContigInfo &);
 
     void calculateAlleleMasks();
 
@@ -73,6 +77,7 @@ class VariantProfile
     bool loadVariantStructure(std::string filename, std::string variantName);
     void createVariantChromosomeStructures();
     std::string getName();
+    const ContigInfo & getContigInfo();
 
     private:
     void determinePossibleGroups();
@@ -94,8 +99,9 @@ class VariantProfile
     void initMasks();
     void initReferenceMask();
     void initVariantMask();
-    inline void addSimulatedTemplateToMask(int &, VariantMap &, int, int, Allele &);
-    inline void addValueToMask(Allele & allele, int sOld, int sNew, std::string & orientation, std::string & jString, std::string & bpString, std::string & chromosomes);
+    inline void addSimulatedTemplateToMask(int &, VariantMap &, int, int64_t, Allele &);
+    inline void addValueToMask(Allele & allele, int64_t sOld, int64_t sNew, std::string & orientation, std::string & jString, std::string & bpString, std::string & chromosomes);
+    void addGroupToMasks(std::string);
 };
 
 #endif

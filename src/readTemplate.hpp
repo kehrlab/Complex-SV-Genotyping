@@ -19,11 +19,11 @@ class ReadTemplate
     std::vector<int> firstIndices;
     std::vector<int> lastIndices;
     int primaryFirst, primaryLast;
-    int fivePrimeFirst, fivePrimeLast;
+    int64_t fivePrimeFirst, fivePrimeLast;
     std::string templateName;
 
     std::string orientation;
-    int insertSize;
+    int64_t insertSize;
     bool split;
     bool splitFirst;
     bool splitLast;
@@ -37,10 +37,12 @@ class ReadTemplate
     float templateWeight;
     std::unordered_set<int> overlappingRegions;
     std::string junctionString;
-    std::string chromosomeString;
-    std::string bpString;
+    std::string bpSpanString;
+    std::string bpBridgeString;
+
     std::unordered_set<int> spanningBreakpoints;
     std::unordered_set<int> splittingJunctions;
+    std::unordered_set<int> bridgedBreakpoints;
 
     void determineInformativeRecords();
     void calculateInsertSize();
@@ -48,9 +50,9 @@ class ReadTemplate
     
     int softClippingLeftLength(BamRecord &);
     int softClippingRightLength(BamRecord &);
-    void findSplitsBasedOnClipping(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);
+    void findSplitsBasedOnClipping(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &, int);
     void findSplitsBasedOnGaps(std::vector<Junction> &);
-    void findClippedSplitsOnChromosome(std::string, JunctionRegion &, SplitAlignmentInfo &);
+    void findClippedSplitsOnChromosome(std::string, JunctionRegion &, SplitAlignmentInfo &, int);
     bool alignsWithinExpectedDistance(std::vector<Junction> &, uint32_t, BamRecord &, BamRecord &);
     bool alignsWithinRegion(int &, GenomicRegion &, BamRecord &, int);
     bool readSpansJunction(BamRecord &, Junction &);
@@ -59,16 +61,18 @@ class ReadTemplate
     
     public:
     ReadTemplate();
-    ReadTemplate(std::vector<BamRecord>);
+    ReadTemplate(std::vector<BamRecord>, ContigInfo &);
 
-    void findSplitReads(std::vector<Junction> &, std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &);
+    void findSplitReads(std::vector<Junction> &, std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &, int);
     void findSpanningReads(std::vector<Breakpoint> &);
+    void findBridgedBreakpoints(std::vector<Breakpoint> &);
+
     void determineLocationStrings();
-    void determineFivePrimeEnds();
+    void determineFivePrimeEnds(ContigInfo &);
     void markSuspectedSplit();
 
     std::string getOrientation();
-    int getInsertSize();
+    int64_t getInsertSize();
     bool containsSplitRead();
     bool containsSpanningRead();
     bool alignsAcrossChromosomes();
@@ -86,8 +90,8 @@ class ReadTemplate
     bool containsSuspectedSplit();
     std::string getName();
     std::string getJunctionString();
-    std::string getBreakpointString();
-    std::string getChromosomeString();
+    std::string getBpSpanString();
+    std::string getBpBridgeString();
     std::vector<int> getMappingQualities();
 };
 

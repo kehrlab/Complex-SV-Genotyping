@@ -2,7 +2,7 @@
 #include "readTemplate.hpp"
 #include <unordered_map>
 
-RecordManager::RecordManager()
+RecordManager::RecordManager(ContigInfo cInfo) : cInfo(cInfo)
 {
     this->maxReadLength = 100;
 }
@@ -57,7 +57,7 @@ void RecordManager::collectTemplates()
     {
         if (it->second.size() > 1)
         {
-            ReadTemplate rTemplate(it->second);
+            ReadTemplate rTemplate(it->second, this->cInfo);
             if (rTemplate.isProperPair()) 
                 this->templates.push_back(rTemplate);
         }

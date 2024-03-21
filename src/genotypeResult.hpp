@@ -64,7 +64,7 @@ class GenotypeResult
     float getQuality();
     void createOutputString();
     std::string getOutputString();
-    void storeEvidence(int, std::string, std::string, std::string, std::string, std::vector<int>);
+    void storeEvidence(int64_t, std::string, std::string, std::string, std::string, std::vector<int>);
     void writeEvidence(std::string);
     void printAllLikelihoods();
     void addTemplateProbabilities(std::vector<std::string>, std::vector<float>, float);

@@ -5,6 +5,7 @@
 #include <vector>
 #include <seqan/bam_io.h>
 
+#include "custom_types.hpp"
 #include "readTemplate.hpp"
 #include "bamFileHandler.hpp"
 #include "record.hpp"
@@ -18,6 +19,8 @@ class RecordManager
     std::vector<int> insertSizes;
     int maxReadLength;
 
+    ContigInfo cInfo;
+
 
     void extractInsertSizes();
 
@@ -30,7 +33,7 @@ class RecordManager
     void resetInsertSizes();
 
     public:
-    RecordManager();
+    RecordManager(ContigInfo);
 
     void setBamRecords(std::vector<BamRecord>);
     void setReadPairs(std::unordered_map<std::string, std::vector<BamRecord>>);

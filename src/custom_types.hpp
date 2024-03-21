@@ -4,6 +4,7 @@
 #include <seqan/sequence.h> 
 #include <seqan/bam_io.h>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "genomicRegion.hpp"
@@ -14,6 +15,55 @@ struct ContigInfo
 {
     std::vector<std::string> cNames;
     std::vector<int> cLengths;
+    std::unordered_map<std::string, uint32_t> globalPositions;
+
+    ContigInfo(){}
+
+    ContigInfo(std::unordered_map<std::string, int> contigLengths)
+    {
+        std::vector<std::string>().swap(this->cNames);
+        std::vector<int>().swap(this->cLengths);
+        for (auto c : contigLengths)
+        {
+            this->cNames.push_back(c.first);
+            this->cLengths.push_back(c.second);
+        }
+        sortNames();
+        calculateGlobalContigPositions();
+    }
+
+    std::unordered_map<std::string, int> getContigLengths()
+    {
+        std::unordered_map<std::string, int> contigLengths;
+        for (uint32_t i = 0; i < this->cNames.size(); ++i)
+            contigLengths[this->cNames[i]] = this->cLengths[i];
+        return contigLengths;
+    }
+    
+    void sortNames() {
+        std::vector<std::pair<std::string, int>> cInfo;
+        for (uint32_t i = 0; i < this->cLengths.size(); ++i)
+            cInfo.push_back(std::pair(this->cNames[i], this->cLengths[i]));
+        std::sort(
+            cInfo.begin(), 
+            cInfo.end(), 
+            [](std::pair<std::string, int> p1, std::pair<std::string, int> p2) {
+                    return p1.second >= p2.second;
+                }
+            );
+        for (uint32_t i = 0; i < cInfo.size(); ++i) {
+            this->cNames[i] = cInfo[i].first;
+            this->cLengths[i] = cInfo[i].second;
+        }
+    }
+
+    void calculateGlobalContigPositions() {
+        uint32_t startPos = 0;
+        for (uint32_t i = 0; i < this->cNames.size(); ++i) {
+            this->globalPositions[this->cNames[i]] = startPos;
+            startPos += this->cLengths[i];
+        }
+    }
 };
 
 struct TemplatePosition
@@ -48,7 +98,7 @@ struct VariantRegions
 
 struct SplitAlignmentInfo
 {
-    std::vector<std::vector<int>> junctionIndices;
+    std::vector<std::unordered_set<int>> junctionIndices;
     std::vector<int> insertSize; 
 };
 

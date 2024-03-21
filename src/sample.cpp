@@ -33,7 +33,7 @@ void Sample::openBamFile()
 {
     this->bamFile.open(this->filename);
     this->bamFileOpen = true;
-    this->chromosomeLengths = bamFile.getContigLengths();
+    this->contigInfo = bamFile.getContigInfo();
 
     this->sampleName = this->bamFile.getSampleName();
     if (this->sampleName == "")
@@ -79,14 +79,14 @@ int Sample::getFilterMargin()
     return ReadPairFilter::calculateBreakpointMargin(this->sampleDistribution.getInsertMean(), this->sampleDistribution.getInsertSD());
 }
 
-ContigInfo Sample::getContigInfo()
+const ContigInfo & Sample::getContigInfo()
 {
-    return this->bamFile.getContigInfo();
+    return this->contigInfo;
 }
 
 std::unordered_map<std::string, int> Sample::getContigLengths()
 {
-    return this->bamFile.getContigLengths();
+    return this->contigInfo.getContigLengths();
 }
 
 std::string Sample::getFileName()
@@ -118,13 +118,13 @@ void Sample::writeSampleProfile(std::string profilePath)
     stream.write("GENOTYPER\1", 10);
 
     // write sample name
-    int sampleNameLen = this->sampleName.size() + 1;
+    uint32_t sampleNameLen = this->sampleName.size() + 1;
     stream.write(reinterpret_cast<const char *>(&sampleNameLen), sizeof sampleNameLen);
     stream.write(this->sampleName.c_str(), sampleName.size());
     stream.write("\0", 1);
 
     // write sample path
-    int samplePathLength = this->filename.size() + 1;
+    uint32_t samplePathLength = this->filename.size() + 1;
     stream.write(reinterpret_cast<const char *>(&samplePathLength), sizeof samplePathLength);
     stream.write(this->filename.c_str(), this->filename.size());
     stream.write("\0", 1);
@@ -146,23 +146,23 @@ void Sample::writeSampleProfile(std::string profilePath)
 
     // write chromosome names and lengths
     // write number of chromosomes
-    int nChrom = this->chromosomeLengths.size();
+    uint32_t nChrom = this->contigInfo.cNames.size();
     stream.write(reinterpret_cast<const char *>(&nChrom), sizeof nChrom);
-    for (auto & chr : this->chromosomeLengths)
+    for (uint32_t i = 0; i < nChrom; ++i)
     {
-        int cNameLen = chr.first.size() + 1;
+        uint32_t cNameLen = this->contigInfo.cNames[i].size() + 1;
         stream.write(reinterpret_cast<const char *>(&cNameLen), sizeof cNameLen);
-        stream.write(chr.first.c_str(), cNameLen - 1);
+        stream.write(this->contigInfo.cNames[i].c_str(), cNameLen - 1);
         stream.write("\0", 1);
-        stream.write(reinterpret_cast<const char *>(&chr.second), sizeof chr.second);
+        stream.write(reinterpret_cast<const char *>(&this->contigInfo.cLengths[i]), sizeof this->contigInfo.cLengths[i]);
     }
 
     // write regions used for distribution creation
-    int nRegions = this->regionStrings.size();
+    uint32_t nRegions = this->regionStrings.size();
     stream.write(reinterpret_cast<const char *>(&nRegions), sizeof nRegions);
     for (auto & r : this->regionStrings)
     {
-        int rNameLen = r.size() + 1;
+        uint32_t rNameLen = r.size() + 1;
         stream.write(reinterpret_cast<const char *>(&rNameLen), sizeof rNameLen);
         stream.write(r.c_str(), rNameLen - 1);
         stream.write("\0", 1);
@@ -197,8 +197,8 @@ void Sample::readSampleProfile(std::string profilePath)
     delete[] tempString;
 
     // sample name
-    int sampleNameSize;
-    stream.read(reinterpret_cast<char *>(&sampleNameSize), sizeof(int));
+    uint32_t sampleNameSize;
+    stream.read(reinterpret_cast<char *>(&sampleNameSize), sizeof(uint32_t));
     tempString = new char[sampleNameSize];
     stream.read(tempString, sampleNameSize);
     if (tempString[sampleNameSize - 1] != '\0')
@@ -207,8 +207,8 @@ void Sample::readSampleProfile(std::string profilePath)
     delete[] tempString;
     
     // sample path
-    int samplePathSize;
-    stream.read(reinterpret_cast<char *>(&samplePathSize), sizeof(int));
+    uint32_t samplePathSize;
+    stream.read(reinterpret_cast<char *>(&samplePathSize), sizeof(uint32_t));
     tempString = new char[samplePathSize];
     stream.read(tempString, samplePathSize);
     if (tempString[samplePathSize - 1] != '\0')
@@ -227,15 +227,15 @@ void Sample::readSampleProfile(std::string profilePath)
     stream.read(reinterpret_cast<char *>(&this->sampleDistribution.getInsertSD()), sizeof(float));
 
     // chromosome names and lengths
-    std::unordered_map<std::string, int>().swap(this->chromosomeLengths);
-    int nChrom;
-    stream.read(reinterpret_cast<char * >(&nChrom), sizeof(int));
-    for (int i = 0; i < nChrom; ++i)
+    this->contigInfo = ContigInfo();
+    uint32_t nChrom;
+    stream.read(reinterpret_cast<char * >(&nChrom), sizeof(uint32_t));
+    for (uint32_t i = 0; i < nChrom; ++i)
     {
-        int l;
+        uint32_t l;
         int cLength;
 
-        stream.read(reinterpret_cast<char *>(&l), sizeof(int));
+        stream.read(reinterpret_cast<char *>(&l), sizeof(uint32_t));
 
         char * tempString = new char[l];
         stream.read(reinterpret_cast<char *>(tempString), l);
@@ -243,17 +243,19 @@ void Sample::readSampleProfile(std::string profilePath)
         delete[] tempString;
         
         stream.read(reinterpret_cast<char *>(&cLength), sizeof(int));
-        this->chromosomeLengths[cName] = cLength;
+        this->contigInfo.cNames.push_back(cName);
+        this->contigInfo.cLengths.push_back(cLength);
     }
+    this->contigInfo.calculateGlobalContigPositions();
 
     // regions
     std::vector<std::string>().swap(this->regionStrings);
-    int nRegions;
-    stream.read(reinterpret_cast<char * >(&nRegions), sizeof(int));
-    for (int i = 0; i < nRegions; ++i)
+    uint32_t nRegions;
+    stream.read(reinterpret_cast<char * >(&nRegions), sizeof(uint32_t));
+    for (uint32_t i = 0; i < nRegions; ++i)
     {
-        int l;
-        stream.read(reinterpret_cast<char *>(&l), sizeof(int));
+        uint32_t l;
+        stream.read(reinterpret_cast<char *>(&l), sizeof(uint32_t));
 
         char * tempString = new char[l];
         stream.read(tempString, l);
@@ -285,8 +287,8 @@ void Sample::printSampleProfile()
     std::cout << "Mean: " << this->sampleDistribution.getInsertMean() << std::endl;
     std::cout << "SD: " << this->sampleDistribution.getInsertSD() << std::endl;
     std::cout << "Chromosomes: "<< std::endl;
-    for (auto & chr : this->chromosomeLengths)
-        std::cout << "\t" << chr.first << "\t" << chr.second << std::endl;
+    for (uint32_t i = 0; i < this->contigInfo.cNames.size(); ++i)
+        std::cout << "\t" << this->contigInfo.cNames[i] << "\t" << this->contigInfo.cLengths[i] << std::endl;
     std::cout << "Regions:" << std::endl;
     for (auto & r : this->regionStrings)
         std::cout << "\t" << r << std::endl;

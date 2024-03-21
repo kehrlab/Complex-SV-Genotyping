@@ -10,7 +10,7 @@ GenomicRegion::GenomicRegion()
     this->containsSequence = false;
 }
 
-GenomicRegion::GenomicRegion(std::string rName, int begin, int end)
+GenomicRegion::GenomicRegion(std::string rName, int64_t begin, int64_t end)
 {
     setReferenceName(rName);
     setRegionStart(begin);
@@ -19,7 +19,7 @@ GenomicRegion::GenomicRegion(std::string rName, int begin, int end)
     this->containsSequence = false;
 }
 
-GenomicRegion::GenomicRegion(std::string rName, int begin, int end, bool reverse)
+GenomicRegion::GenomicRegion(std::string rName, int64_t begin, int64_t end, bool reverse)
 {
     setReferenceName(rName);
     setRegionStart(begin);
@@ -48,12 +48,12 @@ GenomicRegion::GenomicRegion(std::string regionString)
     this->containsSequence = false;
 }
 
-void GenomicRegion::setRegionStart(int begin)
+void GenomicRegion::setRegionStart(int64_t begin)
 {
     this->begin = begin;
 }
 
-void GenomicRegion::setRegionEnd(int end)
+void GenomicRegion::setRegionEnd(int64_t end)
 {
     this->end = end;
 }
@@ -73,12 +73,12 @@ std::string GenomicRegion::getReferenceName()
     return this->rName;
 }
 
-int GenomicRegion::getRegionStart()
+int64_t GenomicRegion::getRegionStart()
 {
     return this->begin;
 }
 
-int GenomicRegion::getRegionEnd()
+int64_t GenomicRegion::getRegionEnd()
 {
     return this->end;
 }
@@ -101,9 +101,9 @@ bool GenomicRegion::overlaps(GenomicRegion other, int requiredOverlap)
 {
     if (this->getReferenceName() == other.getReferenceName())
     {
-        if (other.getRegionStart() >= this->getRegionStart() && other.getRegionStart() <= this->getRegionEnd() && (other.getRegionStart() - this->getRegionStart() >= requiredOverlap || this->getRegionEnd() - other.getRegionStart() >= requiredOverlap))
+        if (other.getRegionStart() >= (this->getRegionStart() + requiredOverlap) && other.getRegionStart() <= (this->getRegionEnd() - requiredOverlap))
             return true;
-        if (other.getRegionEnd() >= this->getRegionStart() && other.getRegionEnd() <= this->getRegionEnd() && (other.getRegionEnd() - this->getRegionStart() >= requiredOverlap || this->getRegionEnd() - other.getRegionEnd() >= requiredOverlap))
+        if (other.getRegionEnd() >= (this->getRegionStart() + requiredOverlap) && other.getRegionEnd() <= (this->getRegionEnd() - requiredOverlap))
             return true;
         if (other.getRegionStart() <= this->getRegionStart() && other.getRegionEnd() >= this->getRegionEnd())
             return true;

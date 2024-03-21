@@ -44,6 +44,7 @@ inline void loadVariantProfiles(std::vector<VariantProfile> &, genotypeParameter
 inline void checkProfileParameters(int &, int &, int &, std::vector<VariantProfile> &, genotypeParameters &);
 inline void getGenotypePriors(std::unordered_map<std::string, std::unordered_map<std::string, float>> & genotypePriors, genotypeParameters & params);
 inline void checkSampleParameters(std::vector<std::string> &, int &, int &, int &, genotypeParameters &);
+bool contigsCompatible(const ContigInfo &, const ContigInfo &);
 inline void loadReadPairs(VariantProfile &, RecordManager &, BamFileHandler &, Sample &);
 inline void createGenotypeDistributions(
     VariantProfile &, std::vector<std::string> &, std::vector<GenotypeDistribution> &, 

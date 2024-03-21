@@ -380,13 +380,13 @@ void GenotypeResult::determineQualityStats()
     this->meanQuality /= this->mappingQualities.size();
 }
 
-void GenotypeResult::storeEvidence(int insertSize, std::string orientation, std::string junctionString, std::string breakpointString, std::string chromosomeString, std::vector<int> mapQs)
+void GenotypeResult::storeEvidence(int64_t insertSize, std::string orientation, std::string junctionString, std::string breakpointString, std::string bridgeString, std::vector<int> mapQs)
 {
     ++ this->observedReads;
     for (int mapQ : mapQs)
         this->mappingQualities.push_back(mapQ);
 
-    this->sampleDistribution.addInsertSizeProbability(insertSize, orientation, junctionString, breakpointString, chromosomeString, 1.0);
+    this->sampleDistribution.addInsertSizeProbability(insertSize, orientation, junctionString, breakpointString, bridgeString, 1.0);
 }
 
 void GenotypeResult::writeEvidence(std::string prefix)

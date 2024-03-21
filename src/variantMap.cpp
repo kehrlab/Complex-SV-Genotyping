@@ -57,7 +57,7 @@ bool VariantMap::isDeletion(int & delSize, GenomicRegion & r1, GenomicRegion & r
     return false;
 }
 
-ReadTemplate VariantMap::simulateTemplate(int startIndex, int insertSize, int readLength)
+ReadTemplate VariantMap::simulateTemplate(int startIndex, int64_t insertSize, int readLength, ContigInfo & cInfo)
 {
     std::vector<BamRecord> records;
 
@@ -87,7 +87,7 @@ ReadTemplate VariantMap::simulateTemplate(int startIndex, int insertSize, int re
     for (BamRecord r : lastRecords)
         records.push_back(r);
 
-    ReadTemplate sT(records);
+    ReadTemplate sT(records, cInfo);
     if (firstPossibleSplit || lastPossibleSplit)
 	    sT.markSuspectedSplit();
     return sT;
@@ -202,46 +202,45 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
             delSize = this->deletionIndices[firstIndex];
             this->possibleSplitRead = true;
         }
-        BamRecord record(refName, "tempTemplate", start, end, 60, endIndex-beginIndex, clipRight, clipLeft, reverse, true, first, !first, deletion, delSize);
+        BamRecord record(refName, "tempTemplate", start, end, 60, endIndex-beginIndex + 1, clipRight, clipLeft, reverse, true, first, !first, deletion, delSize);
         createdRecords.push_back(record);
     } 
-    else if ((std::abs(firstIndex - lastIndex) == 1) && this->deletionIndices.find(firstIndex) != this->deletionIndices.end())
+    else if ((std::abs(firstIndex - lastIndex) == 1) && this->deletionIndices.find(firstIndex) == this->deletionIndices.end())
     {
-        std::string refNameLeft, refNameRight;
         int startLeft, startRight, endLeft, endRight, clipLeftLeft, clipRightLeft, clipLeftRight, clipRightRight;
         bool reverseLeft, reverseRight;
         bool primaryLeft = false;
         bool primaryRight = false;
 
-        refNameLeft = firstPosition.getReferenceName();
-        refNameRight = lastPosition.getReferenceName();
+        std::string refNameLeft = firstPosition.getReferenceName();
+        std::string refNameRight = lastPosition.getReferenceName();
 
         if (!this->regions[firstIndex].isReverse())
         {
             startLeft = firstPosition.getRegionStart();
             endLeft = this->regions[firstIndex].getRegionEnd();
             clipLeftLeft = 0;
-            clipRightLeft = std::abs(lastDistFromBegin);
+            clipRightLeft = std::abs(lastDistFromBegin) + 1;
             reverseLeft = false;
         } else {
             startLeft = this->regions[firstIndex].getRegionStart();
             endLeft = firstPosition.getRegionStart();
             clipRightLeft = 0;
-            clipLeftLeft = std::abs(lastDistFromBegin);
+            clipLeftLeft = std::abs(lastDistFromBegin) + 1;
             reverseLeft = true;
         }
         if (!this->regions[lastIndex].isReverse())
         {
             startRight = this->regions[lastIndex].getRegionStart();
             endRight = lastPosition.getRegionStart();
-            clipLeftRight = std::abs(firstDistFromEnd);
+            clipLeftRight = std::abs(firstDistFromEnd) + 1;
             clipRightRight = 0;
             reverseRight = false;
         } else {
             startRight = lastPosition.getRegionStart();
             endRight = this->regions[lastIndex].getRegionEnd();
             clipLeftRight = 0;
-            clipRightRight = std::abs(firstDistFromEnd);
+            clipRightRight = std::abs(firstDistFromEnd) + 1;
             reverseRight = true;
         }
 
@@ -250,21 +249,16 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
         else
             primaryRight = true;
 
+        
         if (isReverse)
         {
-            if (reverseLeft)
-                reverseLeft = false;
-            else
-                reverseLeft = true;
-            if (reverseRight)
-                reverseRight = false;
-            else
-                reverseRight = true;
+            reverseLeft = !reverseLeft;
+            reverseRight = !reverseRight;
         }
         
 	    this->possibleSplitRead = true;
-        BamRecord r1(refNameLeft, "tempTemplate", startLeft, endLeft, 60, endIndex - beginIndex, clipRightLeft, clipLeftLeft, reverseLeft, primaryLeft, first, !first);
-        BamRecord r2(refNameRight, "tempTemplate", startRight, endRight, 60, endIndex - beginIndex, clipRightRight, clipLeftRight, reverseRight, primaryRight, first, !first);
+        BamRecord r1(refNameLeft, "tempTemplate", startLeft, endLeft, 60, endIndex - beginIndex + 1, clipRightLeft, clipLeftLeft, reverseLeft, primaryLeft, first, !first);
+        BamRecord r2(refNameRight, "tempTemplate", startRight, endRight, 60, endIndex - beginIndex + 1, clipRightRight, clipLeftRight, reverseRight, primaryRight, first, !first);
         createdRecords.push_back(r1);
         createdRecords.push_back(r2);
     } else {
@@ -379,7 +373,7 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
         }
 
 	    this->possibleSplitRead = true;
-        BamRecord record(refName, "tempTemplate", start, end, 60, lastIndex - beginIndex, clipRight, clipLeft, reverse, true, first, !first, deletion, delSize);
+        BamRecord record(refName, "tempTemplate", start, end, 60, endIndex - beginIndex + 1, clipRight, clipLeft, reverse, true, first, !first, deletion, delSize);
         createdRecords.push_back(record);
     }
     return createdRecords;

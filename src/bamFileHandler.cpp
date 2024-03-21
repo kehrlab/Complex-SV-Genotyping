@@ -389,9 +389,14 @@ void BamFileHandler::extractContigInfo()
     int nref = sam_hdr_nref(this->header);
     for (int i = 0; i < nref; ++i)
     {
-        cInfo.cNames.push_back(get_rName(i));
+        std::string cName = get_rName(i);
+        if (cName.size() > 5 || cName == "M" || cName == "chrM" || cName == "MT")
+            continue;
+        cInfo.cNames.push_back(cName);
         cInfo.cLengths.push_back(sam_hdr_tid2len(this->header, i));
     }
+    cInfo.sortNames();
+    cInfo.calculateGlobalContigPositions();
     this->contigInfo = cInfo;
 }
 

@@ -24,7 +24,7 @@ class VariantMap
     void calculateMapLength();
     void detectSmallDeletions();
     
-    ReadTemplate simulateTemplate(int, int, int);
+    ReadTemplate simulateTemplate(int, int64_t, int, ContigInfo &);
     void getGCContentVector(std::vector<float> &, uint32_t, int, int);
 
     private:

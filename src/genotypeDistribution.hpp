@@ -13,7 +13,6 @@
 class GenotypeDistribution
 {
     std::unordered_map<std::string, InsertSizeDistribution> distributions;
-    std::unordered_map<std::string, float> interChromosomeCounts;
     std::unordered_map<std::string, float> distributionProbabilities;
 
     float normalizationFactor;
@@ -22,54 +21,53 @@ class GenotypeDistribution
 
     public:
     GenotypeDistribution();
-    GenotypeDistribution(const Eigen::SparseMatrix<float> &, std::unordered_map<std::string, int> &, int, int);
+    GenotypeDistribution(const Eigen::SparseMatrix<float, Eigen::RowMajor> &, std::unordered_map<std::string, int> &, int64_t, int64_t);
 
     GenotypeDistribution & operator+=(GenotypeDistribution &);
     GenotypeDistribution & operator*=(float &);
 
-    void addInsertSizeProbability(int, std::string, std::string, std::string, std::string, float);
-    void addInterChromosomeProbability(std::string, float);
-
+    void addInsertSizeProbability(int64_t, std::string, std::string, std::string, std::string, float);
     void calculateNormalizationFactor();
     void scaleDistribution();
-
-    float getProbability(int, std::string, std::string, std::string, std::string, bool &);
-    float getInterChromosomeProbability(std::string);
-
+    float getProbability(int64_t, std::string, std::string, std::string, std::string, bool &);
     void writeDistribution(std::string);
     void writeDistributionBinned(std::string);
-    
+
     std::unordered_map<std::string, InsertSizeDistribution> & getDistributions();
-    std::unordered_map<std::string, float> getInterChromosomeProbabilites();
-    float getTotalInterChromosomeProbability();
 
     void calculateMinProbability();
     float getMinProbability();
     void setMinProbability(float);
     float calculateKLD(GenotypeDistribution &);
-    int getMinInsertSize();
-    int getMaxInsertSize();
+    int64_t getMinInsertSize();
+    int64_t getMaxInsertSize();
     void smoothDistribution();
     float getNormalizationFactor();
 
-    static std::string determineGroup(std::string orientation, std::string junctionString, std::string breakpointString, std::string chromosomeString)
+    static std::string determineGroup(std::string orientation, std::string junctionString, std::string breakpointString, std::string bridgeString)
     {
         std::string group;
-        if (chromosomeString != "")
-            group = chromosomeString;
-        else if (junctionString != "")
+
+        if (junctionString != "")
             group = "split_" + junctionString;
         else if (breakpointString != "")
             group = "spanning_" + breakpointString;
+        // else if (bridgeString != "")
+        //     group = "bridging_" + bridgeString;
         else if (orientation != "")
             group = orientation;
         else 
         {
             std::cerr << "Could not assign a group to read pair." << std::endl;
+            std::cerr << "Orientation: " << orientation << std::endl;
+            std::cerr << "Junctions: " << junctionString << std::endl;
+            std::cerr << "Breakpoints: " << breakpointString << std::endl;
+            std::cerr << "Bridged breakpoints: " << bridgeString << std::endl;
+            std::cerr << std::endl;
             group = "";
         }
-        if (group == "FR")
-            group = "RF";
+        if (group == "RF")
+            group = "FR";
         return group;
     }
 };

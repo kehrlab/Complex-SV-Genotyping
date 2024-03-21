@@ -57,8 +57,8 @@ COMMANDS
     genotype              Genotype given variants (specified by profiles) in all samples (specified by profiles).
 
 VERSION
-    GGTyper version: 0.0.1-fa1570f
-    Last update on 2023-10-09 13:03:09
+    GGTyper version: 0.0.1-9836abc
+    Last update on 2024-02-26 15:48:21
     Contact: Tim Mirus (Tim.Mirus[at]ukr.de)
 
 Try 'ggtyper COMMAND --help' for more information on each command.
@@ -88,9 +88,7 @@ filePath2.bam
 
 The `profile-variants` command is similar to sample-variants, but takes as first input either a `json` file of variant descriptions or a `txt` file containing one such json file per line.
 Details on that format may be found below. The second and third argument once again denote the target location of the profile list and the target directory of the profiles, respectively.  
-Variant profiles need to be created with library parameters (insert size range and read size) that match the samples to be genotyped.
-These can either be determined from a list of sample profiles (parameter `-S`) or supplied manually (`-sMin`, `-sMax`, `-l`). 
-If both are given, the samples take precendence.
+Variant profiles need to be created with library parameters (insert size range and read size) that match the samples to be genotyped, wich are determined from a list of sample profiles (fourth argument).
 
 ### Variant Description
 (Complex) Structural Variants can be described by their novel junctions or break-ends. We use the JSON format to specify the novel junctions of the alternate alleles for each affected chromosome. It is imperative that these junctions are supplied in the order they are found in on the variant allele.
@@ -123,7 +121,7 @@ Some examples of valid variant descriptions can be found [here](examples/).
 
 A simple call would be
 ```
-./ggtyper profile-variants [variantDescriptions.json] sampleProfiles.txt ./
+./ggtyper profile-variants [variantDescriptions.json] variantProfiles.txt ./ sampleProfiles.txt
 ```
 
 ## genotype
@@ -167,9 +165,11 @@ Reference allele name is `REF`, variant allele name is given in variant descript
 
 ## Version and License
 ```
-Last update: 2023-10-11
-GGTyper version: 0.0.9
+Last update: 21.03.2024
+GGTyper version: 0.1.0
 SeqAn version: 2.4
 HTSLib version: 1.17
 Author: Tim Mirus (Tim.Mirus[at]ukr.de)
 ```
+
+GGTyper is distributed under the GPL-3.0. Consult the accompanying LICENSE file for more details.

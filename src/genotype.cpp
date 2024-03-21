@@ -1,5 +1,6 @@
 #include "genotype.hpp"
 #include "genotypeResult.hpp"
+#include "libraryDistribution.hpp"
 #include "seqan/arg_parse/arg_parse_argument.h"
 #include "seqan/arg_parse/arg_parse_option.h"
 #include "seqan/arg_parse/argument_parser.h"
@@ -9,6 +10,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 #ifndef DATE
 #define DATE "1.1.1970"
@@ -116,6 +118,15 @@ int genotype(int argc, const char **argv)
             {
                 Sample s(sampleProfiles[j]);
 
+                // check compatibility of contigs in s and variantProfile[i]
+                if (! contigsCompatible(s.getContigInfo(), variantProfiles[i].getContigInfo()))
+                {
+                    std::cerr << "Skipping sample " << s.getSampleName() << ": ";
+                    std::cerr << "Contigs incompatible with variant " << variantProfiles[i].getName() << "." << std::endl; 
+                    continue;
+                }
+
+                // prepare object storing the result
                 GenotypeResult result;
                 if (priors.find(variantProfiles[i].getName()) != priors.end())
                     result = GenotypeResult(s.getFileName(), s.getSampleName(), false, priors[variantProfiles[i].getName()]);
@@ -123,15 +134,15 @@ int genotype(int argc, const char **argv)
                     result = GenotypeResult(s.getFileName(), s.getSampleName(), false);
 
                 // load the relevant read pairs
-                RecordManager bamRecords;
+                RecordManager bamRecords(variantProfiles[i].getContigInfo());
                 BamFileHandler bamFileHandler(s.getFileName(), params.minMapQ);
                 loadReadPairs(variantProfiles[i], bamRecords, bamFileHandler, s);
-
+                
                 // create the genotype distributions
                 std::vector<std::string> genotypeNames;
                 std::vector<GenotypeDistribution> genotypeDistributions;
                 ReadPairFilter filter = variantProfiles[i].getFilter();
-                std::vector<std::string> cNames = bamFileHandler.getContigInfo().cNames;
+                std::vector<std::string> cNames = variantProfiles[i].getContigInfo().cNames;
                 LibraryDistribution & sampleDistribution = s.getLibraryDistribution();
                 createGenotypeDistributions(
                     variantProfiles[i], 
@@ -141,7 +152,7 @@ int genotype(int argc, const char **argv)
                     cNames,
                     sampleDistribution
                 );
-        
+
                 // calculate genotype difficulties based on KLD
                 float difficulty = 0;
                 if (params.difficulties)
@@ -230,7 +241,7 @@ int genotype(int argc, const char **argv)
 }
 
 inline void loadVariantProfiles(std::vector<VariantProfile> & variantProfiles, genotypeParameters & params, std::vector<std::string> & profilePaths, int block)
-{   
+{
     int beginIdx = block * params.nThreads;
     int endIdx = std::min(((block + 1) * params.nThreads - 1), ((int) profilePaths.size()) - 1);
     std::vector<VariantProfile>().swap(variantProfiles);
@@ -355,6 +366,22 @@ inline void getGenotypePriors(std::unordered_map<std::string, std::unordered_map
     return;
 }
 
+bool contigsCompatible(const ContigInfo & contigs1, const ContigInfo & contigs2)
+{
+    std::unordered_map<std::string, uint32_t> cLens1;
+    for (uint32_t i = 0; i < contigs1.cNames.size(); ++i)
+        cLens1[contigs1.cNames[i]] = contigs1.cLengths[i];
+
+    for (uint32_t i = 0; i < contigs2.cNames.size(); ++i)
+    {
+        if (cLens1.find(contigs2.cNames[i]) == cLens1.end())
+            return false;
+        if (cLens1[contigs2.cNames[i]] != (uint32_t) contigs2.cLengths[i])
+            return false;
+    }
+    return true;
+}
+
 inline void loadReadPairs(VariantProfile & variantProfile, RecordManager & recordManager, BamFileHandler & bamFileHandler, Sample & s)
 {
     bamFileHandler.setRegions(
@@ -389,7 +416,8 @@ inline void calculateGenotypeLikelihoods(
         if (it->isInterestingReadPair(filter)) 
         {
             it->findSpanningReads(variantProfile.getVariant().getAllBreakpoints());
-            it->findSplitReads(variantProfile.getVariant().getAllJunctions(), variantProfile.getChromosomeStructures());
+            it->findSplitReads(variantProfile.getVariant().getAllJunctions(), variantProfile.getChromosomeStructures(), variantProfile.getMaxInsert());
+            it->findBridgedBreakpoints(variantProfile.getVariant().getAllBreakpoints());
             it->determineLocationStrings();
             adjustLikelihoods(*it, genotypeNames, genotypeDistributions, result);
         }
@@ -401,11 +429,11 @@ inline void adjustLikelihoods(ReadTemplate & readTemplate, std::vector<std::stri
     if (!readTemplate.isProperPair())
        return;
 
-    int insertSize = readTemplate.getInsertSize();
+    int64_t insertSize = readTemplate.getInsertSize();
     std::string orientation = readTemplate.getOrientation();
     std::string junctionString = readTemplate.getJunctionString();
-    std::string breakpointString = readTemplate.getBreakpointString();
-    std::string chromosomeString = readTemplate.getChromosomeString();
+    std::string breakpointString = readTemplate.getBpSpanString();
+    std::string bridgeString = readTemplate.getBpBridgeString();
     std::vector<int> mappingQualities = readTemplate.getMappingQualities();
 
     std::vector<float> probabilities;
@@ -415,12 +443,13 @@ inline void adjustLikelihoods(ReadTemplate & readTemplate, std::vector<std::stri
 	if (insertSize >= dist.getMinInsertSize() - 500 && insertSize <= dist.getMaxInsertSize() + 500)
 		insertSizeWithinLimits = true;
         probabilities.push_back(dist.getProbability(
-            insertSize, orientation, junctionString, breakpointString, chromosomeString, outlier
+            insertSize, orientation, junctionString, breakpointString, bridgeString, outlier
             ));
     } 
     
     if (insertSizeWithinLimits)
-    	result.storeEvidence(insertSize, orientation, junctionString, breakpointString, chromosomeString, mappingQualities);	
+    	result.storeEvidence(insertSize, orientation, junctionString, breakpointString, bridgeString, mappingQualities);	
+
     result.addTemplateProbabilities(genotypeNames, probabilities, readTemplate.getTemplateWeight());
     result.addOutlier(outlier);
 

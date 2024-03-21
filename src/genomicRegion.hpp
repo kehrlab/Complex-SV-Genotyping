@@ -11,7 +11,7 @@
 class GenomicRegion
 {
     std::string rName;
-    int begin, end;
+    int64_t begin, end;
 
     bool reverse;
     bool containsSequence;
@@ -27,15 +27,15 @@ class GenomicRegion
     public:
     GenomicRegion();
     GenomicRegion(std::string);
-    GenomicRegion(std::string, int, int);
-    GenomicRegion(std::string, int, int, bool);
+    GenomicRegion(std::string, int64_t, int64_t);
+    GenomicRegion(std::string, int64_t, int64_t, bool);
     bool operator==(GenomicRegion);
     std::string getReferenceName();
-    int getRegionStart();
-    int getRegionEnd();
+    int64_t getRegionStart();
+    int64_t getRegionEnd();
     void setReferenceName(std::string);
-    void setRegionStart(int);
-    void setRegionEnd(int);
+    void setRegionStart(int64_t);
+    void setRegionEnd(int64_t);
     bool overlaps(GenomicRegion);
     bool overlaps(GenomicRegion, int);
     void mergeWithRegion(GenomicRegion);

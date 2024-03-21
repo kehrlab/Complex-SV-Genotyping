@@ -1,4 +1,5 @@
 #include "allele.hpp"
+#include <stdexcept>
 
 Allele::Allele()
 {}
@@ -165,8 +166,14 @@ void Allele::createChromosomeMaps(std::vector<Breakpoint> & allBreakpoints, int 
     std::unordered_set<std::string> cNames;
     for (Breakpoint bp : allBreakpoints)
         cNames.insert(bp.getReferenceName());
-    for (std::string cName : cNames) 
+    for (std::string cName : cNames)
+    {
+        if (contigLengths.find(cName) == contigLengths.end()) {
+            std::string msg = "Contig " + cName + " not present in all given sample files.";
+            throw std::runtime_error(msg.c_str());
+        }
         createChromosomeMap(cName, allBreakpoints, filterMargin, contigLengths);
+    }
 }
 
 void Allele::createChromosomeMap(std::string cName, std::vector<Breakpoint> & allBreakpoints, int filterMargin, std::unordered_map<std::string, int> contigLengths)
