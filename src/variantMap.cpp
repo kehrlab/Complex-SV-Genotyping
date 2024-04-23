@@ -264,7 +264,7 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
     } else {
         // find the region that contains most of the read
 
-        // get lengths of read parts
+        // get lengths of read parts, considering gapped alignments
         struct partInfo
         {
             int length;
@@ -274,7 +274,7 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
         std::vector<partInfo> parts;
 
         partInfo temp;
-        temp.length = std::abs(firstDistFromEnd);
+        temp.length = std::abs(firstDistFromEnd) + 1;
         temp.startIndex = firstIndex;
         temp.lastIndex = firstIndex;
 
@@ -283,7 +283,7 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
             if (this->deletionIndices.find(firstIndex) != this->deletionIndices.end())
             {
                 if (i+1 == lastIndex)
-                    temp.length += std::abs(lastDistFromBegin);
+                    temp.length += std::abs(lastDistFromBegin) + 1;
                 else
                     temp.length += this->regionLengths[i+1];
                 temp.lastIndex = i+1;
@@ -292,7 +292,7 @@ std::vector<BamRecord> VariantMap::getReadsFromIndices(int beginIndex, int endIn
                 temp.startIndex = i+1;
                 temp.lastIndex = i+1;
                 if (i+1 == lastIndex)
-                    temp.length = std::abs(lastDistFromBegin);
+                    temp.length = std::abs(lastDistFromBegin) + 1;
                 else
                     temp.length = this->regionLengths[i+1];
             }

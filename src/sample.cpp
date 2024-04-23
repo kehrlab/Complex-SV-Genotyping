@@ -84,7 +84,7 @@ const ContigInfo & Sample::getContigInfo()
     return this->contigInfo;
 }
 
-std::unordered_map<std::string, int> Sample::getContigLengths()
+std::unordered_map<std::string, int32_t> Sample::getContigLengths()
 {
     return this->contigInfo.getContigLengths();
 }
@@ -154,7 +154,7 @@ void Sample::writeSampleProfile(std::string profilePath)
         stream.write(reinterpret_cast<const char *>(&cNameLen), sizeof cNameLen);
         stream.write(this->contigInfo.cNames[i].c_str(), cNameLen - 1);
         stream.write("\0", 1);
-        stream.write(reinterpret_cast<const char *>(&this->contigInfo.cLengths[i]), sizeof this->contigInfo.cLengths[i]);
+        stream.write(reinterpret_cast<const char *>(&this->contigInfo.cLengths[i]), sizeof(int32_t));
     }
 
     // write regions used for distribution creation
@@ -242,7 +242,7 @@ void Sample::readSampleProfile(std::string profilePath)
         std::string cName = std::string(tempString);
         delete[] tempString;
         
-        stream.read(reinterpret_cast<char *>(&cLength), sizeof(int));
+        stream.read(reinterpret_cast<char *>(&cLength), sizeof(int32_t));
         this->contigInfo.cNames.push_back(cName);
         this->contigInfo.cLengths.push_back(cLength);
     }

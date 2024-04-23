@@ -14,8 +14,8 @@
 struct ContigInfo
 {
     std::vector<std::string> cNames;
-    std::vector<int> cLengths;
-    std::unordered_map<std::string, uint32_t> globalPositions;
+    std::vector<int32_t> cLengths;
+    std::unordered_map<std::string, uint64_t> globalPositions;
 
     ContigInfo(){}
 
@@ -32,9 +32,9 @@ struct ContigInfo
         calculateGlobalContigPositions();
     }
 
-    std::unordered_map<std::string, int> getContigLengths()
+    std::unordered_map<std::string, int32_t> getContigLengths()
     {
-        std::unordered_map<std::string, int> contigLengths;
+        std::unordered_map<std::string, int32_t> contigLengths;
         for (uint32_t i = 0; i < this->cNames.size(); ++i)
             contigLengths[this->cNames[i]] = this->cLengths[i];
         return contigLengths;
@@ -47,7 +47,7 @@ struct ContigInfo
         std::sort(
             cInfo.begin(), 
             cInfo.end(), 
-            [](std::pair<std::string, int> p1, std::pair<std::string, int> p2) {
+            [](std::pair<std::string, int32_t> p1, std::pair<std::string, int32_t> p2) {
                     return p1.second >= p2.second;
                 }
             );
@@ -58,8 +58,8 @@ struct ContigInfo
     }
 
     void calculateGlobalContigPositions() {
-        uint32_t startPos = 0;
-        for (uint32_t i = 0; i < this->cNames.size(); ++i) {
+        uint64_t startPos = 0;
+        for (uint64_t i = 0; i < this->cNames.size(); ++i) {
             this->globalPositions[this->cNames[i]] = startPos;
             startPos += this->cLengths[i];
         }
@@ -75,12 +75,32 @@ struct TemplatePosition
 struct JunctionRegion
 {
     std::vector<GenomicRegion> regions;
-    std::vector<int> junctionIndices;
-    std::vector<int> breakpointIndices;
+    std::vector<int32_t> junctionIndices;
+    std::vector<int32_t> breakpointIndices;
     std::vector<Junction> junctions;
     std::vector<Breakpoint> breakpoints;
-    int length;
+    int32_t length;
     std::string chromosome;
+
+    void print()
+    {
+        std::cout << "-------------------------------------------" << std::endl;
+        for (auto & r : this->regions)
+            r.print();
+        std::cout << "-------------- Junctions ------------------" << std::endl;
+        for (auto & j : this->junctions)
+            j.print();
+        for (auto & j : this->junctionIndices)
+            std::cout << j << "\t";
+        std::cout << std::endl;
+        std::cout << "-------------- Breakpoints ------------------" << std::endl;
+        for (auto & b : this->breakpoints)
+            b.print();
+        for (auto & b : this->breakpointIndices)
+            std::cout << b << "\t";
+        std::cout << std::endl;
+        std::cout << "Length: " << length << std::endl;
+    }
 };
 
 struct BreakpointRegion
@@ -92,8 +112,8 @@ struct BreakpointRegion
 struct VariantRegions
 {
     std::vector<JunctionRegion> regions;
-    std::vector<int> distanceFromLast;
-    std::vector<int> distanceToNext;
+    std::vector<int32_t> distanceFromLast;
+    std::vector<int32_t> distanceToNext;
 };
 
 struct SplitAlignmentInfo

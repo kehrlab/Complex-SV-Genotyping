@@ -27,7 +27,7 @@ void RegionSampler::determineCommonContigs()
 {
     for (uint32_t i = 0; i < this->contigInfo[0].cNames.size(); ++i)
     {
-        int minContigLength = this->contigInfo[0].cLengths[i];
+        int32_t minContigLength = this->contigInfo[0].cLengths[i];
         bool include = true;
         for (uint32_t j = 0; j < this->contigInfo.size(); ++j)
         {

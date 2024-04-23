@@ -20,14 +20,14 @@ class InsertSizeDistribution
     int64_t minInsertSize;
     int64_t maxInsertSize;
 
-    Eigen::SparseVector<float> distribution;
+    Eigen::SparseVector<float, 0, int64_t> distribution;
 
     float minValue;
 
     public: 
     InsertSizeDistribution();
     InsertSizeDistribution(std::vector<int64_t>);
-    InsertSizeDistribution(int64_t, int64_t, Eigen::SparseVector<float>);
+    InsertSizeDistribution(int64_t, int64_t, Eigen::SparseVector<float, 0, int64_t>);
 
     InsertSizeDistribution & operator+=(InsertSizeDistribution & rhs);
     InsertSizeDistribution & operator*=(float & factor);
@@ -51,7 +51,7 @@ class InsertSizeDistribution
     int64_t getMinInsertSize();
     int64_t getMaxInsertSize();
     float getIntegral();
-    Eigen::SparseVector<float> & getDistributionVector();
+    Eigen::SparseVector<float, 0, int64_t> & getDistributionVector();
     void findMinProbability();
     float getMinProbability();
 };

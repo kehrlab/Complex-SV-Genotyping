@@ -182,7 +182,7 @@ void Allele::createChromosomeMap(std::string cName, std::vector<Breakpoint> & al
     VariantMapManager chromosomeMap(cName, filterMargin, contigLengths);
     if (chromosomeJunctions.size() > 0)
         chromosomeMap.createMapFromJunctions(chromosomeJunctions);
-    chromosomeMap.createBreakpointMaps(allBreakpoints);
+    chromosomeMap.createBreakpointMaps(allBreakpoints, cName);
 
     this->chromosomeMaps.push_back(chromosomeMap);
     this->chromosomeNames.push_back(cName);
@@ -257,123 +257,123 @@ void Allele::clearSequences()
 }
 
 
-std::unordered_map<std::string, JunctionRegion> Allele::getChromosomeStructures(std::vector<Breakpoint> & breakpoints)
-{
-    std::unordered_map<std::string, JunctionRegion> structures;
-    // find unique chromosomes
-    std::unordered_set<std::string> chromosomes;
-    for (auto & bp : breakpoints)
-        chromosomes.insert(bp.getReferenceName());
+// std::unordered_map<std::string, JunctionRegion> Allele::getChromosomeStructures(std::vector<Breakpoint> & breakpoints)
+// {
+//     std::unordered_map<std::string, JunctionRegion> structures;
+//     // find unique chromosomes
+//     std::unordered_set<std::string> chromosomes;
+//     for (auto & bp : breakpoints)
+//         chromosomes.insert(bp.getReferenceName());
 
-    // go over all involved chromosomes
-    for (auto & chr : chromosomes)
-    {
-        JunctionRegion chrStructure;
-        // determine breakpoints and junctions on the chromosome
-        std::vector<int> bpIndices;
-        std::vector<int> njIndices;
-        int regionLength = 0;
-        for (uint32_t i = 0; i < breakpoints.size(); ++i)
-            if (breakpoints[i].getReferenceName() == chr)
-                bpIndices.push_back(i);
-        for (uint32_t i = 0; i < this->novelJunctions.size(); ++i)
-            if (this->novelJunctions[i].getVariantRefName() == chr)
-                njIndices.push_back(i);
-        std::sort(
-            bpIndices.begin(), 
-            bpIndices.end(), 
-            [&](const int & i, const int & j)
-            {
-                return breakpoints[i].getPosition() < breakpoints[j].getPosition();
-            }
-        );
+//     // go over all involved chromosomes
+//     for (auto & chr : chromosomes)
+//     {
+//         JunctionRegion chrStructure;
+//         // determine breakpoints and junctions on the chromosome
+//         std::vector<int> bpIndices;
+//         std::vector<int> njIndices;
+//         int32_t regionLength = 0;
+//         for (uint32_t i = 0; i < breakpoints.size(); ++i)
+//             if (breakpoints[i].getReferenceName() == chr)
+//                 bpIndices.push_back(i);
+//         for (uint32_t i = 0; i < this->novelJunctions.size(); ++i)
+//             if (this->novelJunctions[i].getVariantRefName() == chr)
+//                 njIndices.push_back(i);
+//         std::sort(
+//             bpIndices.begin(), 
+//             bpIndices.end(), 
+//             [&](const int & i, const int & j)
+//             {
+//                 return breakpoints[i].getPosition() < breakpoints[j].getPosition();
+//             }
+//         );
 
-        if (njIndices.size() > 0)
-        {
-            // create a set of regions describing the chromosome structure
-            // left
-            bool isReverse {this->novelJunctions[njIndices[0]].getDirectionLeft() > 0};
-            chrStructure.regions.push_back(
-                GenomicRegion {
-                    this->novelJunctions[njIndices[0]].getRefNameLeft(),
-                    (isReverse ? this->novelJunctions[njIndices[0]].getPositionLeft() : 0),
-                    (isReverse ? 300000000 : this->novelJunctions[njIndices[0]].getPositionLeft()),
-                    isReverse
-                }
-            );
-            regionLength = chrStructure.regions[0].getRegionEnd() - chrStructure.regions[0].getRegionStart();
-            chrStructure.junctionIndices.push_back(regionLength);
-            chrStructure.length = regionLength + 1;
-            chrStructure.junctions.push_back(this->novelJunctions[njIndices[0]]);
-            // middle
-            for (uint32_t j = 0; j + 1 < njIndices.size(); ++j)
-            {
-                if (this->novelJunctions[njIndices[j]].getRefNameRight() != this->novelJunctions[njIndices[j + 1]].getRefNameLeft())
-                    throw std::runtime_error("ERROR: RefNames of adjacent junctions do not match!");
-                if (this->novelJunctions[njIndices[j]].getDirectionRight() == this->novelJunctions[njIndices[j + 1]].getDirectionLeft())
-                    throw std::runtime_error("ERROR: Directions of adjacent junctions are incompatible!");
-                isReverse = (this->novelJunctions[njIndices[j]].getDirectionRight() < 0);
-                chrStructure.regions.push_back(
-                    GenomicRegion {
-                        this->novelJunctions[njIndices[j]].getRefNameRight(),
-                        (isReverse ? this->novelJunctions[njIndices[j+1]].getPositionLeft() : this->novelJunctions[njIndices[j]].getPositionRight()),
-                        (isReverse ? this->novelJunctions[njIndices[j]].getPositionRight() : this->novelJunctions[njIndices[j+1]].getPositionLeft()),
-                        isReverse
-                    }
-                );
-                regionLength = chrStructure.regions[j+1].getRegionEnd() - chrStructure.regions[j+1].getRegionStart() + 1;
-                chrStructure.junctionIndices.push_back(
-                    regionLength + chrStructure.junctionIndices[j]
-                );
-                chrStructure.length += regionLength;
-                chrStructure.junctions.push_back(this->novelJunctions[njIndices[j+1]]);
-            }
-            // right
-            int tempIdx {njIndices[njIndices.size() - 1]};
-            isReverse = this->novelJunctions[tempIdx].getDirectionRight() < 0;
-            chrStructure.regions.push_back(
-                GenomicRegion {
-                    this->novelJunctions[tempIdx].getRefNameRight(),
-                    (isReverse ? 0 : this->novelJunctions[tempIdx].getPositionRight()),
-                    (isReverse ? this->novelJunctions[tempIdx].getPositionRight() : 300000000),
-                    isReverse
-                }
-            );
-            regionLength = chrStructure.regions[tempIdx].getRegionEnd() - chrStructure.regions[tempIdx].getRegionStart() + 1;
-            chrStructure.length += regionLength;
-        } 
-        else 
-        {
-            chrStructure = JunctionRegion {
-                std::vector<GenomicRegion> {
-                    GenomicRegion{
-                        chr,
-                        0,
-                        300000000,
-                        false
-                    }
-                },
-                std::vector<int>(),
-                std::vector<int>(),
-                std::vector<Junction>(),
-                std::vector<Breakpoint>(),
-                300000000
-            };
-        }
+//         if (njIndices.size() > 0)
+//         {
+//             // create a set of regions describing the chromosome structure
+//             // left
+//             bool isReverse {this->novelJunctions[njIndices[0]].getDirectionLeft() > 0};
+//             chrStructure.regions.push_back(
+//                 GenomicRegion {
+//                     this->novelJunctions[njIndices[0]].getRefNameLeft(),
+//                     (isReverse ? this->novelJunctions[njIndices[0]].getPositionLeft() : 0),
+//                     (isReverse ? 300000000 : this->novelJunctions[njIndices[0]].getPositionLeft()),
+//                     isReverse
+//                 }
+//             );
+//             regionLength = chrStructure.regions[0].getRegionEnd() - chrStructure.regions[0].getRegionStart();
+//             chrStructure.junctionIndices.push_back(regionLength);
+//             chrStructure.length = regionLength + 1;
+//             chrStructure.junctions.push_back(this->novelJunctions[njIndices[0]]);
+//             // middle
+//             for (uint32_t j = 0; j + 1 < njIndices.size(); ++j)
+//             {
+//                 if (this->novelJunctions[njIndices[j]].getRefNameRight() != this->novelJunctions[njIndices[j + 1]].getRefNameLeft())
+//                     throw std::runtime_error("ERROR: RefNames of adjacent junctions do not match!");
+//                 if (this->novelJunctions[njIndices[j]].getDirectionRight() == this->novelJunctions[njIndices[j + 1]].getDirectionLeft())
+//                     throw std::runtime_error("ERROR: Directions of adjacent junctions are incompatible!");
+//                 isReverse = (this->novelJunctions[njIndices[j]].getDirectionRight() < 0);
+//                 chrStructure.regions.push_back(
+//                     GenomicRegion {
+//                         this->novelJunctions[njIndices[j]].getRefNameRight(),
+//                         (isReverse ? this->novelJunctions[njIndices[j+1]].getPositionLeft() : this->novelJunctions[njIndices[j]].getPositionRight()),
+//                         (isReverse ? this->novelJunctions[njIndices[j]].getPositionRight() : this->novelJunctions[njIndices[j+1]].getPositionLeft()),
+//                         isReverse
+//                     }
+//                 );
+//                 regionLength = chrStructure.regions[j+1].getRegionEnd() - chrStructure.regions[j+1].getRegionStart() + 1;
+//                 chrStructure.junctionIndices.push_back(
+//                     regionLength + chrStructure.junctionIndices[j]
+//                 );
+//                 chrStructure.length += regionLength;
+//                 chrStructure.junctions.push_back(this->novelJunctions[njIndices[j+1]]);
+//             }
+//             // right
+//             int tempIdx {njIndices[njIndices.size() - 1]};
+//             isReverse = this->novelJunctions[tempIdx].getDirectionRight() < 0;
+//             chrStructure.regions.push_back(
+//                 GenomicRegion {
+//                     this->novelJunctions[tempIdx].getRefNameRight(),
+//                     (isReverse ? 0 : this->novelJunctions[tempIdx].getPositionRight()),
+//                     (isReverse ? this->novelJunctions[tempIdx].getPositionRight() : 300000000),
+//                     isReverse
+//                 }
+//             );
+//             regionLength = chrStructure.regions[tempIdx + 1].getRegionEnd() - chrStructure.regions[tempIdx + 1].getRegionStart() + 1;
+//             chrStructure.length += regionLength;
+//         } 
+//         else 
+//         {
+//             chrStructure = JunctionRegion {
+//                 std::vector<GenomicRegion> {
+//                     GenomicRegion{
+//                         chr,
+//                         0,
+//                         300000000,
+//                         false
+//                     }
+//                 },
+//                 std::vector<int>(),
+//                 std::vector<int>(),
+//                 std::vector<Junction>(),
+//                 std::vector<Breakpoint>(),
+//                 300000000
+//             };
+//         }
 
-        // Place all breakpoints and assign corresponding indices
-        for (auto & b : bpIndices)
-            insertBreakpoint(breakpoints[b], chrStructure);
+//         // Place all breakpoints and assign corresponding indices
+//         for (auto & b : bpIndices)
+//             insertBreakpoint(breakpoints[b], chrStructure);
         
-        structures[chr] = chrStructure;
-    }
-    return structures;
-}
+//         structures[chr] = chrStructure;
+//     }
+//     return structures;
+// }
 
 void Allele::insertBreakpoint(Breakpoint & bp, JunctionRegion & jRegion)
 {
     // find fitting regions
-    int currentIdx = 0;
+    int32_t currentIdx = 0;
     for (uint32_t j = 0; j < jRegion.regions.size(); ++j)
     {
         // adjust region to not include breakpoint locations
@@ -396,7 +396,7 @@ void Allele::insertBreakpoint(Breakpoint & bp, JunctionRegion & jRegion)
                 d = jRegion.regions[j].getRegionEnd() - bp.getPosition();
             else
                 d = bp.getPosition() - jRegion.regions[j].getRegionStart();
-            int index = currentIdx + d;
+            int32_t index = currentIdx + d;
             jRegion.breakpoints.push_back(bp);
             jRegion.breakpointIndices.push_back(index);
         }

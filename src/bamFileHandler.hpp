@@ -93,7 +93,7 @@ class BamFileHandler
 
     // get contig lengths
     //
-    std::unordered_map<std::string, int> getContigLengths();
+    std::unordered_map<std::string, int32_t> getContigLengths();
 
     // get contig info
     //

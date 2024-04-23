@@ -369,9 +369,9 @@ std::string BamFileHandler::get_rName(int rID)
 }
 
 
-std::unordered_map<std::string, int> BamFileHandler::getContigLengths()
+std::unordered_map<std::string, int32_t> BamFileHandler::getContigLengths()
 {
-    std::unordered_map<std::string, int> contigLengths;
+    std::unordered_map<std::string, int32_t> contigLengths;
 
     for (uint32_t i = 0; i < this->contigInfo.cNames.size(); ++i)
     {

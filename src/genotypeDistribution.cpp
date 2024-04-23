@@ -8,7 +8,7 @@ GenotypeDistribution::GenotypeDistribution()
     this->minProbability = 0.0;
 }
 
-GenotypeDistribution::GenotypeDistribution(const Eigen::SparseMatrix<float, Eigen::RowMajor> & dist, std::unordered_map<std::string, int> & groupIndices, int64_t sMin, int64_t sMax)
+GenotypeDistribution::GenotypeDistribution(const Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t> & dist, std::unordered_map<std::string, int> & groupIndices, int64_t sMin, int64_t sMax)
 {
     this->normalizationFactor = 1;
     this->minProbability = 0.0;
@@ -140,7 +140,7 @@ void GenotypeDistribution::writeDistribution(std::string prefix)
             float oob_low = 0;
             float oob_high = 0;
 
-            for (Eigen::SparseVector<float>::InnerIterator it1(it.second.getDistributionVector(), 0); it1; ++it1)
+            for (Eigen::SparseVector<float, 0, int64_t>::InnerIterator it1(it.second.getDistributionVector(), 0); it1; ++it1)
             {
                 float p = it1.value();
                 int64_t idx = it1.row();
@@ -182,7 +182,7 @@ void GenotypeDistribution::writeDistributionBinned(std::string prefix)
             float oob_high = 0;
 
             //  create a binned vector of probabilities
-            Eigen::SparseVector<float> binnedDist;
+            Eigen::SparseVector<float, 0, int64_t> binnedDist;
 
             int64_t npBins = maxIS / binSize;
             if (maxIS % binSize)
@@ -196,7 +196,7 @@ void GenotypeDistribution::writeDistributionBinned(std::string prefix)
             binnedDist.resize(nnBins + npBins);
             binnedDist.reserve(it.second.getDistributionVector().nonZeros() / binSize + 1);
 
-            for (Eigen::SparseVector<float>::InnerIterator it1(it.second.getDistributionVector(), 0); it1; ++it1)
+            for (Eigen::SparseVector<float, 0, int64_t>::InnerIterator it1(it.second.getDistributionVector(), 0); it1; ++it1)
             {
                 float p = it1.value();
                 int64_t idx = it1.row();
@@ -205,7 +205,7 @@ void GenotypeDistribution::writeDistributionBinned(std::string prefix)
             }
 
             //  write as above
-            for (Eigen::SparseVector<float>::InnerIterator it1(binnedDist, 0); it1; ++it1)
+            for (Eigen::SparseVector<float, 0, int64_t>::InnerIterator it1(binnedDist, 0); it1; ++it1)
             {
                 float p = it1.value();
                 int64_t idx = it1.row();
@@ -290,7 +290,7 @@ float GenotypeDistribution::calculateKLD(GenotypeDistribution & other)
 
     for (auto it : this->distributions)
     {
-        for (Eigen::SparseVector<float>::InnerIterator it1(it.second.getDistributionVector(), 0); it1; ++it1)
+        for (Eigen::SparseVector<float, 0, int64_t>::InnerIterator it1(it.second.getDistributionVector(), 0); it1; ++it1)
         {
             if (it1.value() <= this->minProbability)
                 continue;

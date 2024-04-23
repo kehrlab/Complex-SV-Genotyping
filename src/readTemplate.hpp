@@ -54,7 +54,7 @@ class ReadTemplate
     void findSplitsBasedOnGaps(std::vector<Junction> &);
     void findClippedSplitsOnChromosome(std::string, JunctionRegion &, SplitAlignmentInfo &, int);
     bool alignsWithinExpectedDistance(std::vector<Junction> &, uint32_t, BamRecord &, BamRecord &);
-    bool alignsWithinRegion(int &, GenomicRegion &, BamRecord &, int);
+    bool alignsWithinRegion(int32_t &, GenomicRegion &, BamRecord &, int);
     bool readSpansJunction(BamRecord &, Junction &);
 
     void getIndexRegions(std::vector<GenomicRegion> &, std::vector<std::vector<int>> &, BamRecord &, JunctionRegion &);

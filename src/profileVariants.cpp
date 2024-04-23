@@ -61,7 +61,7 @@ int profileVariants(int argc, const char **argv)
     int sMin {1000}, sMax {0}, readLength {-1};
     bool readLengthError {false};
     float insertMean = 0;
-    std::vector<std::unordered_map<std::string, int>> contigInfos;
+    std::vector<std::unordered_map<std::string, int32_t>> contigInfos;
 
     std::ifstream stream(params.sampleProfileFile);
     if (stream.is_open())
@@ -114,9 +114,16 @@ int profileVariants(int argc, const char **argv)
     date[date.find_last_of("\n")] = '\t';
     std::cout << date << "Calculating variant profiles..." << std::endl;
 
-    std::vector<std::string> profilePaths(variants.size());
     ContigInfo cInfo = mergeContigLengths(contigInfos);
     int overlap = 20;
+
+    // open output file for profile paths
+    std::ofstream outStream(params.outFile);
+    if (!outStream.is_open())
+    {
+        std::string msg = "Error: Could not open file " + params.outFile + " for writing.";
+        throw std::runtime_error(msg.c_str());
+    }
 
     #pragma omp parallel for num_threads(params.nThreads)
     for (uint32_t i = 0; i < variants.size(); ++i) 
@@ -126,20 +133,14 @@ int profileVariants(int argc, const char **argv)
             readLength, sMin, sMax, cInfo
             );
         profile.calculateAlleleMasks();
-        profilePaths[i] = params.outDir + "/" + variants[i].getName() + ".profile";
-        profile.writeProfile(profilePaths[i]);
+	    std::string profilePath = params.outDir + "/" + variants[i].getName() + ".profile";
+        profile.writeProfile(profilePath);
+        #pragma omp critical
+        outStream << profilePath << std::endl;
     }
 
-    // write profile paths to file
-    std::ofstream outStream(params.outFile);
-    if (!outStream.is_open())
-    {
-        std::string msg = "Error: Could not open file " + params.outFile + " for writing.";
-        throw std::runtime_error(msg.c_str());
-    }
-    for (auto & f : profilePaths)
-        outStream << f << std::endl;
     outStream.close();
+
 
     now = time(0);
     date = std::string(ctime(&now));
@@ -234,7 +235,7 @@ variantProfileParams getVariantProfileParameters(const seqan::ArgumentParser &ar
     return params;
 }
 
-ContigInfo mergeContigLengths(const std::vector<std::unordered_map<std::string, int>> & contigInfos)
+ContigInfo mergeContigLengths(const std::vector<std::unordered_map<std::string, int32_t>> & contigInfos)
 {
     std::unordered_set<std::string> cNames;
     for (auto & s : contigInfos)
@@ -245,18 +246,14 @@ ContigInfo mergeContigLengths(const std::vector<std::unordered_map<std::string, 
 
     for (auto & chr : cNames)
     {
-        std::vector<int> sizes;
+        std::vector<int32_t> sizes;
         for (auto s : contigInfos)
-        {
             if (s.find(chr) != s.end())
-            {
                 sizes.push_back(s[chr]);
-            }
-        }
 
         if (sizes.size() == contigInfos.size())
         {
-            int l = sizes[0];
+            int32_t l = sizes[0];
             bool allMatch {true};
             for (uint32_t i = 1; i < sizes.size(); ++i)
             {

@@ -5,9 +5,8 @@ InsertSizeDistribution::InsertSizeDistribution()
     this->maxInsertSize = 1000;
     this->minInsertSize = 1;
     this->minValue = 0.0;
-    //std::vector<float> distribution(1000, 0.0);
 
-    this->distribution = Eigen::SparseVector<float>(1000);
+    this->distribution = Eigen::SparseVector<float, 0, int64_t>(1000);
 }
 
 InsertSizeDistribution::InsertSizeDistribution(std::vector<int64_t> insertSizes)
@@ -18,17 +17,17 @@ InsertSizeDistribution::InsertSizeDistribution(std::vector<int64_t> insertSizes)
     if (insertSizes.size() > 0) 
     {
         inferMinAndMaxValues(insertSizes);
-        this->distribution = Eigen::SparseVector<float>(this->maxInsertSize - this->minInsertSize + 1);
+        this->distribution = Eigen::SparseVector<float, 0, int64_t>(this->maxInsertSize - this->minInsertSize + 1);
         generateDistributionFromInsertSizes(insertSizes); // this also calculates mean insert size
         calculateDistributionSD(insertSizes);
     }
     else 
     {
-        this->distribution = Eigen::SparseVector<float>(1000);
+        this->distribution = Eigen::SparseVector<float, 0, int64_t>(1000);
     }
 }
 
-InsertSizeDistribution::InsertSizeDistribution(int64_t min, int64_t max, Eigen::SparseVector<float> distribution)
+InsertSizeDistribution::InsertSizeDistribution(int64_t min, int64_t max, Eigen::SparseVector<float, 0, int64_t> distribution)
 {
     this->minValue = 0.0;
     this->minInsertSize = min;
@@ -107,7 +106,7 @@ void InsertSizeDistribution::inferMinAndMaxValues(std::vector<int64_t> const & i
 
 void InsertSizeDistribution::generateDistributionFromInsertSizes(std::vector<int64_t> const & insertSizes)
 {
-    distribution = Eigen::SparseVector<float>(this->maxInsertSize - this->minInsertSize + 1, 0);
+    distribution = Eigen::SparseVector<float, 0, int64_t>(this->maxInsertSize - this->minInsertSize + 1);
     this->insertMean = 0;    
     for (uint32_t i = 0; i < insertSizes.size(); ++i) {
         this->distribution.coeffRef(insertSizes[i] - this->minInsertSize) += 1;
@@ -146,20 +145,20 @@ void InsertSizeDistribution::scaleDistribution()
 
 void InsertSizeDistribution::smoothDistribution(int kernelSize)
 {
-    Eigen::SparseVector<float> smoothed_values(this->distribution.rows());
-    smoothed_values.reserve(this->distribution.nonZeros() * 2);
+    Eigen::SparseVector<float, 0, int64_t> smoothed_values(this->distribution.rows());
+    smoothed_values.reserve(this->distribution.nonZeros() * 5);
 
     std::vector<float> kernel(5, 0);
     for (int i = - (kernelSize-1)/2; i <= (kernelSize-1)/2; ++i)
         kernel[i+(kernelSize-1)/2] = 1 / std::sqrt(2 * M_PI) * std::exp(- (i*i)/((kernelSize-1)));
 
-    for (Eigen::SparseVector<float>::InnerIterator it(this->distribution, 0); it; ++it)
+    for (Eigen::SparseVector<float, 0, int64_t>::InnerIterator it(this->distribution, 0); it; ++it)
     {
         int64_t idx = it.row();
         float value = 0;
         for (int j = 0; j < kernelSize; ++j)
         {
-            if (idx+j-(kernelSize-1)/2 < 0 || idx+j-(kernelSize-1)/2 >= (int) this->distribution.size())
+            if (idx+j-(kernelSize-1)/2 < 0 || idx+j-(kernelSize-1)/2 >= this->distribution.size())
                 continue; 
             value += kernel[j] * this->distribution.coeff(idx+j-(kernelSize-1)/2);
         }
@@ -198,7 +197,7 @@ double InsertSizeDistribution::getInsertSD() const
 float InsertSizeDistribution::getInsertSizeProbability(int64_t insertSize)
 {
     if (insertSize >= this->minInsertSize && insertSize <= this->maxInsertSize)
-        return this->distribution.coeffRef(insertSize - this->minInsertSize);
+        return this->distribution.coeff(insertSize - this->minInsertSize);
     else
         return 0;
 }
@@ -218,7 +217,7 @@ float InsertSizeDistribution::getIntegral()
     return this->distribution.sum();
 }
 
-Eigen::SparseVector<float> & InsertSizeDistribution::getDistributionVector()
+Eigen::SparseVector<float, 0, int64_t> & InsertSizeDistribution::getDistributionVector()
 {
     return this->distribution;
 }

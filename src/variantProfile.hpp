@@ -31,8 +31,8 @@ class VariantProfile
     std::unordered_map<std::string, int> variantGroups;
     std::unordered_map<std::string, bool> groupOccurs;
 
-    Eigen::SparseMatrix<float, Eigen::RowMajor> referenceMask;
-    std::vector<std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor>>> variantMask;
+    Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t> referenceMask;
+    std::vector<std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t>>> variantMask;
        
     int filterMargin;
     int overlap;
@@ -58,9 +58,9 @@ class VariantProfile
 
     void calculateAlleleMasks();
 
-    const Eigen::SparseMatrix<float, Eigen::RowMajor> & getVariantMask(int s);
-    const Eigen::SparseMatrix<float, Eigen::RowMajor> & getVariantMask(const std::string &, int s);
-    const Eigen::SparseMatrix<float, Eigen::RowMajor> & getReferenceMask();
+    const Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t> & getVariantMask(int s);
+    const Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t> & getVariantMask(const std::string &, int s);
+    const Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t> & getReferenceMask();
 
     void calculateGenotypeDistributions(std::unordered_map<std::string, GenotypeDistribution> &, LibraryDistribution &, float);
     ReadPairFilter & getFilter();

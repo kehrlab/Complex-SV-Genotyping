@@ -18,7 +18,7 @@ VariantMapManager::VariantMapManager(std::string chromosome, std::vector<Junctio
     setFilterMargin(filterMargin);
     setContigLengths(contigLengths);
     createMapFromJunctions(novelJunctions);
-    createBreakpointMaps(breakpoints);
+    createBreakpointMaps(breakpoints, chromosome);
 }
 
 void VariantMapManager::setChromosomeName(std::string chromosome)
@@ -45,10 +45,11 @@ void VariantMapManager::createMapFromJunctions(std::vector<Junction> novelJuncti
     createReferenceRegions();
 }
 
-void VariantMapManager::createBreakpointMaps(std::vector<Breakpoint> breakpoints)
+void VariantMapManager::createBreakpointMaps(std::vector<Breakpoint> breakpoints, std::string chr)
 {
     for (Breakpoint bp : breakpoints)
-        createMapFromBreakpoint(bp);
+        if (bp.getReferenceName() == chr)
+            createMapFromBreakpoint(bp);
     mergeOverlappingMaps();
     for (VariantMap & m : this->refMaps)
         m.calculateMapLength();

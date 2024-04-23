@@ -139,7 +139,7 @@ int genotype(int argc, const char **argv)
                 loadReadPairs(variantProfiles[i], bamRecords, bamFileHandler, s);
                 
                 // create the genotype distributions
-                std::vector<std::string> genotypeNames;
+		        std::vector<std::string> genotypeNames;
                 std::vector<GenotypeDistribution> genotypeDistributions;
                 ReadPairFilter filter = variantProfiles[i].getFilter();
                 std::vector<std::string> cNames = variantProfiles[i].getContigInfo().cNames;
@@ -276,8 +276,6 @@ inline void checkProfileParameters(int & sMin, int & sMax, int & readLength, std
         }
         if (!it->variantStructureIsPresent())
         {
-            std::cout << "There is no structure present?" << std::endl;
-            std::cout << it->getName() << "\t" << it->variantStructureIsPresent() << std::endl;
             if (params.variantFile == "")
             {
                 std::string msg = "Variant description could not be loaded from profile. A variant description file needs to be specified.";
@@ -440,15 +438,15 @@ inline void adjustLikelihoods(ReadTemplate & readTemplate, std::vector<std::stri
     bool insertSizeWithinLimits = false;
     bool outlier = false;
     for (auto dist : genotypeDistributions) {
-	if (insertSize >= dist.getMinInsertSize() - 500 && insertSize <= dist.getMaxInsertSize() + 500)
-		insertSizeWithinLimits = true;
+	    if (insertSize >= dist.getMinInsertSize() - 500 && insertSize <= dist.getMaxInsertSize() + 500)
+		    insertSizeWithinLimits = true;
         probabilities.push_back(dist.getProbability(
             insertSize, orientation, junctionString, breakpointString, bridgeString, outlier
             ));
     } 
     
     if (insertSizeWithinLimits)
-    	result.storeEvidence(insertSize, orientation, junctionString, breakpointString, bridgeString, mappingQualities);	
+    	result.storeEvidence(insertSize, orientation, junctionString, breakpointString, bridgeString, mappingQualities);
 
     result.addTemplateProbabilities(genotypeNames, probabilities, readTemplate.getTemplateWeight());
     result.addOutlier(outlier);

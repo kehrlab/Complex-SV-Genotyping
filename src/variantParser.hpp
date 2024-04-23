@@ -25,6 +25,7 @@ class variantParser {
     void readStructure();
     void readJSONFile();
     void parseJSONObject();
+    bool structureIsValid(std::vector<Junction>);
 
     variantParser();
     Junction parseJunction(nlohmann::detail::iteration_proxy_value<nlohmann::detail::iter_impl<nlohmann::basic_json<>>> &);

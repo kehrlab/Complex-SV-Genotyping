@@ -12,7 +12,7 @@ BamRecord::BamRecord(std::string refName, std::string templateName, int begin, i
     this->reverse = reverse;
 
     this->mappingQuality = 60;
-    this->seqLength = end-begin;
+    this->seqLength = end-begin+1;
     this->clipLeft = 0;
     this->clipRight = 0;
     this->alignmentLength = this->seqLength;
@@ -31,7 +31,7 @@ BamRecord::BamRecord(std::string refName, std::string templateName, int begin, i
     this->templateName = templateName;
     this->beginPos = begin;
     this->endPos = end;
-    this->alignmentLength = end-begin;
+    this->alignmentLength = end-begin+1;
     this->reverse = reverse;
     this->mappingQuality = mappingQuality;
     this->seqLength = seqLength;
@@ -51,7 +51,7 @@ BamRecord::BamRecord(std::string refName, std::string templateName, int begin, i
     this->templateName = templateName;
     this->beginPos = begin;
     this->endPos = end;
-    this->alignmentLength = end-begin;
+    this->alignmentLength = end-begin+1;
     this->reverse = reverse;
     this->mappingQuality = mappingQuality;
     this->seqLength = seqLength;
@@ -217,6 +217,11 @@ bool BamRecord::isClipped()
     return !(this->clipLeft == 0 && this->clipRight == 0);
 }
 
+bool BamRecord::isClipped(int min)
+{
+    return !(this->clipLeft < min && this->clipRight < min);
+}
+
 bool BamRecord::containsDeletion()
 {
     return this->deletion;
@@ -241,4 +246,11 @@ bool BamRecord::passesInsertFilter()
 bool BamRecord::passesStandardFilter()
 {
     return !(this->unmapped || this->duplicate || !this->multiple || !this->primary);
+}
+
+
+void BamRecord::print()
+{
+	std::cout << getReferenceName() << "\t" << getFivePrimePos() << "-" << getThreePrimePos() << "\t" << getClipLeft() << "\t" << getClipRight() << "\t" << getSeqLength() << "\t" << getAlignmentLength() << std::endl;
+	return;
 }

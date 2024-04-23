@@ -31,9 +31,11 @@ void variantParser::parseJSONObject()
     for (auto& variant : this->jsonObject.items())
     {
         this->id = 0;
+	bool isValid = true;
         variantData variantJunctions;
         std::vector<std::string> variantAlleleNames;
-        this->variantNames.push_back(variant.key());
+	std::string varName = variant.key();
+
         for (auto& allele : variant.value().items())
         {
             variantAlleleNames.push_back(allele.key());
@@ -47,11 +49,53 @@ void variantParser::parseJSONObject()
                     tempJunctions.push_back(parseJunction(junction));
                 }
             }
+	    
+	    // check whether the junctions for this allele form valid
+            // chromosome structures
+            if (!structureIsValid(tempJunctions)) {
+                isValid = false;
+                break;
+            }
+
             variantJunctions.push_back(tempJunctions);
         }
+
+        // do not add variant if its structure is not valid
+        if (!isValid) {
+            std::cerr << "Variant " << varName << " has invalid structure and will be ignored." << std::endl;
+            continue;
+        }	
+
+	this->variantNames.push_back(varName);
         this->alleleNames.push_back(variantAlleleNames);
         this->variants.push_back(variantJunctions);
     }
+}
+
+bool variantParser::structureIsValid(std::vector<Junction> junctions)
+{
+	for (unsigned i = 0; i < junctions.size() - 1; ++i)
+	{
+		if (junctions[i].getVariantRefName() != junctions[i+1].getVariantRefName())
+				continue;
+		if (junctions[i].getRefNameRight() == junctions[i+1].getRefNameLeft())
+		{
+			if (junctions[i].getPositionRight() > junctions[i+1].getPositionLeft() && (junctions[i].getDirectionRight() > 0 || junctions[i+1].getDirectionLeft() < 0))
+			{
+				std::cerr << "ERROR: Junction positions indicate inverted segment but directions indicate normal orientation." << std::endl;
+				return false;
+			} else if (junctions[i].getPositionRight() <= junctions[i+1].getPositionLeft() && (junctions[i].getDirectionRight() < 0 || junctions[i+1].getDirectionLeft() > 0))
+			{
+				std::cerr << "ERROR: Junction positions indicate normal orientation but directions indicate inverted segment." << std::endl;
+				return false;
+			} else if (junctions[i].getPositionRight() == junctions[i+1].getPositionLeft())
+			{
+				std::cerr << "ERROR: Right breakpoint position of one junction matches left breakpoint position of next junction." << std::endl;
+				return false;
+			}
+		}
+	}
+	return true;
 }
 
 Junction variantParser::parseJunction(nlohmann::detail::iteration_proxy_value<nlohmann::detail::iter_impl<nlohmann::basic_json<>>> & junction)

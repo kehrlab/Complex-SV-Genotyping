@@ -61,6 +61,7 @@ class BamRecord
     bool isFirst();
     bool isLast();
     bool isClipped();
+    bool isClipped(int);
     int getMapQ();
     bool hasFlagAllProper();
     bool containsDeletion();
@@ -69,6 +70,7 @@ class BamRecord
     GenomicRegion getAlignmentRegion();
     bool passesInsertFilter();
     bool passesStandardFilter();
+    void print();
 };
 
 #endif

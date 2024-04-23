@@ -21,7 +21,7 @@ class GenotypeDistribution
 
     public:
     GenotypeDistribution();
-    GenotypeDistribution(const Eigen::SparseMatrix<float, Eigen::RowMajor> &, std::unordered_map<std::string, int> &, int64_t, int64_t);
+    GenotypeDistribution(const Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t> &, std::unordered_map<std::string, int> &, int64_t, int64_t);
 
     GenotypeDistribution & operator+=(GenotypeDistribution &);
     GenotypeDistribution & operator*=(float &);

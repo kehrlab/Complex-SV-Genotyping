@@ -51,7 +51,7 @@ class VariantMapManager
     VariantMapManager(std::string, std::vector<Junction>, std::vector<Breakpoint>, int, std::unordered_map<std::string, int>);
 
     void createMapFromJunctions(std::vector<Junction>);
-    void createBreakpointMaps(std::vector<Breakpoint>);
+    void createBreakpointMaps(std::vector<Breakpoint>, std::string);
     void createMapFromBreakpoint(Breakpoint);
 
     std::vector<VariantMap> getMaps();

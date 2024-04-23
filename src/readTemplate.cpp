@@ -177,7 +177,7 @@ void ReadTemplate::findSplitReads(std::vector<Junction> & junctions, std::unorde
     // both reads must properly align
     if (!isProperPair())
         return;
-    
+   
     // there are two modes of detection / two different kinds of splits
     findSplitsBasedOnClipping(chromosomeStructures, sMax);
     findSplitsBasedOnGaps(junctions);
@@ -191,7 +191,8 @@ void ReadTemplate::findSplitsBasedOnClipping(std::unordered_map<std::string, std
     BamRecord rLast = this->records[this->primaryLast];
 
     // only works with at least one clipped record 
-    if (!rFirst.isClipped() && !rLast.isClipped())
+    int minClip = 20;
+    if (!rFirst.isClipped(minClip) && !rLast.isClipped(minClip))
 	    return;
 
     SplitAlignmentInfo splitInfo;
@@ -200,8 +201,10 @@ void ReadTemplate::findSplitsBasedOnClipping(std::unordered_map<std::string, std
     for (auto & alleleStruct : chromosomeStructures)
         if (alleleStruct.first != "REF")
             for (auto chr : alleleStruct.second)
-                findClippedSplitsOnChromosome(chr.first, chr.second, splitInfo, sMax);
-    
+		        if (chr.second.junctionIndices.size() > 0)
+                    findClippedSplitsOnChromosome(chr.first, chr.second, splitInfo, sMax);
+
+    // TODO: use the inferred insert sizes to exclude impossible index combinations
     // evaluate the results
     if (splitInfo.junctionIndices.size() > 1) {
         this->junctionString = "ambiguous";
@@ -252,8 +255,9 @@ void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, JunctionRegi
                 
                 // calculate insert size on variant allele
                 s = firstRegions[i].getRegionEnd() - lastRegions[j].getRegionStart() + 1;
+
                 // if it is not within the range of the insert size distribution, skip
-                if (s < 0 || s > sMax)
+                if (s < 1 || s > sMax)
                     continue;
 
                 for (auto & idx : firstJunctionIndices[i])
@@ -270,8 +274,9 @@ void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, JunctionRegi
                 
                 // calculate insert size
                 s = lastRegions[j].getRegionEnd() - firstRegions[i].getRegionStart() + 1;
+
                 // if it is not within the range of the insert size distribution, skip
-                if (s < 0 || s > sMax)
+                if (s < 1 || s > sMax)
                     continue;
 
                 for (auto & idx : firstJunctionIndices[i])
@@ -281,15 +286,12 @@ void ReadTemplate::findClippedSplitsOnChromosome(std::string cName, JunctionRegi
             }
             
             if (indices.size() > 0)
-            {	
-                indexGroups.push_back(indices);
-                insertSizes.push_back(s);
+            {
+                splitInfo.junctionIndices.push_back(indices);
+                splitInfo.insertSize.push_back(s);
             }
 	    }	
     }
-    // store all combinations and deal with them when adding to profile
-    splitInfo.junctionIndices = indexGroups;
-    splitInfo.insertSize = insertSizes;
 }
 
 
@@ -307,8 +309,11 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
         if (!r.overlaps(recordRegion, smallMargin))
             continue;
 
-        int beginIdx {-1}, endIdx {-1};
-        std::vector<int> tempIndices;
+        int32_t beginIdx {-1}, endIdx {-1};
+        bool unmatched {true};
+
+        // infer original read orientation
+        bool originalReverse = (r.isReverse() != record.isReverse());
 
         // check for clipping at the end of first region
         if (i == 0)
@@ -334,7 +339,11 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
             if (clipRight > 0 && dRight >= 0 && clipRight - dRight >= overlap && dRight < smallMargin)
             {
                 endIdx += clipRight;
-                tempIndices.push_back(jRegion.junctions[i].getID());
+                std::vector<int> tempIndices {jRegion.junctions[i].getID()};
+                unmatched = false;
+
+                regions.push_back(GenomicRegion{jRegion.chromosome, beginIdx, endIdx, originalReverse});
+                indices.push_back(tempIndices);
             }
         }
         
@@ -346,6 +355,8 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
 
             int clipLeft{0}, clipRight{0};
             int dLeft{0}, dRight{0};
+
+            std::vector<int> tempIndices;
 
             if (!r.isReverse()) {
                 dLeft = recordRegion.getRegionStart() - r.getRegionStart();
@@ -368,12 +379,20 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
             {
                 beginIdx -= clipLeft;
                 tempIndices.push_back(jRegion.junctions[i-1].getID());
+                unmatched = false;
             }
 
             if (clipRight > 0 && dRight >= 0 && clipRight - dRight >= overlap && dRight < smallMargin)
             {
                 endIdx += clipRight;
                 tempIndices.push_back(jRegion.junctions[i].getID());
+                unmatched = false;
+            }
+
+            if (tempIndices.size() > 0)
+            {
+                regions.push_back(GenomicRegion{jRegion.chromosome, beginIdx, endIdx, originalReverse});
+                indices.push_back(tempIndices);
             }
         }
 
@@ -402,23 +421,28 @@ void ReadTemplate::getIndexRegions(std::vector<GenomicRegion> & regions, std::ve
             if (clipLeft > 0 && dLeft >= 0 && clipLeft - dLeft >= overlap && dLeft < smallMargin)
             {
                 beginIdx -= clipLeft;
-                tempIndices.push_back(jRegion.junctions[nJ-1].getID());
+                std::vector<int> tempIndices {jRegion.junctions[nJ-1].getID()};
+                unmatched = false;
+
+                regions.push_back(GenomicRegion{jRegion.chromosome, beginIdx, endIdx, originalReverse});
+                indices.push_back(tempIndices);
             }
         }
 
-        // infer original read orientation
-        bool originalReverse = (r.isReverse() != record.isReverse());
-        
-        regions.push_back(GenomicRegion{jRegion.chromosome, beginIdx, endIdx, originalReverse});
-        indices.push_back(tempIndices);
+        // add the possible alignment even if the read is not clipped at any of the region's ends
+        // this often occurs for one read in a pair
+        if (unmatched) {
+            regions.push_back(GenomicRegion{jRegion.chromosome, beginIdx, endIdx, originalReverse});
+            indices.push_back(std::vector<int>());
+        }
     }
 }
 
 
 bool ReadTemplate::alignsWithinExpectedDistance(std::vector<Junction> & junctions, uint32_t index, BamRecord & clippedRecord, BamRecord & secondRecord)
 {
-    int expectedDistance = 1500;
-    int remainingDistance = expectedDistance;
+    int32_t expectedDistance = 1000;
+    int32_t remainingDistance = expectedDistance;
 
     // left 
     for (int i = (int) index; i > 0; --i)
@@ -472,11 +496,11 @@ bool ReadTemplate::alignsWithinExpectedDistance(std::vector<Junction> & junction
     return false;
 }
 
-bool ReadTemplate::alignsWithinRegion(int & remainingDistance, GenomicRegion & junctionRegion, BamRecord & secondRecord, int referencePosition)
+bool ReadTemplate::alignsWithinRegion(int32_t & remainingDistance, GenomicRegion & junctionRegion, BamRecord & secondRecord, int referencePosition)
 {
     if (secondRecord.getAlignmentRegion().overlaps(junctionRegion))
     {
-        int distanceFromJunction = std::min(
+        int32_t distanceFromJunction = std::min(
             std::abs(referencePosition - secondRecord.getStartPos()),
             std::abs(referencePosition - secondRecord.getEndPos())
         );
@@ -492,7 +516,6 @@ bool ReadTemplate::alignsWithinRegion(int & remainingDistance, GenomicRegion & j
 
 void ReadTemplate::findSplitsBasedOnGaps(std::vector<Junction> & junctions)
 {
-    //for (auto & junction : junctions) {
     for (uint32_t i = 0; i < junctions.size(); ++i) {
         auto & junction = junctions[i];
         if (junction.getRefNameLeft() != junction.getRefNameRight())
@@ -709,9 +732,11 @@ float ReadTemplate::getTemplateWeight()
 void ReadTemplate::print()
 {
     if (this->isProperPair()){
+	    std::cout << this->records[this->primaryFirst].getReferenceName() << "\t";
         std::cout << this->records[this->primaryFirst].getStartPos() << "\t" << this->records[this->primaryFirst].getEndPos() << "\t";
         std::cout << this->records[this->primaryFirst].getClipLeft() << "\t" << this->records[this->primaryFirst].getClipRight() << "\t";
         std::cout << this->records[this->primaryFirst].getSeqLength() << std::endl;
+	    std::cout << this->records[this->primaryLast].getReferenceName() << "\t";
         std::cout << this->records[this->primaryLast].getStartPos() << "\t" << this->records[this->primaryLast].getEndPos() << "\t";
         std::cout << this->records[this->primaryLast].getClipLeft() << "\t" << this->records[this->primaryLast].getClipRight() << "\t";
         std::cout << this->records[this->primaryLast].getSeqLength() << std::endl;

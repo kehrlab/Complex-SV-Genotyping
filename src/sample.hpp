@@ -54,7 +54,7 @@ class Sample
     void closeBamFile();
     int getFilterMargin();
     const ContigInfo & getContigInfo();
-    std::unordered_map<std::string, int> getContigLengths();
+    std::unordered_map<std::string, int32_t> getContigLengths();
     std::string getFileName();
     int getMaxReadLength();
     void close();
