@@ -1,6 +1,8 @@
 #include "variantProfile.hpp"
 #include "eigen3/Eigen/src/SparseCore/SparseMatrix.h"
+#include "filter.hpp"
 #include "genotypeDistribution.hpp"
+#include "variant.hpp"
 
 VariantProfile::VariantProfile()
 {
@@ -8,7 +10,6 @@ VariantProfile::VariantProfile()
     this->sMaxMapped = 1000;
     this->readLength = 150;
     this->overlap = 20;
-    this->variantPresent = false;
     this->name = "unnamed";
 }
 
@@ -31,7 +32,6 @@ VariantProfile::VariantProfile(
     this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
     this->sMinMapped = sMin;
     this->sMaxMapped = sMax;
-    this->variantPresent = true;
     this->name = this->variant.getName();
     determinePossibleGroups();
     initMasks();
@@ -976,17 +976,10 @@ void VariantProfile::writeProfile(std::string filename)
     stream.write("GENOTYPER\1", 10);
     
     // write variant name
-    int vnSize = this->variant.getName().size() + 1;
-    stream.write(reinterpret_cast<const char *>(&vnSize), sizeof(int));
-    stream.write(this->variant.getName().c_str(), vnSize - 1);
-    stream.write("\0", 1);
+    writeString(stream, this->variant.getName());
 
     // write variant file name
-    std::string vName = this->variant.getVariantFileName();
-    int vfSize = vName.size() + 1;
-    stream.write(reinterpret_cast<const char *>(&vfSize), sizeof(int));
-    stream.write(vName.c_str(), vfSize - 1);
-    stream.write("\0", 1);
+    writeString(stream, this->variant.getVariantFileName());
     
     // write read length, sMin and sMax assumed for library distibution
     stream.write(reinterpret_cast<const char *>(&this->readLength), sizeof(int));
@@ -1006,13 +999,33 @@ void VariantProfile::writeProfile(std::string filename)
     stream.write(reinterpret_cast<const char *>(&nChrom), sizeof nChrom);
     for (uint32_t i = 0; i < this->cInfo.cNames.size(); ++i)
     {
-        uint32_t cNameLen = this->cInfo.cNames[i].size() + 1;
-        stream.write(reinterpret_cast<const char *>(&cNameLen), sizeof cNameLen);
-        stream.write(this->cInfo.cNames[i].c_str(), cNameLen - 1);
-        stream.write("\0", 1);
+        writeString(stream, this->cInfo.cNames[i]);
         stream.write(reinterpret_cast<const char *>(&this->cInfo.cLengths[i]), sizeof(int32_t));
     }
 
+    // write variant description
+    uint32_t nAlleles = this->variant.getAlleles().size() - 1;
+    stream.write(reinterpret_cast<const char *>(&nAlleles), sizeof(uint32_t));
+    // for each variant allele
+    for (Allele & allele : this->variant.getAlleles())
+    {
+        if (allele.getName() == "REF")
+            continue;
+        //  write allele name
+        writeString(stream, allele.getName());
+
+        //  write number of chromosomes
+        uint32_t n = allele.getChromosomeNames().size();
+        stream.write(reinterpret_cast<const char *>(&n), sizeof(uint32_t));
+
+        for (std::string & cName : allele.getChromosomeNames())
+        {
+            //  write junctions
+            std::vector<Junction> junctions = allele.getJunctionsOnChromosome(cName);
+            writeJunctions(stream, cName, junctions);
+        }
+    }
+    
     // write number of read pair groups and their names
     int nG = this->variantGroups.size();
     stream.write(reinterpret_cast<const char *>(&nG), sizeof(int));
@@ -1030,18 +1043,12 @@ void VariantProfile::writeProfile(std::string filename)
         }
     }
     for (std::string & g : colnames)
-    {
-        int size = g.size() + 1;
-        stream.write(reinterpret_cast<const char *>(&size), sizeof(int));
-        stream.write(g.c_str(), size - 1);
-        stream.write("\0", 1);
-    }
+        writeString(stream, g);
 
     // write reference allele name
     stream.write("REF\0", 4);
 
     // write reference matrix
-    // this->referenceMask.makeCompressed()  ;
     int64_t m      = referenceMask.rows()     ;
     int64_t n      = referenceMask.cols()     ;
     int64_t nnzS   = referenceMask.nonZeros() ;
@@ -1057,7 +1064,7 @@ void VariantProfile::writeProfile(std::string filename)
     stream.write(reinterpret_cast<const char *>(referenceMask.outerIndexPtr()), sizeof(int64_t)*outerS);
     stream.write(reinterpret_cast<const char *>(referenceMask.innerIndexPtr()), sizeof(int64_t)*nnzS);
 
-    // write number of variant alleles and their names
+    // write number of variant alleles and their names (for ordering of allele matrices)
     int nA = this->variantAlleleNames.size();
     stream.write(reinterpret_cast<const char *>(&nA), sizeof(int));
     std::vector<std::string> alleleNames;
@@ -1073,20 +1080,13 @@ void VariantProfile::writeProfile(std::string filename)
         }
     }
     for (std::string & a : alleleNames)
-    {
-        int size = a.size() + 1;
-        stream.write(reinterpret_cast<const char *>(&size), sizeof(int));
-        stream.write(a.c_str(), size - 1);
-        stream.write("\0", 1);
-    }
+        writeString(stream, a);
 
     // write variant matrices
     for (uint32_t i = 0; i < this->variantMask.size(); ++i)
     {
         for (uint32_t s = 0; s < this->variantMask[i].size(); ++s)
         {
-            // this->variantMask[i][s].makeCompressed();
-
             int64_t m      = this->variantMask[i][s].rows()     ;
             int64_t n      = this->variantMask[i][s].cols()     ;
             int64_t nnzS   = this->variantMask[i][s].nonZeros() ;
@@ -1129,23 +1129,11 @@ void VariantProfile::readProfile(std::string filename)
     delete[] tempString;
 
     // get variant name
-    int l;
-    stream.read(reinterpret_cast<char *>(&l), sizeof(int));
-    tempString = new char[l];
-    stream.read(tempString, l);
-    if (tempString[l-1] != '\0')
-        throw std::runtime_error("");
-    this->name = std::string(tempString);
-    delete[] tempString;
+    readString(this->name, stream);
     
     // get variant path
-    stream.read(reinterpret_cast<char *>(&l), sizeof(int));
-    tempString = new char[l];
-    stream.read(tempString, l);
-    if (tempString[l-1] != '\0')
-        throw std::runtime_error("");
-    std::string variantPath(tempString);
-    delete[] tempString;    
+    std::string variantPath;
+    readString(variantPath, stream);  
 
     // get read length, insert minima and maxima and filter margin
     stream.read(reinterpret_cast<char *>(&this->readLength), sizeof(int));
@@ -1153,6 +1141,8 @@ void VariantProfile::readProfile(std::string filename)
     stream.read(reinterpret_cast<char *>(&this->sMax), sizeof(int));
     stream.read(reinterpret_cast<char *>(&this->sMinMapped), sizeof(int64_t));
     stream.read(reinterpret_cast<char *>(&this->sMaxMapped), sizeof(int64_t));
+    
+    // read filter
     stream.read(reinterpret_cast<char *>(&this->filterMargin), sizeof(int));
 
     // chromosome names and lengths
@@ -1161,59 +1151,70 @@ void VariantProfile::readProfile(std::string filename)
     stream.read(reinterpret_cast<char * >(&nChrom), sizeof(uint32_t));
     for (uint32_t i = 0; i < nChrom; ++i)
     {
-        uint32_t l;
-        int cLength;
+        int32_t cLength;
+        std::string cName;
 
-        stream.read(reinterpret_cast<char *>(&l), sizeof(uint32_t));
-
-        char * tempString = new char[l];
-        stream.read(reinterpret_cast<char *>(tempString), l);
-        std::string cName = std::string(tempString);
-        delete[] tempString;
-        
+        readString(cName, stream);
         stream.read(reinterpret_cast<char *>(&cLength), sizeof(int32_t));
+
         this->cInfo.cNames.push_back(cName);
         this->cInfo.cLengths.push_back(cLength);
     }
     this->cInfo.calculateGlobalContigPositions();
 
-    // try load the actual variant
-    this->variantPresent = loadVariantStructure(variantPath, this->name);
-    //
-    // Maybe I should get rid of this dependency and write the filter to the profile?
-    //
-    if (variantPresent)
-    {
-        this->variant.setFilterMargin(this->filterMargin);
-        this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
-    } 
-    else 
-    {
-        std::string error = "Variant file not found in location given in the profile. Abort.\n";
-        throw std::runtime_error(error.c_str());
-    }
+    // read variant description
+    std::vector<std::string> alleleNames;
+    std::vector<std::vector<Junction>> allJunctions;
+    
+    // read variant description
+    uint32_t nAlleles;
+    stream.read(reinterpret_cast<char *>(&nAlleles), sizeof(uint32_t));
 
+    // for each variant allele
+    for (uint32_t i = 0; i < nAlleles; ++i)
+    {
+        std::vector<Junction> alleleJunctions;
+        std::vector<Junction> chromosomeJunctions;
+
+        //  read allele name
+        std::string alleleName;
+        readString(alleleName, stream);
+
+	//  read number of chromosomes
+        uint32_t n;
+        stream.read(reinterpret_cast<char *>(&n), sizeof(uint32_t));
+        for (uint32_t j = 0; j < n; ++j)
+        {
+            // read junctions
+            chromosomeJunctions = readJunctions(stream);
+            for (Junction & junction : chromosomeJunctions)
+                alleleJunctions.push_back(junction);
+        }
+
+        allJunctions.push_back(alleleJunctions);
+        alleleNames.push_back(alleleName);
+    }
+    
+    this->variant = complexVariant(this->name, alleleNames, allJunctions); 
+    createVariantChromosomeStructures(); // required for read pair attribute determination 
+    this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
+    
     // get read pair groups
     int nG;
     stream.read(reinterpret_cast<char *>(&nG), sizeof(int));
     std::unordered_map<std::string, int>().swap(this->variantGroups);
     for (int i = 0; i < nG; ++i)
     {
-        stream.read(reinterpret_cast<char *>(&l), sizeof(int));
-        tempString = new char[l];
-        stream.read(tempString, l);
-        if (tempString[l-1] != '\0')
-            throw std::runtime_error("");
-        std::string g(tempString);
+        std::string g;
+        readString(g, stream);
         this->variantGroups[g] = i;
-        delete[] tempString;
     }
 
     // get reference allele name
     tempString = new char[4];
     stream.read(tempString, 4);
     if (tempString[3] != '\0')
-        throw std::runtime_error("");
+        throw std::runtime_error("Could not read reference allele name from profile");
     std::string refName(tempString);
     delete [] tempString;
     
@@ -1247,14 +1248,9 @@ void VariantProfile::readProfile(std::string filename)
 
     for (int i = 0; i < nA; ++i)
     {
-        stream.read(reinterpret_cast<char *>(&l), sizeof(int));
-        tempString = new char[l];
-        stream.read(tempString, l);
-        if (tempString[l-1] != '\0')
-            throw std::runtime_error("");
-        std::string a(tempString);
+        std::string a;
+        readString(a, stream);
         this->variantAlleleNames[a] = i;
-        delete[] tempString;
     }
 
     this->variantMask = std::vector<std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t>>>(
@@ -1313,44 +1309,121 @@ int VariantProfile::getReadLength()
     return this->readLength;
 }
 
-bool VariantProfile::variantStructureIsPresent()
-{
-    return this->variantPresent;
-}
+// bool VariantProfile::variantStructureIsPresent()
+// {
+//     return this->variantPresent;
+// }
 
-bool VariantProfile::loadVariantStructure(std::string filename, std::string variantName)
-{
-    // load with variant parser
-    try {
-        variantParser parser(filename);
-        int idx = -1;
-        for (uint32_t i = 0; i < parser.getVariantNames().size(); ++i)
-        {
-            if (parser.getVariantNames()[i] == variantName)
-            {
-                idx = i;
-                break;
-            }
-        }
-        if (idx < 0)
-        {
-            std::cerr << "Could not find variant " << variantName << " in specified file (" << filename << ")." << std::endl;
-            return false;
-        }
+// bool VariantProfile::loadVariantStructure(std::string filename, std::string variantName)
+// {
+//     // load with variant parser
+//     try {
+//         variantParser parser(filename);
+//         int idx = -1;
+//         for (uint32_t i = 0; i < parser.getVariantNames().size(); ++i)
+//         {
+//             if (parser.getVariantNames()[i] == variantName)
+//             {
+//                 idx = i;
+//                 break;
+//             }
+//         }
+//         if (idx < 0)
+//         {
+//             std::cerr << "Could not find variant " << variantName << " in specified file (" << filename << ")." << std::endl;
+//             return false;
+//         }
 
-        this->variant = complexVariant(parser.getVariantNames()[idx], parser.getAlleleNames()[idx], parser.getVariantJunctions()[idx], filename);
-        createVariantChromosomeStructures();
-    } 
-    catch (std::runtime_error const& err)
-    {
-        std::cerr << "Could not read variant file (" << filename << ")" << std::endl;
-        return false;
-    }
+//         this->variant = complexVariant(parser.getVariantNames()[idx], parser.getAlleleNames()[idx], parser.getVariantJunctions()[idx], filename);
+//         createVariantChromosomeStructures();
+//     } 
+//     catch (std::runtime_error const& err)
+//     {
+//         std::cerr << "Could not read variant file (" << filename << ")" << std::endl;
+//         return false;
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
 std::string VariantProfile::getName()
 {
     return this->name;
+}
+
+inline void VariantProfile::writeString(std::ofstream & stream, std::string s)
+{
+    uint32_t sLen = s.size() + 1;
+    stream.write(reinterpret_cast<const char *>(&sLen), sizeof sLen);
+    stream.write(s.c_str(), sLen - 1);
+    stream.write("\0", 1);
+}
+
+
+inline void VariantProfile::readString(std::string & s, std::ifstream & stream)
+{
+    uint32_t l;
+    stream.read(reinterpret_cast<char *>(&l), sizeof(uint32_t));
+    char * tempString = new char[l];
+    stream.read(reinterpret_cast<char *>(tempString), l);
+
+    if (tempString[l-1] != '\0')
+        throw std::runtime_error("ERROR: Trying to read invalid string from profile.");
+
+    s = std::string(tempString);
+    delete[] tempString;
+}
+
+void VariantProfile::writeJunctions(std::ofstream & stream, std::string cName, std::vector<Junction> & junctions)
+{
+    writeString(stream, cName);
+
+    uint32_t nJ = junctions.size();
+    stream.write(reinterpret_cast<const char *>(&nJ), sizeof(uint32_t));
+
+    for (Junction & j : junctions)
+    {
+        writeString(stream, j.getRefNameLeft());
+        writeString(stream, j.getRefNameRight());
+
+        int32_t xLeft = j.getPositionLeft();
+        int32_t xRight = j.getPositionRight();
+        int32_t id = j.getID();
+        int32_t dLeft = j.getDirectionLeft();
+        int32_t dRight = j.getDirectionRight();
+
+        stream.write(reinterpret_cast<const char *>(&id), sizeof(int32_t));
+        stream.write(reinterpret_cast<const char *>(&xLeft), sizeof(int32_t));
+        stream.write(reinterpret_cast<const char *>(&xRight), sizeof(int32_t));
+        stream.write(reinterpret_cast<const char *>(&dLeft), sizeof(int32_t));
+        stream.write(reinterpret_cast<const char *>(&dRight), sizeof(int32_t));
+    }
+}
+
+
+std::vector<Junction> VariantProfile::readJunctions(std::ifstream & stream)
+{
+    std::vector<Junction> junctions;
+
+    std::string cName;
+    readString(cName, stream);
+
+    uint32_t nJ;
+    stream.read(reinterpret_cast<char *>(&nJ), sizeof(uint32_t));
+    
+    for (uint32_t i = 0; i < nJ; ++i)
+    {
+        std::string rNameLeft, rNameRight;
+        int32_t id, xLeft, xRight, dLeft, dRight;
+        readString(rNameLeft, stream);
+        readString(rNameRight, stream);
+        stream.read(reinterpret_cast<char *>(&id), sizeof(int32_t));
+        stream.read(reinterpret_cast<char *>(&xLeft), sizeof(int32_t));
+        stream.read(reinterpret_cast<char *>(&xRight), sizeof(int32_t));
+        stream.read(reinterpret_cast<char *>(&dLeft), sizeof(int32_t));
+        stream.read(reinterpret_cast<char *>(&dRight), sizeof(int32_t));
+
+        junctions.push_back(Junction(id, cName, rNameLeft, rNameRight, xLeft, xRight, dLeft, dRight));
+    }
+    return junctions;
 }

@@ -80,3 +80,8 @@ int ReadPairFilter::getMargin()
 {
     return this->margin;
 }
+
+std::vector<GenomicRegion> & ReadPairFilter::getRegions()
+{
+    return this->variantRegions;
+}

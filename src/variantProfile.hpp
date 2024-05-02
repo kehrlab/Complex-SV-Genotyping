@@ -22,7 +22,6 @@ class VariantProfile
 {
     complexVariant variant;
     std::string name;
-    bool variantPresent;
 
     // ProgramOptions options;
     std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> chromosomeStructures;
@@ -45,7 +44,6 @@ class VariantProfile
 
     int64_t sMinMapped;
     int64_t sMaxMapped;
-
     
 
     ReadPairFilter filter;
@@ -73,8 +71,6 @@ class VariantProfile
     int getMaxInsert();
     int getMargin();
     int getReadLength();
-    bool variantStructureIsPresent();
-    bool loadVariantStructure(std::string filename, std::string variantName);
     void createVariantChromosomeStructures();
     std::string getName();
     const ContigInfo & getContigInfo();
@@ -102,6 +98,11 @@ class VariantProfile
     inline void addSimulatedTemplateToMask(int &, VariantMap &, int, int64_t, Allele &);
     inline void addValueToMask(Allele & allele, int64_t sOld, int64_t sNew, std::string & orientation, std::string & jString, std::string & bpString, std::string & chromosomes);
     void addGroupToMasks(std::string);
+
+    inline void readString(std::string &, std::ifstream &);
+    inline void writeString(std::ofstream &, std::string);
+    void writeJunctions(std::ofstream &, std::string, std::vector<Junction> &);
+    std::vector<Junction> readJunctions(std::ifstream &);
 };
 
 #endif

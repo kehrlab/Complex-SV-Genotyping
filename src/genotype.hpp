@@ -40,7 +40,7 @@ seqan::ArgumentParser::ParseResult parseGenotypeArgs(seqan::ArgumentParser & arg
 
 genotypeParameters getGenotypeParameters(seqan::ArgumentParser & argParser);
 
-inline void loadVariantProfiles(std::vector<VariantProfile> &, genotypeParameters &, std::vector<std::string> &, int);
+inline void loadVariantProfiles(std::vector<VariantProfile> &, genotypeParameters &, std::vector<std::string> &, uint32_t);
 inline void checkProfileParameters(int &, int &, int &, std::vector<VariantProfile> &, genotypeParameters &);
 inline void getGenotypePriors(std::unordered_map<std::string, std::unordered_map<std::string, float>> & genotypePriors, genotypeParameters & params);
 inline void checkSampleParameters(std::vector<std::string> &, int &, int &, int &, genotypeParameters &);

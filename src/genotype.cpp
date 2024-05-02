@@ -4,6 +4,7 @@
 #include "seqan/arg_parse/arg_parse_argument.h"
 #include "seqan/arg_parse/arg_parse_option.h"
 #include "seqan/arg_parse/argument_parser.h"
+#include "seqan/parallel/parallel_macros.h"
 #include "variantProfile.hpp"
 #include "vcfWriter.hpp"
 #include <chrono>
@@ -39,6 +40,7 @@ int genotype(int argc, const char **argv)
         return 1;
 
     genotypeParameters params = getGenotypeParameters(argParser);
+    omp_set_num_threads(params.nThreads);
 
 
     now = time(0);
@@ -92,11 +94,11 @@ int genotype(int argc, const char **argv)
         vcfFile.setFileName(params.vcfFile);
 
     // genotyping
-    int block {0};
+    uint64_t block {0};
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-    while (block * params.nThreads < (int) variantFiles.size())
-    {
-        // load variant profiles (currently all) and check parameters
+    while (block * params.nThreads < variantFiles.size())
+    {        
+	// load variant profiles (currently all) and check parameters
         std::vector<VariantProfile> variantProfiles;
         loadVariantProfiles(variantProfiles, params, variantFiles, block);
         checkProfileParameters(sMin, sMax, readLength, variantProfiles, params);
@@ -110,7 +112,7 @@ int genotype(int argc, const char **argv)
                 );
 
         // genotype current variants
-        #pragma omp parallel for schedule(dynamic) collapse(2) num_threads(params.nThreads)
+        #pragma omp parallel for schedule(dynamic,(int)(sampleProfiles.size()/2)) collapse(2) num_threads(params.nThreads)
         for (uint32_t i = 0; i < variantProfiles.size(); ++i)
         {
             // in all samples
@@ -189,6 +191,7 @@ int genotype(int argc, const char **argv)
                 std::string outString = variantProfiles[i].getVariant().getName() + "\t" + result.getOutputString();
                 if (params.difficulties)
                     outString += ("\t" + std::to_string(difficulty));
+                
                 #pragma omp critical
                 outFile << outString << std::endl;
             }
@@ -202,16 +205,16 @@ int genotype(int argc, const char **argv)
 
         // Status and ETA
         std::chrono::steady_clock::time_point current = std::chrono::steady_clock::now();
-        auto tAvg = (float) std::chrono::duration_cast<std::chrono::seconds>(current-begin).count() / std::min((block + 1) * params.nThreads, (int) variantFiles.size());
+        auto tAvg = (float) std::chrono::duration_cast<std::chrono::seconds>(current-begin).count() / std::min((block + 1) * params.nThreads, variantFiles.size());
 
         now = time(0);
         date = std::string(ctime(&now));
         date[date.find_last_of("\n")] = '\t';
         std::cout << "\r\e[K" << std::flush;
         std::cout << date << "Genotyped ";
-        std::cout << std::min((block + 1) * params.nThreads, (int) variantFiles.size());
+        std::cout << std::min((block + 1) * params.nThreads, variantFiles.size());
         std::cout << "/" << variantFiles.size() << " variants.\t\t\t";
-        std::cout << "ETA: " << (int) (tAvg * (variantFiles.size() - std::min((block + 1) * params.nThreads, (int) variantFiles.size()))) << "s     " << std::flush;
+        std::cout << "ETA: " << (uint32_t) (tAvg * (variantFiles.size() - std::min((block + 1) * params.nThreads, variantFiles.size()))) << "s     " << std::flush;
 
         // move to the next block of variants
         ++block;
@@ -240,16 +243,20 @@ int genotype(int argc, const char **argv)
     return 0;
 }
 
-inline void loadVariantProfiles(std::vector<VariantProfile> & variantProfiles, genotypeParameters & params, std::vector<std::string> & profilePaths, int block)
+inline void loadVariantProfiles(std::vector<VariantProfile> & variantProfiles, genotypeParameters & params, std::vector<std::string> & profilePaths, uint32_t block)
 {
-    int beginIdx = block * params.nThreads;
-    int endIdx = std::min(((block + 1) * params.nThreads - 1), ((int) profilePaths.size()) - 1);
+    if (profilePaths.size() == 0)
+        throw std::runtime_error("No variant profiles to load.");
+
+    uint32_t beginIdx = block * params.nThreads;
+    uint32_t endIdx = std::min(((block + 1) * params.nThreads - 1), (uint32_t) (profilePaths.size()) - 1);
     std::vector<VariantProfile>().swap(variantProfiles);
 
-    for (int i = beginIdx; i <= endIdx; ++i)
+    for (uint32_t i = beginIdx; i <= endIdx; ++i)
         variantProfiles.push_back(VariantProfile(profilePaths[i]));
     if (variantProfiles.size() == 0)
         throw std::runtime_error("No variant profiles successfully read.");
+
     return;
 }
 
@@ -273,22 +280,6 @@ inline void checkProfileParameters(int & sMin, int & sMax, int & readLength, std
             std::cerr << msg << std::endl;
             it = variantProfiles.erase(it);
             continue;
-        }
-        if (!it->variantStructureIsPresent())
-        {
-            if (params.variantFile == "")
-            {
-                std::string msg = "Variant description could not be loaded from profile. A variant description file needs to be specified.";
-                throw std::runtime_error(msg.c_str());
-            } else {
-                if (!it->loadVariantStructure(params.variantFile, it->getName()))
-                {
-                    std::string msg =  "Description of variant " + it->getName() + " could not be loaded from file " + params.variantFile + ".";
-                    throw std::runtime_error(msg.c_str());
-                } else {
-                    it->getFilter() = ReadPairFilter(it->getVariant().getAllBreakpoints(), it->getMargin(), 0);
-                }
-            }
         }
         ++it;
     }

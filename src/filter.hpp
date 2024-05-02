@@ -23,6 +23,7 @@ class ReadPairFilter
     bool fragmentPassesFilter(BamRecord &, BamRecord &);
     int getMargin();
     bool fragmentOverlapsNovelJunction(BamRecord &, BamRecord &);
+    std::vector<GenomicRegion> & getRegions();
 };
 
 #endif
