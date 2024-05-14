@@ -2,8 +2,8 @@
 
 ## Description
 
-This project is an implementation of a genotyping algorithm for complex structural variants using paired-end short-read data.
-The aim is to enable genoyping of complex SVs of any structure.
+This repository holds an implementation of a genotyping algorithm for complex structural variants using paired-end short-read data.
+The aim is to enable genotyping of complex SVs of any structure.
 
 ## Installation
 
