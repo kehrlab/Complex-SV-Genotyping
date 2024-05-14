@@ -48,8 +48,6 @@ class ReadTemplate
     void calculateInsertSize();
     void determineOrientation();
     
-    int softClippingLeftLength(BamRecord &);
-    int softClippingRightLength(BamRecord &);
     void findSplitsBasedOnClipping(std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>> &, int);
     void findSplitsBasedOnGaps(std::vector<Junction> &);
     void findClippedSplitsOnChromosome(std::string, JunctionRegion &, SplitAlignmentInfo &, int);

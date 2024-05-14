@@ -41,137 +41,32 @@ LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, Templat
     std::vector<int>().swap(this->insertSizes);
 }
 
-LibraryDistribution::LibraryDistribution(std::unordered_map<std::string, TemplatePosition> & insertPositions, std::vector<GenomicRegion> & regions, SeqFileHandler & refFileHandler)
+LibraryDistribution::LibraryDistribution(int sMin, int sMax, int readLength, std::vector<double> & values)
 {
     this->insertMean = 0;
     this->insertSD = 0;
-    this->sMin = 1;
-    this->sMax = 1000;
-    this->gcCorrection = true;
+    this->gcCorrection = false;
+    this->sMin = sMin;
+    this->sMax = sMax;
+    this->readLength = readLength;
+    this->numReadPairs = 0;
+
     this->distribution.resize(this->sMax - this->sMin + 1);
     for (uint32_t i = 0; i < this->distribution.size(); ++i)
         this->distribution[i] = std::vector<float>(100, 0);
-    this->uniformDistribution.resize(this->sMax - this->sMin + 1);
-    for (uint32_t i = 0; i < this->uniformDistribution.size(); ++i)
-        this->uniformDistribution[i] = std::vector<float>(100, 0);
-
-    seqan::Dna5String gString = 'G';
-    seqan::Dna5String cString = 'C';
-    seqan::Dna5String base, seq;
-    float gc, total, temp;
-
-    std::vector<float> gcContents;
-
-    // extract information from templates
-    std::unordered_map<std::string, std::unordered_map<int, std::vector<int>>> templatePositions;
-    for (auto it : insertPositions)
+    for (uint32_t i = 0; i < values.size(); ++i)
     {
-        int s = it.second.end - it.second.begin + 1;
-        if (s > this->sMax || s < this->sMin)
-            continue;
-        this->insertSizes.push_back(s);
-        ++this->numReadPairs;
-
-        if (templatePositions.find(it.second.chr) == templatePositions.end())
-        {
-            std::unordered_map<int, std::vector<int>> tempPositions;
-            std::vector<int> endPos;
-            endPos.push_back(s);
-            tempPositions[it.second.begin] = endPos;
-            templatePositions[it.second.chr] = tempPositions;
-        } 
-        else 
-        {
-            if (templatePositions[it.second.chr].find(it.second.begin) == templatePositions[it.second.chr].end())
-            {
-                std::vector<int> endPos;
-                endPos.push_back(s);
-                templatePositions[it.second.chr][it.second.begin] = endPos;
-            } 
-            else 
-            {
-                templatePositions[it.second.chr][it.second.begin].push_back(s);
-            }
-        }
+        uint32_t nR = (int) values[i];
+        this->numReadPairs += (int) values[i];
+        this->distribution[i][0] += (float) values[i];
+        for (uint32_t j = 0; j < nR; ++j)
+            this->insertSizes.push_back(this->sMin + i);
     }
-
-    // traverse all regions
-    for (GenomicRegion & region : regions)
-    {
-        if (!region.sequenceInMemory())
-            region.readSequence(refFileHandler);
-        seq = region.getSequence();
-
-        std::unordered_map<int, std::vector<int>> positions;
-        if (templatePositions.find(region.getReferenceName()) != templatePositions.end())
-            positions = templatePositions[region.getReferenceName()];
-        
-        for (uint32_t i = 0; i < seqan::length(seq); ++i)
-        {
-            if (i == 0)
-            {
-                total = 0;
-                gc = 0;
-                for (int s = this->sMin; s <= this->sMax; ++s)
-                {
-                    if ((i + s) >= seqan::length(seq))
-                        break;
-                    base = seq[i+s];
-                    ++total;
-                    if (base == gString || base == cString)
-                        ++gc;
-                    gcContents.push_back(gc/total);
-                }
-            } else {
-                total = 1;
-                base = seq[i - 1];
-                for (uint32_t j = 0; j < gcContents.size() - 1; ++j)
-                {
-                    if ((i + j) >= (seqan::length(seq) - 1))
-                        break;
-                    ++total;
-                    temp = gcContents[j + 1] * total;
-                    if (base == gString || base == cString)
-                        temp -= 1;
-                    gcContents[j] = temp / (total - 1);
-                }
-                if ((i + this->sMax) < seqan::length(seq))
-                {
-                    total = this->sMax + 1;
-                    temp = gcContents[gcContents.size() - 1] * total;
-                    if (base == gString || base == cString)
-                            temp -= 1;
-                    base = seq[i + this->sMax];
-                    if (base == gString || base == cString)
-                            temp += 1;
-                    gcContents[gcContents.size() - 1] = temp / total;
-                }
-            }
-
-            for (uint32_t j = 0; j < gcContents.size(); ++j)
-            {
-                if ((i+j) >= seqan::length(seq))
-                    break;
-                this->uniformDistribution[j][calculateGCIndex(gcContents[j])] += 1;
-            }
-            if (positions.find(region.getRegionStart() + i) != positions.end())
-            {
-                for (int s : positions[region.getRegionStart() + i])	
-			        this->distribution[s - this->sMin][calculateGCIndex(gcContents[s - this->sMin])] += 1;
-            }
-        }
-        gcContents.erase(gcContents.begin(), gcContents.end());
-        region.clearSequence();
-    }
-    smoothDistribution(this->distribution, 5); 
+    smoothDistribution(this->distribution, 10);
+    smoothDistribution(this->distribution, 20);
+    smoothDistribution(this->distribution, 5);
     scaleDistribution(this->distribution);
-    
-    smoothDistribution(this->uniformDistribution, 5);
-    scaleDistribution(this->uniformDistribution);
-    
     createMarginalDistributions();
-    calculateCorrectionFactors();
-
     std::vector<int>().swap(this->insertSizes);
 }
 

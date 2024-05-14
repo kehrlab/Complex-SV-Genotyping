@@ -40,8 +40,9 @@ class LibraryDistribution
 
     public:
     LibraryDistribution();
+    LibraryDistribution(int, int, int, std::vector<double> &);
     LibraryDistribution(std::unordered_map<std::string, TemplatePosition> &);
-    LibraryDistribution(std::unordered_map<std::string, TemplatePosition> &, std::vector<GenomicRegion> &, SeqFileHandler &);
+
     void writeDistribution(std::string filename);
     float getProbability(int, float);
     float getProbability(int);

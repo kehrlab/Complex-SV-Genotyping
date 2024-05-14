@@ -164,20 +164,17 @@ void GenotypeDistribution::writeDistribution(std::string prefix)
 void GenotypeDistribution::writeDistributionBinned(std::string prefix)
 {
     int binSize = 20;
-    int64_t minIS = 0;
-    int64_t maxIS = 0;
     int bounds = 20000;
-    for (auto it : this->distributions)
-    {
-        maxIS = std::max(maxIS, it.second.getMaxInsertSize());
-        minIS = std::min(minIS, it.second.getMinInsertSize());
-    }
+
     std::ofstream f;
     f.open(prefix.append(".txt"));
     if (f.is_open())
     {
         // for each distribution: 
         for (auto & it : this->distributions) {
+            int64_t maxIS = it.second.getMaxInsertSize();
+            int64_t minIS = it.second.getMinInsertSize();
+
             float oob_low = 0;
             float oob_high = 0;
 
@@ -206,7 +203,7 @@ void GenotypeDistribution::writeDistributionBinned(std::string prefix)
 
             //  write as above
             for (Eigen::SparseVector<float, 0, int64_t>::InnerIterator it1(binnedDist, 0); it1; ++it1)
-            {
+            { 
                 float p = it1.value();
                 int64_t idx = it1.row();
                 int64_t sBin = (idx - nnBins) * binSize;

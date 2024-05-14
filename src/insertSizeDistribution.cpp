@@ -82,10 +82,10 @@ void InsertSizeDistribution::addInsertSizeProbability(int64_t insertSize, float 
             int64_t diff = this->minInsertSize - newMin;
             for (int64_t i = 0; i < this->distribution.nonZeros(); ++i)
                 *(this->distribution.innerIndexPtr() + i) += diff;
-            this->minInsertSize = newMin;
-        } else {
-            this->maxInsertSize = newMax;
         }
+        
+        this->minInsertSize = newMin;
+        this->maxInsertSize = newMax;
     } 
     // add probability
     distribution.coeffRef(insertSize - this->minInsertSize) += p;

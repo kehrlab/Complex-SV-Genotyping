@@ -1,7 +1,29 @@
 #include "record.hpp"
 
 BamRecord::BamRecord()
-{}
+{
+    this->referenceName = "";
+    this->templateName = "";
+    this->beginPos = -1;
+    this->endPos = -1;
+    this->alignmentLength = 0;
+    this->mappingQuality = -1;
+    this->seqLength = 0;
+    this->clipLeft = 0;
+    this->clipRight = 0;
+    this->deletionSize = -1;
+
+    this->reverse = false;
+    this->primary = false;
+    this->first = false;
+    this->last = false;
+    this->allProper = false;
+    this->deletion = false;
+    this->multiple = false;
+    this->duplicate = false;
+    this->qcNoPass = false;
+    this->unmapped = false;
+}
 
 BamRecord::BamRecord(std::string refName, std::string templateName, int begin, int end, bool reverse, bool first, bool last)
 {
@@ -23,6 +45,11 @@ BamRecord::BamRecord(std::string refName, std::string templateName, int begin, i
     this->last = last;
     this->allProper = true;
     this->deletion = false;
+
+    this->multiple = true;
+    this->duplicate = false;
+    this->qcNoPass = false;
+    this->unmapped = false;
 }
 
 BamRecord::BamRecord(std::string refName, std::string templateName, int begin, int end, int mappingQuality, int seqLength, int clipRight, int clipLeft, bool reverse, bool primary, bool first, bool last)
@@ -43,6 +70,11 @@ BamRecord::BamRecord(std::string refName, std::string templateName, int begin, i
     this->allProper = true;
     this->deletion = false;
     this->deletionSize = -1;
+
+    this->multiple = true;
+    this->duplicate = false;
+    this->qcNoPass = false;
+    this->unmapped = false;
 }
 
 BamRecord::BamRecord(std::string refName, std::string templateName, int begin, int end, int mappingQuality, int seqLength, int clipRight, int clipLeft, bool reverse, bool primary, bool first, bool last, bool deletion, int deletionSize)
@@ -63,6 +95,11 @@ BamRecord::BamRecord(std::string refName, std::string templateName, int begin, i
     this->allProper = true;
     this->deletion = deletion;
     this->deletionSize = deletionSize;
+
+    this->multiple = true;
+    this->duplicate = false;
+    this->qcNoPass = false;
+    this->unmapped = false;
 }
 
 BamRecord::BamRecord(bam1_t * record, bam_hdr_t * hdr)
@@ -253,4 +290,18 @@ void BamRecord::print()
 {
 	std::cout << getReferenceName() << "\t" << getFivePrimePos() << "-" << getThreePrimePos() << "\t" << getClipLeft() << "\t" << getClipRight() << "\t" << getSeqLength() << "\t" << getAlignmentLength() << std::endl;
 	return;
+}
+
+
+bool BamRecord::operator==(BamRecord r2)
+{
+    return (
+        this->first == r2.first && this->last == r2.last && 
+        this->primary == r2.primary && this->reverse == r2.reverse && 
+        this->alignmentLength == r2.alignmentLength && 
+        this->beginPos == r2.beginPos && this->endPos == r2.endPos && 
+        this->seqLength == r2.seqLength && this->clipLeft == r2.clipLeft &&
+        this->clipRight == r2.clipRight && this->templateName == r2.templateName &&
+        this->mappingQuality == r2.mappingQuality
+        );
 }

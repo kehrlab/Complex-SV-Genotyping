@@ -8,6 +8,7 @@
 #include "variantProfile.hpp"
 #include "variantParser.hpp"
 #include "variant.hpp"
+#include "profileHandler.hpp"
 
 struct variantProfileParams {
     std::vector<std::string> variantFileNames;
@@ -18,9 +19,11 @@ struct variantProfileParams {
     int margin;
     int nThreads;
 
+    bool popdel;
+
     variantProfileParams():
     variantFileNames (std::vector<std::string>()), outFile(""), outDir(""), sampleProfileFile (""),
-    margin(500), nThreads(1)
+    margin(500), nThreads(1), popdel(false)
     {} 
 };
 

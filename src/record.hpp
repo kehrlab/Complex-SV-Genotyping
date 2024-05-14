@@ -20,8 +20,8 @@ class BamRecord
     int clipLeft;
     int deletionSize;
 
-    int beginPos;
-    int endPos;
+    int32_t beginPos;
+    int32_t endPos;
 
     bool primary;
     bool reverse;
@@ -71,6 +71,8 @@ class BamRecord
     bool passesInsertFilter();
     bool passesStandardFilter();
     void print();
+
+    bool operator==(BamRecord r2);
 };
 
 #endif

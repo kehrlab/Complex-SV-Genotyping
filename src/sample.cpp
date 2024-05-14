@@ -1,5 +1,16 @@
 #include "sample.hpp"
 
+Sample::Sample()
+{
+    this->distributionDirectory = "";
+    this->bamFileOpen = false;
+    this->filename = "";
+    this->sampleName = "";
+    this->minMapQ = 0;
+
+    this->sampleDistribution = LibraryDistribution();
+}
+
 Sample::Sample(
     std::string filename,
     const std::vector<GenomicRegion> & givenRegions
@@ -27,6 +38,20 @@ Sample::Sample(std::string profilePath)
     std::ifstream stream;
     this->sampleDistribution = LibraryDistribution();
     readSampleProfile(profilePath);
+}
+
+void Sample::loadPopDelProfile(PopDelProfileHandler & popdelProfile)
+{
+    this->sampleName = popdelProfile.getSampleName();
+    this->filename = popdelProfile.getFileName();
+
+    this->contigInfo.cLengths = popdelProfile.getContigLengths();
+    this->contigInfo.cNames = popdelProfile.getContigNames();
+
+    this->sampleDistribution = popdelProfile.getLibraryDistribution();
+
+    this->bamFileOpen = false;
+    this->minMapQ = 0;
 }
 
 void Sample::openBamFile()

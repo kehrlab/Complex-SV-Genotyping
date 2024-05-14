@@ -11,6 +11,7 @@
 #include "recordManager.hpp"
 #include "sample.hpp"
 #include "variantProfile.hpp"
+#include "profileHandler.hpp"
 
 
 struct genotypeParameters
@@ -27,10 +28,12 @@ struct genotypeParameters
     int nThreads, minMapQ;
     bool difficulties, distributions;
 
+    bool popdel;
+
     genotypeParameters():
     variantList(""), sampleList(""), outputPrefix(""), variantFile(""),
     vcfFile(""), priorFile(""), nThreads(1), minMapQ(0), difficulties(false), 
-    distributions(false)
+    distributions(false), popdel(false)
     {}
 };
 
@@ -46,6 +49,7 @@ inline void getGenotypePriors(std::unordered_map<std::string, std::unordered_map
 inline void checkSampleParameters(std::vector<std::string> &, int &, int &, int &, genotypeParameters &);
 bool contigsCompatible(const ContigInfo &, const ContigInfo &);
 inline void loadReadPairs(VariantProfile &, RecordManager &, BamFileHandler &, Sample &);
+inline void loadReadPairs(VariantProfile &, RecordManager &, PopDelProfileHandler &);
 inline void createGenotypeDistributions(
     VariantProfile &, std::vector<std::string> &, std::vector<GenotypeDistribution> &, 
     float eps, std::vector<std::string> &, LibraryDistribution &);

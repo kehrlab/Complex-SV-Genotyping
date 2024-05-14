@@ -19,6 +19,7 @@
 #include "libraryDistribution.hpp"
 #include "custom_types.hpp"
 #include "filter.hpp"
+#include "profileHandler.hpp"
 
 
 class Sample
@@ -48,7 +49,9 @@ class Sample
     public:
     Sample(std::string, const std::vector<GenomicRegion> &);
     Sample(std::string);
+    Sample();
     
+    void loadPopDelProfile(PopDelProfileHandler &);
 
     LibraryDistribution & getLibraryDistribution();
     void closeBamFile();

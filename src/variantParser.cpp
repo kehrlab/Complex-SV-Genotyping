@@ -31,10 +31,10 @@ void variantParser::parseJSONObject()
     for (auto& variant : this->jsonObject.items())
     {
         this->id = 0;
-	bool isValid = true;
+	    bool isValid = true;
         variantData variantJunctions;
         std::vector<std::string> variantAlleleNames;
-	std::string varName = variant.key();
+	    std::string varName = variant.key();
 
         for (auto& allele : variant.value().items())
         {

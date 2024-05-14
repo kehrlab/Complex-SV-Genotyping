@@ -1,6 +1,7 @@
 #include "genotype.hpp"
 #include "genotypeResult.hpp"
 #include "libraryDistribution.hpp"
+#include "readTemplate.hpp"
 #include "seqan/arg_parse/arg_parse_argument.h"
 #include "seqan/arg_parse/arg_parse_option.h"
 #include "seqan/arg_parse/argument_parser.h"
@@ -40,13 +41,12 @@ int genotype(int argc, const char **argv)
         return 1;
 
     genotypeParameters params = getGenotypeParameters(argParser);
-    omp_set_num_threads(params.nThreads);
-
 
     now = time(0);
     date = std::string(ctime(&now));
     date[date.find_last_of("\n")] = '\t';
     std::cout << date << "Get sample parameters..." << std::endl;
+
     // load sample profile paths and check parameter consistency (sMin, sMax, readLength)
     std::vector<std::string> sampleProfiles;
     int sMin {-1}, sMax{-1}, readLength{-1};
@@ -94,11 +94,11 @@ int genotype(int argc, const char **argv)
         vcfFile.setFileName(params.vcfFile);
 
     // genotyping
-    uint64_t block {0};
+    uint32_t block {0};
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     while (block * params.nThreads < variantFiles.size())
-    {        
-	// load variant profiles (currently all) and check parameters
+    {
+	    // load variant profiles and check parameters
         std::vector<VariantProfile> variantProfiles;
         loadVariantProfiles(variantProfiles, params, variantFiles, block);
         checkProfileParameters(sMin, sMax, readLength, variantProfiles, params);
@@ -112,13 +112,25 @@ int genotype(int argc, const char **argv)
                 );
 
         // genotype current variants
-        #pragma omp parallel for schedule(dynamic,(int)(sampleProfiles.size()/2)) collapse(2) num_threads(params.nThreads)
+        #pragma omp parallel for schedule(dynamic) collapse(2) num_threads(params.nThreads)
         for (uint32_t i = 0; i < variantProfiles.size(); ++i)
         {
             // in all samples
             for (uint32_t j = 0; j < sampleProfiles.size(); ++j)
             {
-                Sample s(sampleProfiles[j]);
+                Sample s;
+                PopDelProfileHandler popdelProfile;
+                
+                // if we use popdel profiles, the sample will need to be initialized from that
+                if (params.popdel)
+                {
+                    popdelProfile.open(sampleProfiles[j]);
+                    s.loadPopDelProfile(popdelProfile);
+                }
+                else // otherwise, load the sample from GGTyper sample
+                {
+                    s.readSampleProfile(sampleProfiles[j]);
+                }
 
                 // check compatibility of contigs in s and variantProfile[i]
                 if (! contigsCompatible(s.getContigInfo(), variantProfiles[i].getContigInfo()))
@@ -136,9 +148,22 @@ int genotype(int argc, const char **argv)
                     result = GenotypeResult(s.getFileName(), s.getSampleName(), false);
 
                 // load the relevant read pairs
+                // contig info is required to make sure that insert size definitions
+                // are correct across chromosomes
                 RecordManager bamRecords(variantProfiles[i].getContigInfo());
-                BamFileHandler bamFileHandler(s.getFileName(), params.minMapQ);
-                loadReadPairs(variantProfiles[i], bamRecords, bamFileHandler, s);
+
+                if (params.popdel)
+                {
+                    loadReadPairs(variantProfiles[i], bamRecords, popdelProfile);
+                } 
+                else 
+                {
+                    BamFileHandler bamFileHandler(s.getFileName(), params.minMapQ);
+                    loadReadPairs(variantProfiles[i], bamRecords, bamFileHandler, s);
+                    bamFileHandler.closeInputFile();
+                }
+                popdelProfile.close();
+                
                 
                 // create the genotype distributions
 		        std::vector<std::string> genotypeNames;
@@ -184,7 +209,6 @@ int genotype(int argc, const char **argv)
                     tempResults[i][j] = result;
 
                 // clean up
-                bamFileHandler.closeInputFile();
                 s.close();
 
                 // write the genotype call to output file
@@ -205,16 +229,16 @@ int genotype(int argc, const char **argv)
 
         // Status and ETA
         std::chrono::steady_clock::time_point current = std::chrono::steady_clock::now();
-        auto tAvg = (float) std::chrono::duration_cast<std::chrono::seconds>(current-begin).count() / std::min((block + 1) * params.nThreads, variantFiles.size());
+        auto tAvg = (float) std::chrono::duration_cast<std::chrono::seconds>(current-begin).count() / std::min((block + 1) * params.nThreads, (uint32_t) variantFiles.size());
 
         now = time(0);
         date = std::string(ctime(&now));
         date[date.find_last_of("\n")] = '\t';
         std::cout << "\r\e[K" << std::flush;
         std::cout << date << "Genotyped ";
-        std::cout << std::min((block + 1) * params.nThreads, variantFiles.size());
+        std::cout << std::min((block + 1) * params.nThreads, (uint32_t) variantFiles.size());
         std::cout << "/" << variantFiles.size() << " variants.\t\t\t";
-        std::cout << "ETA: " << (uint32_t) (tAvg * (variantFiles.size() - std::min((block + 1) * params.nThreads, variantFiles.size()))) << "s     " << std::flush;
+        std::cout << "ETA: " << (uint32_t) (tAvg * (variantFiles.size() - std::min((block + 1) * params.nThreads, (uint32_t) variantFiles.size()))) << "s     " << std::flush;
 
         // move to the next block of variants
         ++block;
@@ -234,7 +258,17 @@ int genotype(int argc, const char **argv)
     {
         for (auto & p : sampleProfiles)
         {
-            Sample s(p);
+            Sample s;
+            if (params.popdel)
+            {
+                PopDelProfileHandler popdelProfile(p);
+                s.loadPopDelProfile(popdelProfile);
+                popdelProfile.close();
+            } 
+            else 
+            {
+                s.readSampleProfile(p);
+            }
             s.getLibraryDistribution().writeDistribution(s.getFileName() + "_distributions/defaultDistribution.txt");
             s.close();
         }
@@ -249,7 +283,7 @@ inline void loadVariantProfiles(std::vector<VariantProfile> & variantProfiles, g
         throw std::runtime_error("No variant profiles to load.");
 
     uint32_t beginIdx = block * params.nThreads;
-    uint32_t endIdx = std::min(((block + 1) * params.nThreads - 1), (uint32_t) (profilePaths.size()) - 1);
+    uint32_t endIdx = std::min(((block + 1) * params.nThreads - 1), (uint32_t) profilePaths.size() - 1);
     std::vector<VariantProfile>().swap(variantProfiles);
 
     for (uint32_t i = beginIdx; i <= endIdx; ++i)
@@ -296,7 +330,20 @@ inline void checkSampleParameters(std::vector<std::string> & sampleProfiles, int
     {
         std::getline(stream, filename);
         sampleProfiles.push_back(filename);
-        Sample s(filename);
+
+        Sample s;
+
+        if (params.popdel)
+        {
+            PopDelProfileHandler popdelHandler(filename);
+            s.loadPopDelProfile(popdelHandler);
+            popdelHandler.close();
+        } 
+        else 
+        {
+            s.readSampleProfile(filename);
+        }
+
         if (readLength < 0) {
             readLength = s.getLibraryDistribution().getReadLength();
         } else if (s.getLibraryDistribution().getReadLength() != readLength) {
@@ -377,6 +424,13 @@ inline void loadReadPairs(VariantProfile & variantProfile, RecordManager & recor
         variantProfile.getVariant().calculateAssociatedRegions(s.getLibraryDistribution())
     );
     recordManager.setReadPairs(bamFileHandler.get_read_pairs());
+    return;
+}
+
+inline void loadReadPairs(VariantProfile & variantProfile, RecordManager & recordManager, PopDelProfileHandler & popdelHandler)
+{
+    std::vector<GenomicRegion> variantRegions = variantProfile.getVariant().calculateAssociatedRegions(popdelHandler.getLibraryDistribution());
+    recordManager.setReadPairs(popdelHandler.get_read_pairs(variantRegions));
     return;
 }
 
@@ -541,6 +595,9 @@ seqan::ArgumentParser::ParseResult parseGenotypeArgs(seqan::ArgumentParser &argP
         seqan::ArgParseOption::INPUT_FILE, "PRIORS"
     ));
     seqan::setValidValues(argParser, "priors", "txt");
+    seqan::addOption(argParser, seqan::ArgParseOption(
+        "p", "popdel", "Use popdel profiles instead of sample profiles generated by 'ggtyper profile-samples'."
+    ));
     
 
     seqan::addDescription(argParser, "Genotype given variants (specified by profiles) in all samples (specified by profiles).");
@@ -565,6 +622,7 @@ genotypeParameters getGenotypeParameters(seqan::ArgumentParser &argParser)
     seqan::getOptionValue(params.distributions, argParser, "write-distributions");
     seqan::getOptionValue(params.vcfFile, argParser, "vcf-out");
     seqan::getOptionValue(params.priorFile, argParser, "priors");
+    seqan::getOptionValue(params.popdel, argParser, "popdel");
 
     return params;
 }

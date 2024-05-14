@@ -1180,7 +1180,7 @@ void VariantProfile::readProfile(std::string filename)
         std::string alleleName;
         readString(alleleName, stream);
 
-	//  read number of chromosomes
+	    //  read number of chromosomes
         uint32_t n;
         stream.read(reinterpret_cast<char *>(&n), sizeof(uint32_t));
         for (uint32_t j = 0; j < n; ++j)
@@ -1197,6 +1197,7 @@ void VariantProfile::readProfile(std::string filename)
     
     this->variant = complexVariant(this->name, alleleNames, allJunctions); 
     createVariantChromosomeStructures(); // required for read pair attribute determination 
+    
     this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
     
     // get read pair groups
