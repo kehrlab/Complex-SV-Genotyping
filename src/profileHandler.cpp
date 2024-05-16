@@ -128,8 +128,6 @@ std::unordered_map<std::string, std::vector<BamRecord>> PopDelProfileHandler::ge
 
     for (GenomicRegion & r : regions)
     {
-        this->infile.clear(); // in case EOF was reached while trying to read previous region
-
         int32_t beginPos = r.getRegionStart();
         seqan::CharString rName(r.getReferenceName().c_str());
 
@@ -152,6 +150,7 @@ std::unordered_map<std::string, std::vector<BamRecord>> PopDelProfileHandler::ge
             // continue if not yet at correct position
             if (w.beginPos + 255 < beginPos)
                 continue;
+                
             // continue if window is empty
             if (seqan::length(w.records) == 0)
                 continue;

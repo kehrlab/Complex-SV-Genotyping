@@ -1028,9 +1028,12 @@ inline void jumpToTranslocRegion(TStream & stream,
                                  const seqan::CharString & chrom,
                                  const unsigned indexOffset)
 {
-    SEQAN_ASSERT(!stream.eof());
+    
+    // SEQAN_ASSERT(!stream.eof());
     // Find position of chrom in contigNames
     uint64_t i = 0;
+    stream.clear();
+
     for (; i < length(contigNames) && chrom != contigNames[i]; ++i);
 
     // Calculate the position of chrom in the index and seek it
