@@ -130,7 +130,7 @@ std::unordered_map<std::string, std::vector<BamRecord>> PopDelProfileHandler::ge
     {
         this->infile.clear(); // in case EOF was reached while trying to read previous region
 
-        uint32_t beginPos = r.getRegionStart();
+        int32_t beginPos = r.getRegionStart();
         seqan::CharString rName(r.getReferenceName().c_str());
 
         // jump to first window overlapping the region of interest
@@ -164,7 +164,7 @@ std::unordered_map<std::string, std::vector<BamRecord>> PopDelProfileHandler::ge
                     std::vector<BamRecord> tempRecords;
                     createReadPair(tempRecords, w.records[rg][i], rName, this->sampleDistribution.getReadLength());
                     
-                    if (!tempRecords[0].passesStandardFilter() || !tempRecords[1].passesStandardFilter())
+                    if (! bothInRegions(regions, tempRecords)) 
                         continue;
                     
                     records[std::to_string(templateIdx)] = tempRecords;
@@ -199,7 +199,7 @@ std::unordered_map<std::string, std::vector<BamRecord>> PopDelProfileHandler::ge
                     std::vector<BamRecord> tempRecords;
                     createReadPair(tempRecords, window.records[rg][i], rName, this->sampleDistribution.getReadLength());
 
-                    if (!tempRecords[0].passesStandardFilter() || !tempRecords[1].passesStandardFilter()) 
+                    if (! bothInRegions(regions, tempRecords)) 
                         continue;
                     
                     // translocation pairs are duplicated in popdel profiles; keep only one (unless there is an accidental duplicate)
@@ -227,7 +227,6 @@ std::unordered_map<std::string, std::vector<BamRecord>> PopDelProfileHandler::ge
     
     return records;
 }
-
 
 inline void PopDelProfileHandler::createReadPair(std::vector<BamRecord> & records, const ReadPair & rp, seqan::CharString rName, int readLength)
 {
@@ -290,6 +289,30 @@ inline void PopDelProfileHandler::createReadPair(std::vector<BamRecord> & record
         records.push_back(BamRecord(chromosome2, templateName, pos2 - readLength + (windowEntry.second.clip_0 + windowEntry.second.clip_1) + 1, pos2, 100, readLength, windowEntry.second.clip_1, windowEntry.second.clip_0, false, true, false, true));
 }
 
+
+inline bool PopDelProfileHandler::bothInRegions(std::vector<GenomicRegion> & regions, std::vector<BamRecord> & records)
+{
+    // check first record
+    bool firstInRegion {false};
+    bool secondInRegion {false};
+    for (auto & r : regions)
+    {
+        if (r.overlaps(records[0].getAlignmentRegion())) {
+            firstInRegion = true;
+            break;
+        }
+    }
+
+    for (auto & r : regions)
+    {
+        if (r.overlaps(records[1].getAlignmentRegion())) {
+            secondInRegion = true;
+            break;
+        }
+    }
+
+    return (firstInRegion && secondInRegion);
+}
 
 LibraryDistribution & PopDelProfileHandler::getLibraryDistribution()
 {

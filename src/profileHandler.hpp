@@ -49,6 +49,7 @@ class PopDelProfileHandler{
     private:
         inline void readHistograms();
         inline void mergeRGHistograms();
+        inline bool bothInRegions(std::vector<GenomicRegion> & regions, std::vector<BamRecord> & records);
 };
 
 #endif
