@@ -122,11 +122,14 @@ inline void PopDelProfileHandler::mergeRGHistograms()
 std::unordered_map<std::string, std::vector<BamRecord>> PopDelProfileHandler::get_read_pairs(std::vector<GenomicRegion> regions)
 {
     std::unordered_map<std::string, std::vector<BamRecord>> records;
+    std::unordered_map<std::string, int> recordCounts;
 
     uint32_t templateIdx = 0;
 
     for (GenomicRegion & r : regions)
     {
+        this->infile.clear(); // in case EOF was reached while trying to read previous region
+
         uint32_t beginPos = r.getRegionStart();
         seqan::CharString rName(r.getReferenceName().c_str());
 
@@ -171,21 +174,21 @@ std::unordered_map<std::string, std::vector<BamRecord>> PopDelProfileHandler::ge
         }
 
 
-        // jump to translocation block 
+        // Jump to translocation region
         unsigned translocIndexBeginPos = translocationIndexBeginPos(this->sampleNumRegions);
-        jumpToTranslocBlock(this->infile, translocIndexBeginPos);
-
+        jumpToTranslocRegion(this->infile, this->sampleContigNames, rName, translocIndexBeginPos);
         
         zlib_stream::zip_istream transloc_unzipper(this->infile);
         TranslocationWindow window;
 
-        do // no indexing in this block; read windows until the region of interest is reached and extract records
+        while (true) // no indexing in this block; read windows until the region of interest is reached and extract records
         {
             unsigned ret = readTillRoi(window, transloc_unzipper, rName, beginPos, this->sampleContigNames, this->numReadGroups);
+
             if (ret > 0)
                 break;
 
-            if (seqan::length(window.records) == 0)
+            if (seqan::length(window.records) == 0) // no records in windows
                 continue;
 
             // get all records from window
@@ -196,29 +199,30 @@ std::unordered_map<std::string, std::vector<BamRecord>> PopDelProfileHandler::ge
                     std::vector<BamRecord> tempRecords;
                     createReadPair(tempRecords, window.records[rg][i], rName, this->sampleDistribution.getReadLength());
 
-                    if (!tempRecords[0].passesStandardFilter() || !tempRecords[1].passesStandardFilter())
+                    if (!tempRecords[0].passesStandardFilter() || !tempRecords[1].passesStandardFilter()) 
                         continue;
                     
                     // translocation pairs are duplicated in popdel profiles; keep only one (unless there is an accidental duplicate)
                     std::string key = tempRecords[0].getTemplateName();
-                    int idx = 0;
-                    bool equal {false};
+                    // count the occurrences of identical read pairs; only every second at the same location is added to records
+                    if (recordCounts.find(key) == recordCounts.end())
+                        recordCounts[key] = 1;
+                    else
+                        recordCounts[key] += 1;
 
+                    if (recordCounts[key] % 2 == 0)
+                        continue;
+
+                    int idx = 0;
                     while (records.find(key + std::to_string(idx)) != records.end())
-                    {
-                        equal = (records[key + std::to_string(idx)][0] == tempRecords[0] && records[key + std::to_string(idx)][1] == tempRecords[1]) || 
-                                (records[key + std::to_string(idx)][0] == tempRecords[1] && records[key + std::to_string(idx)][1] == tempRecords[0]);
-                        
-                        if (equal)
-                            break;
-                        
                         ++idx;
-                    }
-                    if (!equal) 
-                        records[key + std::to_string(idx)] = tempRecords;
+                    records[key + std::to_string(idx)] = tempRecords;
                 }
             }
-        } while (this->sampleContigNames[window.chrom] == rName && (window.beginPos + 255) < r.getRegionEnd());
+
+            if ((window.beginPos + 255) >= r.getRegionEnd()) //
+                break;
+        };
     }
     
     return records;
@@ -276,14 +280,14 @@ inline void PopDelProfileHandler::createReadPair(std::vector<BamRecord> & record
     std::string templateName = std::min(chromosome2, chromosome1) + std::to_string(std::min(pos1, pos2)) + std::max(chromosome2, chromosome1) + std::to_string(std::max(pos1, pos2));
 
     if (windowEntry.orientation == Orientation::RF || windowEntry.orientation == Orientation::RR)        // first record is in reverse orientation
-        records.push_back(BamRecord(chromosome1, templateName, pos1, pos1 + readLength - (windowEntry.first.clip_0 + windowEntry.first.clip_1), 100, readLength, windowEntry.first.clip_0, windowEntry.first.clip_1, true, true, true, false));
+        records.push_back(BamRecord(chromosome1, templateName, pos1, pos1 + readLength - (windowEntry.first.clip_0 + windowEntry.first.clip_1) - 1, 100, readLength, windowEntry.first.clip_0, windowEntry.first.clip_1, true, true, true, false));
     else                                                                                                 // first record is in forward orientation
-        records.push_back(BamRecord(chromosome1, templateName, pos1 - readLength + (windowEntry.first.clip_0 + windowEntry.first.clip_1), pos1, 100, readLength, windowEntry.first.clip_1, windowEntry.first.clip_0, false, true, true, false));
+        records.push_back(BamRecord(chromosome1, templateName, pos1 - readLength + (windowEntry.first.clip_0 + windowEntry.first.clip_1) + 1, pos1, 100, readLength, windowEntry.first.clip_1, windowEntry.first.clip_0, false, true, true, false));
 
     if (windowEntry.orientation == Orientation::FR || windowEntry.orientation == Orientation::RR)        // second record is in reverse orientation
-        records.push_back(BamRecord(chromosome2, templateName, pos2, pos2 + readLength - (windowEntry.second.clip_0 + windowEntry.second.clip_1), 100, readLength, windowEntry.second.clip_0, windowEntry.second.clip_1, true, true, false, true));
+        records.push_back(BamRecord(chromosome2, templateName, pos2, pos2 + readLength - (windowEntry.second.clip_0 + windowEntry.second.clip_1) - 1, 100, readLength, windowEntry.second.clip_0, windowEntry.second.clip_1, true, true, false, true));
     else                                                                                                 // second record is in forward orientation
-        records.push_back(BamRecord(chromosome2, templateName, pos2 - readLength + (windowEntry.second.clip_0 + windowEntry.second.clip_1), pos2, 100, readLength, windowEntry.second.clip_1, windowEntry.second.clip_0, false, true, false, true));
+        records.push_back(BamRecord(chromosome2, templateName, pos2 - readLength + (windowEntry.second.clip_0 + windowEntry.second.clip_1) + 1, pos2, 100, readLength, windowEntry.second.clip_1, windowEntry.second.clip_0, false, true, false, true));
 }
 
 

@@ -1019,17 +1019,23 @@ inline unsigned translocationIndexBeginPos(const unsigned numNormalIndexRegions)
 }
 
 // =======================================================================================
-// Function jumpToTranslocBlock()
+// Function jumpToTranslocRegion()
 // =======================================================================================
-// Jump to the start of the translocation block (i.e. the first byte after the translocation guard)
+// Jump to the first translocation record on chrom.
 template<typename TStream>
-inline void jumpToTranslocBlock(TStream & stream, const unsigned indexOffset)
+inline void jumpToTranslocRegion(TStream & stream,
+                                 const seqan::String<seqan::CharString> & contigNames,
+                                 const seqan::CharString & chrom,
+                                 const unsigned indexOffset)
 {
-    // Move to the position of the first entry in the translocation index.
-    stream.clear();
-    
+    SEQAN_ASSERT(!stream.eof());
+    // Find position of chrom in contigNames
+    uint64_t i = 0;
+    for (; i < length(contigNames) && chrom != contigNames[i]; ++i);
+
+    // Calculate the position of chrom in the index and seek it
     uint64_t offset = 0;
-    stream.seekg(indexOffset);
+    stream.seekg(indexOffset + i * sizeof(uint64_t));
 
     // Read the offset and move the stream.
     stream.read(reinterpret_cast<char *>(&offset), sizeof(uint64_t));
