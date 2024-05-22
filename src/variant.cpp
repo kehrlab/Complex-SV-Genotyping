@@ -131,7 +131,7 @@ std::vector<GenomicRegion> complexVariant::createRegionsFromBreakpoints(int sear
     return associatedRegions;
 }
 
-std::string complexVariant::getName()
+std::string complexVariant::getName() const
 {
     return this->variantName;
 }

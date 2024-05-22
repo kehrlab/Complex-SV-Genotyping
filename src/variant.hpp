@@ -41,7 +41,7 @@ class complexVariant {
 
     void print();
     std::vector<GenomicRegion> calculateAssociatedRegions(LibraryDistribution &);
-    std::string getName();
+    std::string getName() const;
     std::vector<Junction> & getAllJunctions();
     std::vector<Breakpoint> & getAllBreakpoints();
     std::vector<Allele> & getAlleles();
@@ -51,6 +51,13 @@ class complexVariant {
     void createAlleleMaps(int, std::unordered_map<std::string, int>);
     std::string getVariantFileName();
     void setFilterMargin(int);
+    
+
+    static struct {
+        bool operator()(complexVariant & a, complexVariant & b) {
+            return (a.getAllJunctions().size() > b.getAllJunctions().size());
+        }
+    } compareVariants;
 };
 
 #endif

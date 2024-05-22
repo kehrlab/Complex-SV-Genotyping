@@ -2,6 +2,10 @@
 #include "custom_types.hpp"
 #include "profileHandler.hpp"
 #include "seqan/arg_parse/argument_parser.h"
+#include "variant.hpp"
+#include <atomic>
+#include <thread>
+#include <unistd.h>
 
 #ifndef DATE
 #define DATE "1.1.1970"
@@ -30,29 +34,6 @@ int profileVariants(int argc, const char **argv)
 
     variantProfileParams params = getVariantProfileParameters(argParser);
     
-    now = time(0);
-    date = std::string(ctime(&now));
-    date[date.find_last_of("\n")] = '\t';
-    std::cout << date << "Loading variant descriptions and creating structures..." << std::endl;
-
-    // load variants
-    std::vector<complexVariant> variants;
-
-    // for each given variant file
-    for (std::string filename : params.variantFileNames)
-    {
-        // load variant descriptions from json file
-        variantParser vParser(filename);
-        std::vector<variantData> allVariantJunctions = vParser.getVariantJunctions();
-        std::vector<std::string> variantNames = vParser.getVariantNames();
-        std::vector<std::vector<std::string>> alleleNames = vParser.getAlleleNames();
-
-        for (uint32_t i = 0; i < variantNames.size(); ++i)
-        {
-            variants.push_back(complexVariant(variantNames[i], alleleNames[i], allVariantJunctions[i], filename));
-            variants[i].setFilterMargin(params.margin);
-        }
-    }
     now = time(0);
     date = std::string(ctime(&now));
     date[date.find_last_of("\n")] = '\t';
@@ -121,14 +102,35 @@ int profileVariants(int argc, const char **argv)
     else if (params.margin <= 0)
         throw std::runtime_error("Error: Parameter -m missing and unable to determine m from sample profiles.");
 
-    // create variant profiles
+    ContigInfo cInfo = mergeContigLengths(contigInfos);
+
     now = time(0);
     date = std::string(ctime(&now));
     date[date.find_last_of("\n")] = '\t';
-    std::cout << date << "Calculating variant profiles..." << std::endl;
+    std::cout << date << "Loading variant descriptions and creating structures..." << std::endl;
 
-    ContigInfo cInfo = mergeContigLengths(contigInfos);
-    int overlap = 20;
+    // load variant descriptions
+    std::vector<complexVariant> variants;
+
+    // for each given variant file
+    for (std::string filename : params.variantFileNames)
+    {
+        // load variant descriptions from json file
+        variantParser vParser(filename);
+        std::vector<variantData> allVariantJunctions = vParser.getVariantJunctions();
+        std::vector<std::string> variantNames = vParser.getVariantNames();
+        std::vector<std::vector<std::string>> alleleNames = vParser.getAlleleNames();
+
+        for (uint32_t i = 0; i < variantNames.size(); ++i)
+        {
+            variants.push_back(complexVariant(variantNames[i], alleleNames[i], allVariantJunctions[i], filename));
+            variants[i].setFilterMargin(params.margin);
+        }
+    }
+
+    // sort variants by number of novel junctions, making sure that larger variants are distributed as evenly as possible
+    std::sort(variants.begin(), variants.end(), complexVariant::compareVariants); 
+
 
     // open output file for profile paths
     std::ofstream outStream(params.outFile);
@@ -138,19 +140,56 @@ int profileVariants(int argc, const char **argv)
         throw std::runtime_error(msg.c_str());
     }
 
-    #pragma omp parallel for num_threads(params.nThreads)
-    for (uint32_t i = 0; i < variants.size(); ++i) 
+    // create variant profiles
+    now = time(0);
+    date = std::string(ctime(&now));
+    date[date.find_last_of("\n")] = '\t';
+    std::cout << date << "Calculating variant profiles..." << std::endl;
+
+    params.nThreads = std::min((size_t) params.nThreads, variants.size()); // make sure not to create more threads than required
+
+    std::vector<std::thread> threads(params.nThreads); // create pool of threads
+    std::vector<bool> availability(params.nThreads, true); // track the availability of each thread
+    std::atomic_int64_t counter = 0; // shared counter for tracking progress
+    
+    int overlap = 20;
+    std::thread progressReporter(trackProgress, std::cref(counter), variants.size()); // one thread to track them all
+
+    // Only handle one variant per thread instead of batch processing.
+    // Memory allocated to each thread will be released once it is destroyed, 
+    // avoiding build-up of unused memory that is not available to the remaining system.
+
+    int64_t nextIdx = 0; // keep track of the next variant to be profiled
+    for (int i = 0; i < params.nThreads; ++i) // first batch of threads is handled separately
     {
-        VariantProfile profile(
-            variants[i], params.margin, overlap, 
-            readLength, sMin, sMax, cInfo
-            );
-        profile.calculateAlleleMasks();
-	    std::string profilePath = params.outDir + "/" + variants[i].getName() + ".profile";
-        profile.writeProfile(profilePath);
-        #pragma omp critical
-        outStream << profilePath << std::endl;
+        availability[i] = false;
+        threads[i] = std::thread(createVariantProfile, variants[i], params, overlap, readLength, sMin, sMax, cInfo, std::ref(counter), std::ref(availability), i);
+        outStream << params.outDir + "/" + variants[i].getName() + ".profile" << std::endl;
+        ++nextIdx;
     }
+
+    while (nextIdx < variants.size())
+    {
+        for (int i = 0; i < params.nThreads; ++i) // cycle through all threads and assign the next variant to the next available thread 
+        {
+            if (availability[i]) {                                              // each thread only writes to i-th element -> no race conditions
+                threads[i].join();                                              // if the thread is finished, we can join it immediately
+                availability[i] = false;                                        // set availability BEFORE the new thread is started
+                threads[i] = std::thread(createVariantProfile, variants[nextIdx], params, overlap, readLength, sMin, sMax, cInfo, std::ref(counter), std::ref(availability), i); 
+                outStream << params.outDir + "/" + variants[nextIdx].getName() + ".profile" << std::endl; //  // write profile path to file 
+                ++nextIdx;                                                      // next variant
+                if (nextIdx == variants.size())
+                    break;                                              
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // check for available threads periodically
+    }
+
+    for (int i = 0; i < params.nThreads; ++i) // re-join all threads
+        threads[i].join();
+    progressReporter.join();
+
 
     outStream.close();
 
@@ -289,4 +328,34 @@ ContigInfo mergeContigLengths(const std::vector<std::unordered_map<std::string, 
     cInfo.sortNames();
     cInfo.calculateGlobalContigPositions();
     return cInfo;
+}
+
+inline void createVariantProfile(const complexVariant & variant, const variantProfileParams & params, int overlap, int readLength, int sMin, int sMax, ContigInfo cInfo, std::atomic_int64_t & counter, std::vector<bool> & availability, int idx)
+{
+    VariantProfile profile(variant, params.margin, overlap, readLength, sMin, sMax, cInfo);
+    std::string profilePath = params.outDir + "/" + variant.getName() + ".profile";
+
+    profile.calculateAlleleMasks();
+    profile.writeProfile(profilePath);
+
+    counter++;
+    availability[idx] = true;
+}
+
+inline void trackProgress(const std::atomic_int64_t &counter, int64_t targetSize)
+{
+    time_t now;
+    std::string date;
+
+    while (counter < targetSize)
+    {
+        sleep(3);
+        now = time(0);
+        date = std::string(ctime(&now));
+        date[date.find_last_of("\n")] = '\t';
+        std::cout << "\r\e[K" << std::flush;
+        std::cout << date << "Progress: " << counter << " / " << targetSize << " (";
+        printf("%.2f", 100. * ((float) counter / targetSize));
+        std::cout << "%)         " << std::flush;
+    }
 }

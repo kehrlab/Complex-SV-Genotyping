@@ -28,7 +28,6 @@ class VariantProfile
 
     std::unordered_map<std::string, int> variantAlleleNames;
     std::unordered_map<std::string, int> variantGroups;
-    std::unordered_map<std::string, bool> groupOccurs;
 
     Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t> referenceMask;
     std::vector<std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t>>> variantMask;
@@ -52,6 +51,7 @@ class VariantProfile
     public:
     VariantProfile();
     VariantProfile(std::string);
+    VariantProfile(int, int, int, int, int, const ContigInfo &);
     VariantProfile(complexVariant, int, int, int, int, int, const ContigInfo &);
 
     void calculateAlleleMasks();
@@ -72,8 +72,10 @@ class VariantProfile
     int getMargin();
     int getReadLength();
     void createVariantChromosomeStructures();
-    std::string getName();
-    const ContigInfo & getContigInfo();
+    std::string getName() const;
+    const ContigInfo & getContigInfo() const;
+    void clearProfile();
+    void overwrite(complexVariant);
 
     private:
     void determinePossibleGroups();
@@ -93,6 +95,7 @@ class VariantProfile
     std::vector<std::vector<int>> getSubsets(std::vector<int>, std::vector<int>, uint32_t);
 
     void initMasks();
+    void resizeMasks();
     void initReferenceMask();
     void initVariantMask();
     inline void addSimulatedTemplateToMask(int &, VariantMap &, int, int64_t, Allele &);

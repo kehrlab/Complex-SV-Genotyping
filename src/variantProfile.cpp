@@ -37,6 +37,19 @@ VariantProfile::VariantProfile(
     initMasks();
 }
 
+VariantProfile::VariantProfile(
+    int filterMargin,
+    int overlap,
+    int readLength, 
+    int sMin,
+    int sMax,
+    const ContigInfo & contigInfos
+) : filterMargin(filterMargin), overlap(overlap), readLength(readLength), sMin(sMin), sMax(sMax), cInfo(contigInfos)
+{   
+    this->sMinMapped = sMin;
+    this->sMaxMapped = sMax;
+}
+
 void VariantProfile::determinePossibleGroups()
 {
     int alleleCounter = 0;
@@ -439,7 +452,6 @@ void VariantProfile::determineVariantGroups(VariantRegions & vRegions)
         if (this->variantGroups.find(g) == this->variantGroups.end())
         {
             this->variantGroups[g] = counter;
-            this->groupOccurs[g] = false;
             ++counter;
         }
     }
@@ -711,7 +723,7 @@ void VariantProfile::initVariantMask()
             )
         );
         for (int j = 0; j < this->sMax - this->sMin + 1; ++j)
-            this->variantMask[i][j].reserve(Eigen::VectorXi::Constant(this->variantGroups.size(), (this->variant.getAllJunctions().size() + 1) *(this->sMax - this->sMin + 1)));
+            this->variantMask[i][j].reserve(Eigen::VectorXi::Constant(this->variantGroups.size(), (this->variant.getAllJunctions().size() + 1) *(this->sMax - this->sMin + 1) * 5));
     } 
 }
 
@@ -812,7 +824,6 @@ inline void VariantProfile::addValueToMask(Allele & allele, int64_t sOld, int64_
 	    std::cerr << "Insert size error. Profile boundaries: " << this->sMinMapped << "\t" << this->sMaxMapped << "\tMapped insert size: " << sNew << std::endl;
 
     int gIdx = this->variantGroups[group];
-    this->groupOccurs[group] = true;
 
     if (allele.getName() == "REF") 
         this->referenceMask.coeffRef(gIdx, sOld-this->sMinMapped) += 1;
@@ -828,7 +839,6 @@ void VariantProfile::addGroupToMasks(std::string group)
         return;
     int nG = this->variantGroups.size();
     this->variantGroups[group] = nG;
-    this->groupOccurs[group] = true;
 
     this->referenceMask.conservativeResize(this->variantGroups.size(), this->referenceMask.cols());
     this->referenceMask.reserve(Eigen::VectorXi::Constant(this->variantGroups.size(), this->sMax - this->sMin + 1));
@@ -838,7 +848,7 @@ void VariantProfile::addGroupToMasks(std::string group)
         for (uint32_t j = 0; j < this->variantMask[i].size(); ++j)
         {
             this->variantMask[i][j].conservativeResize(this->variantGroups.size(), this->variantMask[i][j].cols());
-            this->variantMask[i][j].reserve(Eigen::VectorXi::Constant(this->variantGroups.size(), (this->variant.getAllJunctions().size() + 1) *(this->sMax - this->sMin + 1)));
+            this->variantMask[i][j].reserve(Eigen::VectorXi::Constant(this->variantGroups.size(), (this->variant.getAllJunctions().size() + 1) *(this->sMax - this->sMin + 1) * 5));
         }
     }
 }
@@ -859,7 +869,7 @@ const Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t> & VariantProfile::get
 }
 
 void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::string, GenotypeDistribution> & distributions, LibraryDistribution & libraryDistribution, float eps)
-{   
+{ 
     std::vector<std::string> alleleNames(this->variantAlleleNames.size() + 1, "");
     alleleNames[0] = "REF";
     for (auto & vN : this->variantAlleleNames)
@@ -873,22 +883,35 @@ void VariantProfile::calculateGenotypeDistributions(std::unordered_map<std::stri
 
     // reserve space for allele matrices
     for (uint32_t i = 0; i < alleleNames.size(); ++i)
-        variantAlleleDists[i].reserve(Eigen::VectorXi::Constant(this->variantGroups.size(), (this->variant.getAllJunctions().size() + 1) * (this->sMax - this->sMin + 1)));
+        variantAlleleDists[i].reserve(Eigen::VectorXi::Constant(this->variantGroups.size(), (this->variant.getAllJunctions().size() + 1) * (this->sMax - this->sMin + 1) * 5));
 
+  
     // fill matrices
     for (int64_t s = this->sMin; s <= this->sMax; ++s)
     {
         float p = libraryDistribution.getProbability((int) s);
-        for (uint32_t v = 0; v < alleleNames.size(); ++v)
-        {	
-	        if (alleleNames[v] == "REF")
-                for (int i = 0; i < variantAlleleDists[0].rows(); ++i)
-                    variantAlleleDists[0].insert(i, s - this->sMinMapped) = this->referenceMask.coeff(i, s-this->sMinMapped) * p;
-	        else
-                variantAlleleDists[v] += this->variantMask[this->variantAlleleNames[alleleNames[v]]][s - this->sMin] * p; 
-	    }
+        for (int i = 0; i < variantAlleleDists[0].rows(); ++i)
+            variantAlleleDists[0].insert(i, s - this->sMinMapped) = this->referenceMask.coeff(i, s-this->sMinMapped) * p;
     }
 
+    // fill matrices
+    bool largeMat = (this->sMaxMapped - this->sMinMapped) > 100000;
+    for (int64_t s = this->sMin; s <= this->sMax; ++s)
+    {
+        float p = libraryDistribution.getProbability((int) s);
+        for (uint32_t v = 1; v < alleleNames.size(); ++v) {
+	    if (!largeMat) {
+	    	variantAlleleDists[v] += this->variantMask[this->variantAlleleNames[alleleNames[v]]][s - this->sMin] * p;
+	    } else {
+		Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t> temp = this->variantMask[this->variantAlleleNames[alleleNames[v]]][s - this->sMin];
+	    	temp *= p;
+	    	for (int i = 0; i < variantAlleleDists[v].rows(); ++i) { // adding row-vectors and assigning them to the finished matrix seems much faster than +=
+            		Eigen::SparseVector<float, 0, int64_t> temp1 = variantAlleleDists[v].row(i) + temp.row(i);
+	        	variantAlleleDists[v].row(i) = temp1;
+	    	}
+	    }
+	}
+    }
     // mix distributions
     float majorFactor = 1. - eps;
     float minorFactor = eps / variantAlleleDists.size();
@@ -953,7 +976,7 @@ complexVariant & VariantProfile::getVariant()
     return this->variant;
 }
 
-const ContigInfo & VariantProfile::getContigInfo()
+const ContigInfo & VariantProfile::getContigInfo() const
 {
     return this->cInfo;
 }
@@ -1274,7 +1297,7 @@ void VariantProfile::readProfile(std::string filename)
 
             this->variantMask[i][s - this->sMin].resize(m, n);
             this->variantMask[i][s - this->sMin].reserve(
-                Eigen::VectorXi::Constant(this->variantGroups.size(), (this->variant.getAllJunctions().size() + 1) * (this->sMax - this->sMin + 1))
+                Eigen::VectorXi::Constant(this->variantGroups.size(), (this->variant.getAllJunctions().size() + 1) * (this->sMax - this->sMin + 1) * 5)
             );
             this->variantMask[i][s - this->sMin].makeCompressed();
             this->variantMask[i][s - this->sMin].resizeNonZeros(nnzS);
@@ -1310,44 +1333,7 @@ int VariantProfile::getReadLength()
     return this->readLength;
 }
 
-// bool VariantProfile::variantStructureIsPresent()
-// {
-//     return this->variantPresent;
-// }
-
-// bool VariantProfile::loadVariantStructure(std::string filename, std::string variantName)
-// {
-//     // load with variant parser
-//     try {
-//         variantParser parser(filename);
-//         int idx = -1;
-//         for (uint32_t i = 0; i < parser.getVariantNames().size(); ++i)
-//         {
-//             if (parser.getVariantNames()[i] == variantName)
-//             {
-//                 idx = i;
-//                 break;
-//             }
-//         }
-//         if (idx < 0)
-//         {
-//             std::cerr << "Could not find variant " << variantName << " in specified file (" << filename << ")." << std::endl;
-//             return false;
-//         }
-
-//         this->variant = complexVariant(parser.getVariantNames()[idx], parser.getAlleleNames()[idx], parser.getVariantJunctions()[idx], filename);
-//         createVariantChromosomeStructures();
-//     } 
-//     catch (std::runtime_error const& err)
-//     {
-//         std::cerr << "Could not read variant file (" << filename << ")" << std::endl;
-//         return false;
-//     }
-
-//     return true;
-// }
-
-std::string VariantProfile::getName()
+std::string VariantProfile::getName() const
 {
     return this->name;
 }
@@ -1427,4 +1413,73 @@ std::vector<Junction> VariantProfile::readJunctions(std::ifstream & stream)
         junctions.push_back(Junction(id, cName, rNameLeft, rNameRight, xLeft, xRight, dLeft, dRight));
     }
     return junctions;
+}
+
+void VariantProfile::clearProfile()
+{
+    this->variant = complexVariant();
+    this->name = "";
+    std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>>().swap(this->chromosomeStructures);
+    std::unordered_map<std::string, int>().swap(this->variantAlleleNames);
+    std::unordered_map<std::string, int>().swap(this->variantGroups);
+
+    this->filter = ReadPairFilter();
+    this->cInfo = ContigInfo();
+
+    this->referenceMask = Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t>();
+    this->referenceMask.reserve(0);
+
+    for (uint32_t i = 0; i + 1 < this->variant.getAlleles().size(); ++i)
+    {
+        for (int j = 0; j < this->sMax - this->sMin + 1; ++j) {
+            this->variantMask[i][j] = Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t>();
+            this->variantMask[i][j].reserve(0);
+        }
+        std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t>>().swap(this->variantMask[i]);
+    } 
+}
+
+void VariantProfile::overwrite(complexVariant variant)
+{
+    this->variant = variant;
+    this->variant.createAlleleMaps(this->filterMargin, cInfo.getContigLengths());
+    this->filter = ReadPairFilter(this->variant.getAllBreakpoints(), this->filterMargin, 0);
+    this->sMinMapped = sMin;
+    this->sMaxMapped = sMax;
+    this->name = this->variant.getName();
+
+    std::unordered_map<std::string, std::unordered_map<std::string, JunctionRegion>>().swap(this->chromosomeStructures);
+    std::unordered_map<std::string, int>().swap(this->variantAlleleNames);
+    std::unordered_map<std::string, int>().swap(this->variantGroups);
+
+    determinePossibleGroups();
+    resizeMasks();
+}
+
+void VariantProfile::resizeMasks()
+{
+    this->referenceMask.resize(this->variantGroups.size(), this->sMaxMapped - this->sMinMapped + 1);
+    this->referenceMask.data().squeeze();
+    this->referenceMask.reserve(Eigen::VectorXi::Constant(this->variantGroups.size(), this->sMax - this->sMin + 1)); 
+
+    this->variantMask.resize(this->variant.getAlleles().size() - 1);
+    for (uint32_t i = 0; i < this->variantMask.size(); ++i)
+    {
+        if (this->variantMask[i].size() > 0)
+        {
+            for (int j = 0; j < this->sMax - this->sMin + 1; ++j) {
+                this->variantMask[i][j].resize(this->variantGroups.size(), this->sMaxMapped - this->sMinMapped + 1);
+                this->referenceMask.data().squeeze();
+            }
+        } else {
+            this->variantMask[i] = std::vector<Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t>>(
+                this->sMax - this->sMin + 1, 
+                Eigen::SparseMatrix<float, Eigen::RowMajor, int64_t>(this->variantGroups.size(), this->sMaxMapped - this->sMinMapped + 1)
+            );
+        }
+    }
+
+    for (uint32_t i = 0; i < this->variantMask.size(); ++i)
+        for (int j = 0; j < this->sMax - this->sMin + 1; ++j)
+            this->variantMask[i][j].reserve(Eigen::VectorXi::Constant(this->variantGroups.size(), (this->variant.getAllJunctions().size() + 1) *(this->sMax - this->sMin + 1) * 5));
 }
