@@ -1,0 +1,77 @@
+[38;5;246m# A tibble: 3 × 2[39m
+[38;5;246m# Groups:   Superpopulation [3][39m
+  Superpopulation     N
+  [3m[38;5;246m<chr>[39m[23m           [3m[38;5;246m<int>[39m[23m
+[38;5;250m1[39m AFR                50
+[38;5;250m2[39m EAS                50
+[38;5;250m3[39m EUR                50
+null device 
+          1 
+null device 
+          1 
+null device 
+          1 
+Remove due to no alleles:  16 
+Without filtering: 
+Calls:  54526#:  274 
+# per variant type: 
+[38;5;246m# A tibble: 10 × 2[39m
+   VariantType     N
+   [3m[38;5;246m<chr>[39m[23m       [3m[38;5;246m<int>[39m[23m
+[38;5;250m 1[39m INVdel         13
+[38;5;250m 2[39m INVdup         29
+[38;5;250m 3[39m dDUP           97
+[38;5;250m 4[39m dDUP_iDEL      40
+[38;5;250m 5[39m delINV         20
+[38;5;250m 6[39m delINVdel      19
+[38;5;250m 7[39m delINVdup      10
+[38;5;250m 8[39m dupINV         34
+[38;5;250m 9[39m dupINVdel      10
+[38;5;250m10[39m dupINVdup       2
+----------------------------------------
+With filtering: 
+Calls:  52554 
+#:  274 
+# per variant type: 
+[38;5;246m# A tibble: 10 × 2[39m
+   VariantType     N
+   [3m[38;5;246m<chr>[39m[23m       [3m[38;5;246m<int>[39m[23m
+[38;5;250m 1[39m INVdel         13
+[38;5;250m 2[39m INVdup         29
+[38;5;250m 3[39m dDUP           97
+[38;5;250m 4[39m dDUP_iDEL      40
+[38;5;250m 5[39m delINV         20
+[38;5;250m 6[39m delINVdel      19
+[38;5;250m 7[39m delINVdup      10
+[38;5;250m 8[39m dupINV         34
+[38;5;250m 9[39m dupINVdel      10
+[38;5;250m10[39m dupINVdup       2
+----------------------------------------
+r^2:  0.8105904 
+HWE:
+[38;5;246m# A tibble: 4 × 5[39m
+[38;5;246m# Groups:   Algorithm, Population [4][39m
+  Algorithm Population   HWE Total Percentage
+  [3m[38;5;246m<chr>[39m[23m     [3m[38;5;246m<chr>[39m[23m      [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<dbl>[39m[23m      [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m GGTyper   AFR          214   224       95.5
+[38;5;250m2[39m GGTyper   All          250   274       91.2
+[38;5;250m3[39m GGTyper   EAS           87    96       90.6
+[38;5;250m4[39m GGTyper   EUR          131   144       91.0
+Overall filtered MIER:
+[38;5;246m# A tibble: 1 × 2[39m
+[38;5;246m# Groups:   Algorithm [1][39m
+  Algorithm  MIER
+  [3m[38;5;246m<chr>[39m[23m     [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m GGTyper       0
+Recall:
+[38;5;246m# A tibble: 1 × 1[39m
+  Recall
+   [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m  0.955
+TR for certainty >= 0.9:
+[38;5;246m# A tibble: 1 × 6[39m
+  Algorithm     N Threshold    TR Filter    Percentage
+  [3m[38;5;246m<chr>[39m[23m     [3m[38;5;246m<int>[39m[23m     [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<dbl>[39m[23m [3m[38;5;246m<chr>[39m[23m          [3m[38;5;246m<dbl>[39m[23m
+[38;5;250m1[39m GGTyper    [4m1[24m566     0.900 0.501 Certainty      0.833
+null device 
+          1 
