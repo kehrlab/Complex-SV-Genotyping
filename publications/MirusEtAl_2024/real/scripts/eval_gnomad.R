@@ -35,9 +35,6 @@ polaris_data %>%
   group_by(Superpopulation) %>% 
   summarize(N = n(), .groups = "keep")
 
-#polaris_data %>%
-#  write_tsv("~/polaris_info.tsv")
-
 
 #########################
 ## function definitions #
@@ -252,12 +249,13 @@ load_ggtyper_results <- function(d, population_data)
 load_gnomad_info <- function(d)
 {
   gnomad <- tibble()
-  for (f in list.files(path = d, pattern = "gnomad_structural_variants_[0-9]+-", full.names = TRUE))
+  for (f in list.files(path = d, pattern = "gnomad_structural_variants_", full.names = TRUE))
   {
       temp <- read_csv(f, progress = FALSE)
       gnomad <- gnomad %>%
         bind_rows(temp)
   }
+  print(str(gnomad))
   return(gnomad)
 }
 
@@ -266,17 +264,21 @@ ggtyper_res <- load_ggtyper_results("polarisResults/ggtyper_gnomad_bih/", polari
 genotype_results <- ggtyper_res
 rm(ggtyper_res)
 
-gnomad_info <- load_gnomad_info("data/gnomad_structural_variants_download/") %>%
+gnomad_info_old <- load_gnomad_info("data/gnomad_structural_variants_download/") %>%
   select("Allele Frequency", Size, "Variant ID", "Homozygote Count") %>%
   rename(AlleleFrequency = "Allele Frequency", VariantID = "Variant ID", HomCount = "Homozygote Count") %>%
   filter(!duplicated(VariantID))
 
-name_assignments <- read_tsv("data/gnomad_variants/gnomad_cpx_name_assignments.tsv", col_names = c("VariantID", "Variant")) %>%
-  mutate(VariantID = gsub(VariantID, pattern = "gnomAD-SV_v3_", replacement = "")) %>%
-  mutate(VariantID = toupper(VariantID))
+old_name_assignments <- read_tsv("data/gnomad_variants/gnomad_cpx_unfiltered_old_names.tsv", col_names = FALSE)
+colnames(old_name_assignments) <- c("Variant", "OldName")
 
-gnomad_info <- gnomad_info %>%
-  inner_join(name_assignments, by = "VariantID")
+gnomad_info <- read_csv("data/gnomad_variants/gnomad_cpx_filtered_AF.csv") %>% rename(Variant = Name)
+full_info <- gnomad_info
+gnomad_info <- gnomad_info %>% 	
+	rename(AlleleFrequency = AF) %>%
+	inner_join(old_name_assignments, by = "Variant") %>%
+	rename(VariantID = Variant) %>%
+	rename(Variant = OldName)
 
 # additional files containing information about repeat / problematic region status for each SV (based on UCSC table browser bed files)
 # created with scripts/find_variants_in_region and data/hg38*.bed
@@ -284,17 +286,22 @@ gnomad_info <- gnomad_info %>%
 #seg_dup_info <- read_tsv("data/gnomad_variants/gnomad_seg_dups_info.tsv", col_names = c("Variant", "SegDup"))
 #problem_info <- read_tsv("data/gnomad_variants/gnomad_problem_info.tsv", col_names = c("Variant", "ProblemRegion"))
 
+
+cat("Before joining: ", length(genotype_results %>% pull(Variant) %>% unique), "\n")
+
 genotype_results <- genotype_results %>%
-#  inner_join(repeat_info, by = "Variant") %>%
-#  inner_join(seg_dup_info, by = "Variant") %>%
-#  inner_join(problem_info, by = "Variant") %>%
   inner_join(gnomad_info, by = "Variant")
+
+full_info %>% filter(! Variant %in% genotype_results$VariantID) %>% write_tsv("removed_variants.tsv")
+
+
+cat("Before filtering: ", length(genotype_results %>% pull(Variant) %>% unique), "\n")
 
 genotype_results %>% write_tsv("polarisResults/gnomadCPX_all_genotypes.tsv")
 
-genotype_results <- genotype_results %>% filter(AlleleFrequency >= minFreq) 
+genotype_results <- genotype_results %>% filter(AlleleFrequency >= minFreq)
 
-
+cat("After filtering: ", length(genotype_results %>% pull(Variant) %>% unique), "\n")
 
 # load Possible results from other algorithms here...
 
@@ -341,8 +348,9 @@ typeCounts <- genotype_results %>%
 
 allele_freqs <- calculate_allele_freqs(genotype_results %>% filter(Certainty >= ceMin & AvgMapQ >= qMin), "all")
 allele_freqs_gnomad <- allele_freqs %>% inner_join(gnomad_info %>% select(Variant, AlleleFrequency), by = "Variant")
+#allele_freqs_gnomad %>% write_tsv("Allele_Freqs_Gnomad.tsv")
 allele_correlation <- cor(allele_freqs_gnomad$AlleleFreq, allele_freqs_gnomad$AlleleFrequency)^2
-
+#stop()
 
 allele_freqs_unfiltered <- calculate_allele_freqs(genotype_results, "all")
 allele_freqs_filtered <- calculate_allele_freqs(genotype_results %>% filter(Certainty >= ceMin & AvgMapQ >= qMin), "all")
@@ -770,20 +778,34 @@ print(point1)
 
 
 #################
-vcf_af <- read_csv("data/gnomad_variants/gnomad_cpx_AF.csv") # these AFs are based on the VCF file!
+vcf_af <- read_csv("data/gnomad_variants/gnomad_cpx_filtered_AF.csv") # these AFs are based on the VCF file after filtering for FILTER=PASS
+vcf_af_unfiltered <- read_csv("data/gnomad_variants/gnomad_cpx_unfiltered_AF.csv") # these AFs are based on VCF file without filtering
+
 p_af_vcf <- vcf_af %>% 
   mutate(eur_AN = fin_AN + nfe_AN, eur_AF = (fin_AF * fin_AN + nfe_AN * nfe_AF) / eur_AN) %>% 
-  pivot_longer(cols = c("eas_AF", "afr_AF", "eur_AF"), values_to = "AF", names_to = "Population") %>%
+  pivot_longer(cols = c("eas_AF", "afr_AF", "eur_AF"), values_to = "AlleleFrequency", names_to = "Population") %>%
   mutate(Population = sapply(Population, function(x){if (x == "eur_AF") return("EUR") else if (x == "eas_AF") return("EAS") else return("AFR")})) %>%
-  select(-c("fin_AF", "fin_AN", "nfe_AN", "nfe_AF", "eas_AN", "eur_AN", "afr_AN")) %>%
-  filter(AF > 0) %>%
-  ggplot(aes(x = AF)) +
+  select(-c("AF", "fin_AF", "fin_AN", "nfe_AN", "nfe_AF", "eas_AN", "eur_AN", "afr_AN")) %>%
+  filter(AlleleFrequency > 0) %>%
+  ggplot(aes(x = AlleleFrequency)) +
   facet_grid(cols = vars(Population)) +
   geom_histogram(col = "black", fill = "#12becc") +
   custom_theme +
   ylab("Count") +
-  xlab("gnomAD-SV allele frequency (VCF)")
+  xlab("gnomAD-SV allele frequency (filtered VCF)")
 
+p_af_vcf_unfiltered <- vcf_af_unfiltered %>% 
+  mutate(eur_AN = fin_AN + nfe_AN, eur_AF = (fin_AF * fin_AN + nfe_AN * nfe_AF) / eur_AN) %>% 
+  pivot_longer(cols = c("eas_AF", "afr_AF", "eur_AF"), values_to = "AlleleFrequency", names_to = "Population") %>%
+  mutate(Population = sapply(Population, function(x){if (x == "eur_AF") return("EUR") else if (x == "eas_AF") return("EAS") else return("AFR")})) %>%
+  select(-c("fin_AF", "fin_AN", "nfe_AN", "nfe_AF", "eas_AN", "eur_AN", "afr_AN")) %>%
+  filter(AlleleFrequency > 0) %>%
+  ggplot(aes(x = AlleleFrequency)) +
+  facet_grid(cols = vars(Population)) +
+  geom_histogram(col = "black", fill = "#12becc") +
+  custom_theme +
+  ylab("Count") +
+  xlab("gnomAD-SV allele frequency (unfiltered VCF)")
 
 p_af_browser_1 <- gnomad_info %>%
   filter(AlleleFrequency > 0) %>%
@@ -791,17 +813,20 @@ p_af_browser_1 <- gnomad_info %>%
   geom_histogram(binwidth = 0.01, col = "black", fill = "#12becc") +
   custom_theme_large +
   ylab("Count") +
-  xlab("gnomAD-SV allele frequency (Browser)")
+  xlab("gnomAD-SV allele frequency (filtered VCF)")
 p_af_browser_2 <- gnomad_info %>%
   filter(AlleleFrequency > 0.005) %>%
   ggplot(aes(x = AlleleFrequency)) +
   geom_histogram(binwidth = 0.01, col = "black", fill = "#12becc") +
   custom_theme_large +
   ylab("Count") +
-  xlab("gnomAD-SV allele frequency (Browser)")
+  xlab("gnomAD-SV allele frequency (filtered VCF)")
+
+# gnomad_info %>% inner_join(vcf_af %>% rename(Variant = Name)) %>% inner_join(by = c("Variant")) %>% write_tsv("gnomad_allele_freq_comparison.tsv")
 
 CairoPDF("plots/afs.pdf", width = 16, height = 9, version = "1.5")
 plot(p_af_vcf)
+plot(p_af_vcf_unfiltered)
 plot(p_af_browser_1)
 plot(p_af_browser_2)
 dev.off()

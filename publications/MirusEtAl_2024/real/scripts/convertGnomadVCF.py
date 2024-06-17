@@ -74,7 +74,7 @@ def checkChromosome(rec): #checks if all intervalls & start are on the same chro
                 print('! Check Chromosomes in Variant description in: '+ rec.info['CPX_TYPE'])
 
 def getAFfreq(rec):
-    AF_entry = [getName(rec), rec.info['AF_fin'][0],rec.info['AN_fin'],rec.info['AF_nfe'][0],rec.info['AN_nfe'],rec.info['AF_eas'][0],rec.info['AN_eas'],rec.info['AF_afr'][0],rec.info['AN_afr']]
+    AF_entry = [getName(rec), rec.info['AF'][0],rec.info['AF_fin'][0],rec.info['AN_fin'],rec.info['AF_nfe'][0],rec.info['AN_nfe'],rec.info['AF_eas'][0],rec.info['AN_eas'],rec.info['AF_afr'][0],rec.info['AN_afr']]
     AF_freqs.append(AF_entry)
 
 def createJSON(rec):
@@ -242,13 +242,15 @@ def createJSON(rec):
         ########## FOR CPX_TYPE: delINV
         if rec.info['CPX_TYPE']== 'delINV':
             SV_Name= str(rec.chrom)+'_'+str(rec.pos)+'_delINV'#getName(rec)     #
+            
             k = 0
             while True:
                 if SV_Name not in SV_Variants:
                     break
                 SV_Name= str(rec.chrom)+'_'+str(rec.pos)+ '_'+str(rec.info['CPX_TYPE'])+'_'+ str(k)
                 k = k +1
-        #    # print(SV_Name)
+            oldNames[getName(rec)] = SV_Name
+        #     print(SV_Name)
         #     interval_1= rec.info['CPX_INTERVALS'][0].split("_")
         #     chromWindow1 = interval_1[1].split(":")
         #     chrm1 = chromWindow1[0]
@@ -301,13 +303,14 @@ def createJSON(rec):
         ########## FOR CPX_TYPE: INVdel
         elif rec.info['CPX_TYPE']== 'INVdel':
             SV_Name= str(rec.chrom)+'_'+str(rec.pos)+'_INVdel' #getName(rec)     #
+            
             k = 0
             while True:
                 if SV_Name not in SV_Variants:
                     break
                 SV_Name= str(rec.chrom)+'_'+str(rec.pos)+ '_'+str(rec.info['CPX_TYPE'])+'_'+ str(k)
                 k = k +1
-            
+            oldNames[getName(rec)] = SV_Name 
             chrm1,start1, end1=SplitInterval(rec.info['CPX_INTERVALS'][0])
             chrm2,start2, end2=SplitInterval(rec.info['CPX_INTERVALS'][1])
             INVdel= {
@@ -350,7 +353,7 @@ def createJSON(rec):
                     break
                 SV_Name= str(rec.chrom)+'_'+str(rec.pos)+ '_'+str(rec.info['CPX_TYPE'])+'_'+ str(k)
                 k = k +1
-            
+            oldNames[getName(rec)] = SV_Name
             
             ####### with Inversion
             if len(rec.info['CPX_INTERVALS']) ==2:
@@ -428,7 +431,7 @@ def createJSON(rec):
                     break
                 SV_Name= str(rec.chrom)+'_'+str(rec.pos)+ '_'+str(rec.info['CPX_TYPE'])+'_'+ str(k)
                 k = k +1
-            
+            oldNames[getName(rec)] = SV_Name
             
             ####### with Inversion
             if len(rec.info['CPX_INTERVALS']) ==3:
@@ -500,7 +503,7 @@ def createJSON(rec):
                     break
                 SV_Name= str(rec.chrom)+'_'+str(rec.pos)+ '_'+str(rec.info['CPX_TYPE'])+'_'+ str(k)
                 k = k +1
-            
+            oldNames[getName(rec)] = SV_Name 
             chrm1,start1, end1=SplitInterval(rec.info['CPX_INTERVALS'][0])
             chrm2,start2, end2=SplitInterval(rec.info['CPX_INTERVALS'][1])
             chrm3,start3, end3=SplitInterval(rec.info['CPX_INTERVALS'][2])
@@ -536,6 +539,7 @@ def createJSON(rec):
         ########## FOR CPX_TYPE: dupINVdup
         elif rec.info['CPX_TYPE']== 'dupINVdup':
             SV_Name=getName(rec)
+            oldNames[getName(rec)] = SV_Name
             chrm1,start1, end1=SplitInterval(rec.info['CPX_INTERVALS'][0])
             chrm2,start2, end2=SplitInterval(rec.info['CPX_INTERVALS'][1])
             chrm3,start3, end3=SplitInterval(rec.info['CPX_INTERVALS'][2])
@@ -576,6 +580,7 @@ def createJSON(rec):
         ########## FOR CPX_TYPE: dupINVdel
         elif rec.info['CPX_TYPE']== 'dupINVdel':
             SV_Name=getName(rec)
+            oldNames[getName(rec)] = SV_Name
             chrm1,start1, end1=SplitInterval(rec.info['CPX_INTERVALS'][0])
             chrm2,start2, end2=SplitInterval(rec.info['CPX_INTERVALS'][1])
             #chrm3,start3, end3=SplitInterval(rec.info['CPX_INTERVALS'][2])
@@ -611,6 +616,7 @@ def createJSON(rec):
         ########## FOR CPX_TYPE: delINVdup
         elif rec.info['CPX_TYPE']== 'delINVdup':
             SV_Name=getName(rec)
+            oldNames[getName(rec)] = SV_Name
             chrm1,start1, end1=SplitInterval(rec.info['CPX_INTERVALS'][0])
             chrm2,start2, end2=SplitInterval(rec.info['CPX_INTERVALS'][1])
             chrm3,start3, end3=SplitInterval(rec.info['CPX_INTERVALS'][2])
@@ -646,6 +652,7 @@ def createJSON(rec):
         ########## FOR CPX_TYPE: INVdup
         elif rec.info['CPX_TYPE']== 'INVdup':
             SV_Name=getName(rec)
+            oldNames[getName(rec)] = SV_Name
             chrm1,start1, end1=SplitInterval(rec.info['CPX_INTERVALS'][0])
             chrm2,start2, end2=SplitInterval(rec.info['CPX_INTERVALS'][1])
             INVdup= {
@@ -680,6 +687,7 @@ def createJSON(rec):
         ########## FOR CPX_TYPE: dupINV
         elif rec.info['CPX_TYPE']== 'dupINV':
             SV_Name=getName(rec)
+            oldNames[getName(rec)] = SV_Name
             chrm1,start1, end1=SplitInterval(rec.info['CPX_INTERVALS'][0])
             chrm2,start2, end2=SplitInterval(rec.info['CPX_INTERVALS'][1])
             dupINV= {
@@ -713,7 +721,10 @@ def createJSON(rec):
 
         ########## FOR CPX_TYPE: INS_iDEL
         elif rec.info['CPX_TYPE']== 'INS_iDEL':
+            SV_Name=getName(rec)
             countVariants['countINS_iDEL'] = countVariants['countINS_iDEL'] +1
+            svNames[rec.id] = SV_Name
+            oldNames[getName(rec)] = SV_Name
             
 
     elif rec.alts[0] == '<INS:ME:ALU>':
@@ -850,7 +861,8 @@ filepath = argv[1]
 outpath = argv[2]   #### im Moment nch nicht verwendet
 SV_Variants ={}
 svNames = {}
-AF_freqs =[['Name','fin_AF','fin_AN','nfe_AF','nfe_AN','eas_AF','eas_AN','afr_AF','afr_AN']]
+oldNames = {}
+AF_freqs =[['Name', 'AF', 'fin_AF','fin_AN','nfe_AF','nfe_AN','eas_AF','eas_AN','afr_AF','afr_AN']]
 
 countVariants={
     'countBND' :0,
@@ -1012,6 +1024,10 @@ prefix=outpath[:-5] # assumes output file has '.json' filetype
 with open(prefix + "_name_assignments.tsv", 'w') as outFile:
     for k in svNames:
         outFile.write(k + "\t" + svNames[k] + "\n")
+
+with open(prefix + "_old_names.tsv", 'w') as outFile:
+    for k in oldNames:
+        outFile.write(k + "\t" + oldNames[k] + "\n")
 
 json_object = json.dumps(SV_Variants, indent=4)
 with open(outpath, "w") as outfile:
