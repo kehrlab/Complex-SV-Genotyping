@@ -16,7 +16,7 @@ typedef std::vector<std::vector<Junction>> variantData;
 class variantParser {
     std::vector<variantData> variants;
     std::string filename;
-    nlohmann::json jsonObject;
+    nlohmann::ordered_json jsonObject;
     int id;
     std::string refName;
     std::vector<std::vector<std::string>> alleleNames;
@@ -28,7 +28,7 @@ class variantParser {
     bool structureIsValid(std::vector<Junction>);
 
     variantParser();
-    Junction parseJunction(nlohmann::detail::iteration_proxy_value<nlohmann::detail::iter_impl<nlohmann::basic_json<>>> &);
+    Junction parseJunction(nlohmann::detail::iteration_proxy_value<nlohmann::detail::iter_impl<nlohmann::basic_json<nlohmann::ordered_map>>> &);
 
     public:
     variantParser(std::string filename);

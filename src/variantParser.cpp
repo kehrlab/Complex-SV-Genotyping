@@ -17,7 +17,7 @@ void variantParser::readJSONFile()
 {
     std::ifstream inStream(this->filename.c_str());
     try
-    {
+    {    
         inStream >> this->jsonObject;
     }
     catch (nlohmann::detail::parse_error const & e)
@@ -106,7 +106,7 @@ bool variantParser::structureIsValid(std::vector<Junction> junctions)
 	return true;
 }
 
-Junction variantParser::parseJunction(nlohmann::detail::iteration_proxy_value<nlohmann::detail::iter_impl<nlohmann::basic_json<>>> & junction)
+Junction variantParser::parseJunction(nlohmann::detail::iteration_proxy_value<nlohmann::detail::iter_impl<nlohmann::basic_json<nlohmann::ordered_map>>> & junction)
 {
     std::string rNameLeft = "";
     std::string rNameRight = "";
