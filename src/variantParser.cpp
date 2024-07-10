@@ -82,15 +82,23 @@ bool variantParser::structureIsValid(std::vector<Junction> junctions)
 		{
 			if (junctions[i].getPositionRight() > junctions[i+1].getPositionLeft() && (junctions[i].getDirectionRight() > 0 || junctions[i+1].getDirectionLeft() < 0))
 			{
-				std::cerr << "ERROR: Junction positions indicate inverted segment but directions indicate normal orientation." << std::endl;
+				std::cerr << "-----------------------------------------------------------------------------------------------" << std::endl;
+				std::cerr << "ERROR: Junction positions indicate inverted segment but directions indicate normal orientation:" << std::endl;
+				std::cerr << "xRight: " << junctions[i].getPositionRight() << "\t, xLeft: " << junctions[i+1].getPositionLeft() << std::endl;
+				std::cerr << "directionRight: " << junctions[i].getDirectionRight() << "\t, directionLeft: " << junctions[i+1].getDirectionLeft() << std::endl;
 				return false;
 			} else if (junctions[i].getPositionRight() <= junctions[i+1].getPositionLeft() && (junctions[i].getDirectionRight() < 0 || junctions[i+1].getDirectionLeft() > 0))
 			{
-				std::cerr << "ERROR: Junction positions indicate normal orientation but directions indicate inverted segment." << std::endl;
+				std::cerr << "-----------------------------------------------------------------------------------------------" << std::endl;
+				std::cerr << "ERROR: Junction positions indicate normal orientation but directions indicate inverted segment:" << std::endl;
+				std::cerr << "xRight: " << junctions[i].getPositionRight() << "\t, xLeft: " << junctions[i+1].getPositionLeft() << std::endl;
+				std::cerr << "directionRight: " << junctions[i].getDirectionRight() << "\t, directionLeft: " << junctions[i+1].getDirectionLeft() << std::endl;
 				return false;
 			} else if (junctions[i].getPositionRight() == junctions[i+1].getPositionLeft())
 			{
-				std::cerr << "ERROR: Right breakpoint position of one junction matches left breakpoint position of next junction." << std::endl;
+				std::cerr << "---------------------------------------------------------------------------------------------------" << std::endl;
+				std::cerr << "ERROR: Right breakpoint position of one junction matches left breakpoint position of next junction:" << std::endl;
+				std::cerr << "xRight: " << junctions[i].getPositionRight() << "\t, xLeft:" << junctions[i+1].getPositionLeft() << std::endl;
 				return false;
 			}
 		}

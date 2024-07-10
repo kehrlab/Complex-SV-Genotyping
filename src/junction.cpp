@@ -3,7 +3,7 @@
 Junction::Junction(
     int id, 
     std::string variantRefName, std::string rNameLeft, std::string rNameRight, 
-    int xLeft, int xRight, 
+    int32_t xLeft, int32_t xRight, 
     int directionLeft, int directionRight
 ) {
     setId(id);
@@ -16,7 +16,7 @@ Junction::Junction(
     int id,
     std::string variantRefName, 
     std::string rName, 
-    int x, 
+    int32_t x, 
     int direction, 
     bool left
 )
@@ -48,7 +48,7 @@ void Junction::setVariantRefName(std::string refName)
 
 void Junction::setRightSide(
     std::string rNameRight,
-    int xRight, int directionRight
+    int32_t xRight, int directionRight
 )
 {
     setRefNameRight(rNameRight);
@@ -58,7 +58,7 @@ void Junction::setRightSide(
 
 void Junction::setLeftSide(
     std::string rNameLeft,
-    int xLeft, int directionLeft
+    int32_t xLeft, int directionLeft
 )
 {
     setRefNameLeft(rNameLeft);
@@ -105,12 +105,12 @@ void Junction::setDirectionRight(int directionRight)
     this->directionRight = directionRight;
 }
 
-void Junction::setPositionRight(int positionRight)
+void Junction::setPositionRight(int32_t positionRight)
 {
     this->xRight = positionRight;
 }
 
-void Junction::setPositionLeft(int positionLeft)
+void Junction::setPositionLeft(int32_t positionLeft)
 {
     this->xLeft = positionLeft;
 }
@@ -146,12 +146,12 @@ int Junction::getDirectionRight()
     return this->directionRight;
 }
 
-int Junction::getPositionLeft()
+int32_t Junction::getPositionLeft()
 {
     return this->xLeft;
 }
 
-int Junction::getPositionRight()
+int32_t Junction::getPositionRight()
 {
     return this->xRight;
 }

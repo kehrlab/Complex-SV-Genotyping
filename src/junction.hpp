@@ -17,11 +17,11 @@ class Junction {
     std::string rNameRight;
     int directionLeft; 
     int directionRight;
-    int xLeft;
-    int xRight;
+    int32_t xLeft;
+    int32_t xRight;
 
-    int beginLeft, endLeft;
-    int beginRight, endRight;
+    int32_t beginLeft, endLeft;
+    int32_t beginRight, endRight;
 
     Junction();
 
@@ -40,8 +40,8 @@ class Junction {
     int getID();
     int getDirectionLeft();
     int getDirectionRight();
-    int getPositionLeft();
-    int getPositionRight();
+    int32_t getPositionLeft();
+    int32_t getPositionRight();
     std::string getRefNameLeft();
     std::string getRefNameRight();
     std::string getVariantRefName();
@@ -49,8 +49,8 @@ class Junction {
     void setId(int);
     void setDirectionLeft(int);
     void setDirectionRight(int);
-    void setPositionRight(int);
-    void setPositionLeft(int);
+    void setPositionRight(int32_t);
+    void setPositionLeft(int32_t);
     void setRefNameLeft(std::string);
     void setRefNameRight(std::string);
     void setVariantRefName(std::string);
