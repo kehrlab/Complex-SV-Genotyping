@@ -491,28 +491,49 @@ void VariantProfile::findPairAttributes(std::unordered_set<std::string> & groups
                     if (r1Idx == r2Idx && (jRegion.junctionIndices[j] - kRegion.junctionIndices[k]) > this->sMax)
                         break;
 
-                    std::vector<Breakpoint> kBps = {kRegion.junctions[k].leftSideToBreakpoint(0), kRegion.junctions[k].rightSideToBreakpoint(1)};
-                    std::vector<Breakpoint> jBps = {jRegion.junctions[j].leftSideToBreakpoint(0), jRegion.junctions[j].rightSideToBreakpoint(1)};
-                    for (auto & kB : kBps)
+                    // by definition, k comes first on the variant allele; therefore there is only one option for kBp and jBp if k == j
+                    std::vector<Breakpoint> kBps = {kRegion.junctions[k].leftSideToBreakpoint(0)}; // left an right breakpoint of the junction
+                    std::vector<bool> kDirs = {kRegion.junctions[k].getDirectionLeft() < 0};       // entry will be true if segment corresponding to the breakpoint is in correct orientation
+                    std::vector<Breakpoint> jBps = {jRegion.junctions[j].rightSideToBreakpoint(1)};
+                    std::vector<bool> jDirs = {jRegion.junctions[j].getDirectionRight() > 0};
+                    if (r1Idx != r2Idx || k != j) 
                     {
-                        for (auto & jB : jBps)
-                        {
-                            if (cInfo.globalPositions.find(jB.getReferenceName()) == cInfo.globalPositions.end())
-                                std::cerr << "Could not find contig " << jB.getReferenceName() << " in contigInfo." << std::endl;
-                            if (cInfo.globalPositions.find(kB.getReferenceName()) == cInfo.globalPositions.end())
-                                std::cerr << "Could not find contig " << kB.getReferenceName() << " in contigInfo." << std::endl;
-                            
-                            int64_t s = (int64_t) this->cInfo.globalPositions[jB.getReferenceName()] + jB.getPosition() -
-                                ((int64_t) this->cInfo.globalPositions[kB.getReferenceName()] + kB.getPosition());
+                        kBps.push_back(kRegion.junctions[k].rightSideToBreakpoint(1));
+                        kDirs.push_back(kRegion.junctions[k].getDirectionRight() > 0);
+                        jBps.push_back(jRegion.junctions[j].leftSideToBreakpoint(0));
+                        jDirs.push_back(jRegion.junctions[j].getDirectionLeft() < 0);
+                    }
 
+                    // go over all possible segment combinations for read pair origins involving the (two) current junction(s)
+                    for (int kB = 0; kB < kBps.size(); ++kB)
+                    {
+                        for (int jB = 0; jB < jBps.size(); ++jB)
+                        {
+                            if (cInfo.globalPositions.find(jBps[jB].getReferenceName()) == cInfo.globalPositions.end())
+                                std::cerr << "Could not find contig " << jBps[jB].getReferenceName() << " in contigInfo." << std::endl;
+                            if (cInfo.globalPositions.find(kBps[kB].getReferenceName()) == cInfo.globalPositions.end())
+                                std::cerr << "Could not find contig " << kBps[kB].getReferenceName() << " in contigInfo." << std::endl;
+                            
+                            int64_t s = (int64_t) this->cInfo.globalPositions[jBps[jB].getReferenceName()] + jBps[jB].getPosition() -
+                                ((int64_t) this->cInfo.globalPositions[kBps[kB].getReferenceName()] + kBps[kB].getPosition());
+
+                            if (kDirs[kB] != jDirs[jB]) // in case one segment is inverted, the orientation is FF or RR and therefore s >= 0 by definition
+                                s = std::abs(s);
+                            if (!kDirs[kB] && !jDirs[jB]) // both are turned -> first read (k) is reverse and therefore we need k - j => -s
+                                s = -s;
+
+                            // need to consider different orientation
                             this->sMinMapped = std::min(this->sMinMapped, s);
-                            this->sMaxMapped = std::max(this->sMaxMapped, std::abs(s));
+                            this->sMaxMapped = std::max(this->sMaxMapped, s);
                         }
                     }
                 }
             }
+            if (r2Idx < r1Idx)
+                d += (kRegion.length - 1);
         }
     }
+    // add some buffer for outliers
     this->sMinMapped -= this->sMax;
     this->sMaxMapped += this->sMax;
 }
@@ -820,8 +841,13 @@ inline void VariantProfile::addValueToMask(Allele & allele, int64_t sOld, int64_
         addGroupToMasks(group);
     }
 
-    if (sNew < this->sMinMapped || sNew >= this->sMaxMapped)
+    if (sNew < this->sMinMapped || sNew >= this->sMaxMapped) {
 	    std::cerr << "Insert size error. Profile boundaries: " << this->sMinMapped << "\t" << this->sMaxMapped << "\tMapped insert size: " << sNew << std::endl;
+        std::cerr << "Variant: " << this->variant.getName() << std::endl;
+        std::cerr << "Read Pair info:\ts: " << sOld << "\tsMap: " << sNew << "\tO: " << orientation << std::endl;
+        std::cerr << "j: " << jString << "\tb: " << bpString << "\tbridge: " << bridgeString << std::endl;
+        return;
+    }
 
     int gIdx = this->variantGroups[group];
 
