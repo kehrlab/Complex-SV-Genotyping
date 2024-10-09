@@ -163,6 +163,9 @@ Reference allele name is `REF`, variant allele name is given in variant descript
 - QualityPass: Flag indicating whether a certain quality (Certainty + AvgMapQ) was reached.
 - Difficulty: Difficulty of this variant in this sample (derived from Kullback-Leibler divergence).
 
+## Citation
+Tim Mirus, Robert Lohmayer, Clementine Döhring, Bjarni V Halldórsson, Birte Kehr, GGTyper: genotyping complex structural variants using short-read sequencing data, Bioinformatics, Volume 40, Issue Supplement_2, September 2024, Pages ii11–ii19, https://doi.org/10.1093/bioinformatics/btae391
+
 ## Version and License
 ```
 Last update: 21.03.2024
